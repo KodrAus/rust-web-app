@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 use std::sync::RwLock;
-use serde_json::{self, Value};
 use auto_impl::auto_impl;
 
-use domain::products::{Resolver, Product};
+use domain::products::{Resolver, Product, ProductData};
 
 pub type Error = String;
 
@@ -13,7 +12,7 @@ pub trait Store {
     fn set(&self, product: Product) -> Result<(), Error>;
 }
 
-pub(super) type InMemoryStore = RwLock<BTreeMap<i32, Value>>;
+pub(super) type InMemoryStore = RwLock<BTreeMap<i32, ProductData>>;
 
 impl Store for InMemoryStore {
     fn get(&self, id: i32) -> Result<Option<Product>, Error> {
@@ -21,11 +20,8 @@ impl Store for InMemoryStore {
             .read()
             .map_err(|_| "not good!")?;
 
-        if let Some(raw_product) = products.get(&id) {
-            let product = serde_json::from_value(raw_product.clone())
-                .map_err(|_| "unexpected product value")?;
-
-            Ok(Some(product))
+        if let Some(data) = products.get(&id) {
+            Ok(Some(Product::from_data(data.clone())))
         }
         else {
             Ok(None)
@@ -33,16 +29,14 @@ impl Store for InMemoryStore {
     }
 
     fn set(&self, product: Product) -> Result<(), Error> {
-        let id = product.id();
+        let data = product.into_data();
+        let id = data.id;
 
         let mut products = self
             .write()
             .map_err(|_| "not good!")?;
 
-        let raw_product = serde_json::to_value(product)
-            .map_err(|_| "unexpected product value")?;
-        
-        products.insert(id, raw_product);
+        products.insert(id, data);
 
         Ok(())
     }

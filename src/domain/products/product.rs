@@ -1,29 +1,35 @@
 pub type ProductError = String;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ProductData {
+    pub id: i32,
+    pub title: String,
+}
+
 pub struct Product {
-    id: i32,
-    title: String
+    data: ProductData
 }
 
 impl Product {
-    pub(in domain::products) fn new(id: i32, title: String) -> Product {
+    pub(in domain::products) fn from_data(data: ProductData) -> Self {
         Product {
-            id: id,
-            title: title
+            data: data
         }
     }
 
-    pub fn id(&self) -> i32 {
-        self.id
+    pub fn into_data(self) -> ProductData {
+        self.data
     }
 
-    pub fn title(&self) -> &str {
-        &self.title
+    pub fn new(id: i32, title: String) -> Result<Self, ProductError> {
+        Ok(Product::from_data(ProductData {
+            id: id,
+            title: title
+        }))
     }
 
     pub fn set_title(&mut self, title: String) -> Result<(), ProductError> {
-        self.title = title;
+        self.data.title = title;
 
         Ok(())
     }
