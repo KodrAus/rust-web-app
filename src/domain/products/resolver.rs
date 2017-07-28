@@ -1,8 +1,6 @@
-mod store;
-
-pub use self::store::*;
-
 use std::sync::Arc;
+
+use super::model::store::*;
 
 pub struct Resolver {
     store: Arc<store::InMemoryStore>

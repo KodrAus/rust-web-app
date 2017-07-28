@@ -1,3 +1,3 @@
-pub mod order;
+pub mod model;
 
-pub use self::order::*;
+pub use self::model::*;

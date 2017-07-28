@@ -5,6 +5,7 @@ pub type OrderError = String;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: i32,
+    _private: (),
 }
 
 pub struct Order {
@@ -15,7 +16,8 @@ pub struct Order {
 pub struct OrderItemData {
     pub id: i32,
     pub product_id: i32,
-    pub price: f32
+    pub price: f32,
+    _private: (),
 }
 
 pub struct OrderItem {
@@ -28,25 +30,25 @@ pub struct OrderAggregate {
 }
 
 impl Order {
-    pub(in domain::orders) fn new(data: OrderData) -> Self {
+    fn from_data(data: OrderData) -> Self {
         Order {
             data: data
         }
     }
 
-    pub fn split(self) -> OrderData {
+    pub fn into_data(self) -> OrderData {
         self.data
     }
 }
 
 impl OrderItem {
-    pub(in domain::orders) fn new(data: OrderItemData) -> Self {
+    fn from_data(data: OrderItemData) -> Self {
         OrderItem {
             data: data
         }
     }
 
-    pub fn split(self) -> OrderItemData {
+    pub fn into_data(self) -> OrderItemData {
         self.data
     }
 }
@@ -60,10 +62,11 @@ impl OrderAggregate {
         let ProductData { id, .. } = product.into_data();
 
         if !self.contains_product(id) {
-            let order_item = OrderItem::new(OrderItemData {
+            let order_item = OrderItem::from_data(OrderItemData {
                 id: 1,
                 product_id: id,
-                price: 1f32
+                price: 1f32,
+                _private: ()
             });
 
             self.order_items.push(order_item);

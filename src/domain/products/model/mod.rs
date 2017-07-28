@@ -1,9 +1,12 @@
+pub mod store;
+
 pub type ProductError = String;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
     pub id: i32,
     pub title: String,
+    _private: (),
 }
 
 pub struct Product {
@@ -11,7 +14,7 @@ pub struct Product {
 }
 
 impl Product {
-    pub(in domain::products) fn from_data(data: ProductData) -> Self {
+    fn from_data(data: ProductData) -> Self {
         Product {
             data: data
         }
@@ -24,7 +27,8 @@ impl Product {
     pub fn new(id: i32, title: String) -> Result<Self, ProductError> {
         Ok(Product::from_data(ProductData {
             id: id,
-            title: title
+            title: title,
+            _private: (),
         }))
     }
 
