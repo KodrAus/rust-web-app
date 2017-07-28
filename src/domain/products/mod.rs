@@ -6,5 +6,7 @@ mod resolver;
 pub use self::resolver::Resolver;
 
 pub use self::model::*;
+pub use self::model::store::ProductStore;
+
 pub use self::commands::*;
 pub use self::queries::*;

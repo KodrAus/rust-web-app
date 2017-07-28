@@ -2,19 +2,19 @@ use std::collections::BTreeMap;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::products::{Resolver, Product, ProductData};
+use domain::products::{Product, ProductData};
 
 pub type Error = String;
 
 #[auto_impl(Arc)]
-pub trait Store {
+pub trait ProductStore {
     fn get(&self, id: i32) -> Result<Option<Product>, Error>;
     fn set(&self, product: Product) -> Result<(), Error>;
 }
 
 pub(in domain::products) type InMemoryStore = RwLock<BTreeMap<i32, ProductData>>;
 
-impl Store for InMemoryStore {
+impl ProductStore for InMemoryStore {
     fn get(&self, id: i32) -> Result<Option<Product>, Error> {
         let products = self
             .read()
@@ -46,12 +46,6 @@ pub(in domain::products) fn in_memory_store() -> InMemoryStore {
     RwLock::new(BTreeMap::new())
 }
 
-pub fn store() -> impl Store {
+pub fn product_store() -> impl ProductStore {
     in_memory_store()
-}
-
-impl Resolver {
-    pub fn store(&self) -> impl Store {
-        self.store.clone()
-    }
 }

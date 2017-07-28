@@ -1,7 +1,7 @@
 use auto_impl::auto_impl;
 
 use domain::products::Product;
-use domain::products::infra::{Resolver, Store};
+use domain::products::{Resolver, ProductStore};
 
 pub struct SetProduct {
     pub id: i32,
@@ -16,7 +16,7 @@ pub trait SetProductCommand {
 }
 
 pub fn set_product_command<TStore>(store: TStore) -> impl SetProductCommand 
-    where TStore: Store
+    where TStore: ProductStore
 {
     move |command: SetProduct| {
         let product = {
@@ -36,7 +36,7 @@ pub fn set_product_command<TStore>(store: TStore) -> impl SetProductCommand
 
 impl Resolver {
     pub fn set_product_command(&self) -> impl SetProductCommand {
-        let store = self.store();
+        let store = self.product_store();
 
         set_product_command(store)
     }

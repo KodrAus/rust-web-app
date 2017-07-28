@@ -24,10 +24,12 @@ impl Product {
         self.data
     }
 
-    pub fn new(id: i32, title: String) -> Result<Self, ProductError> {
+    pub fn new<TTitle>(id: i32, title: TTitle) -> Result<Self, ProductError> 
+        where TTitle: Into<String>
+    {
         Ok(Product::from_data(ProductData {
             id: id,
-            title: title,
+            title: title.into(),
             _private: (),
         }))
     }

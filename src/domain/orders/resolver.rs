@@ -15,7 +15,11 @@ impl Default for Resolver {
 }
 
 impl Resolver {
-    pub fn product_store(&self) -> impl ProductStore {
+    pub fn order_store(&self) -> impl OrderStore {
+        self.store.clone()
+    }
+
+    pub fn order_with_items_store(&self) -> impl OrderWithItemsStore {
         self.store.clone()
     }
 }
