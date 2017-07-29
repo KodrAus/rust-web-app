@@ -1,7 +1,7 @@
 use auto_impl::auto_impl;
 
-use domain::products::Product;
-use domain::products::{Resolver, ProductStore};
+use domain::Resolver;
+use domain::products::{Product, ProductStore};
 
 pub struct SetProduct {
     pub id: i32,

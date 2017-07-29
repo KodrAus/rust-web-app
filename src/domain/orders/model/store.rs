@@ -3,7 +3,7 @@ use std::collections::btree_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::orders::{Order, OrderData, OrderItem, OrderItemData, OrderWithItems};
+use domain::orders::{Order, OrderData, LineItem, LineItemData, OrderLineItemsAggregate};
 
 pub type Error = String;
 
@@ -14,14 +14,14 @@ pub trait OrderStore {
 }
 
 #[auto_impl(Arc)]
-pub trait OrderWithItemsStore {
-    fn get(&self, id: i32) -> Result<Option<OrderWithItems>, Error>;
-    fn set(&self, order: OrderWithItems) -> Result<(), Error>;
+pub trait OrderLineItemsAggregateStore {
+    fn get(&self, id: i32) -> Result<Option<OrderLineItemsAggregate>, Error>;
+    fn set(&self, order: OrderLineItemsAggregate) -> Result<(), Error>;
 }
 
-pub(in domain::orders) struct InMemoryStore {
+pub(in domain) struct InMemoryStore {
     orders: RwLock<BTreeMap<i32, (OrderData, Vec<i32>)>>,
-    order_items: RwLock<BTreeMap<i32, OrderItemData>>
+    order_items: RwLock<BTreeMap<i32, LineItemData>>
 }
 
 impl OrderStore for InMemoryStore {
@@ -62,8 +62,8 @@ impl OrderStore for InMemoryStore {
     }
 }
 
-impl OrderWithItemsStore for InMemoryStore {
-    fn get(&self, id: i32) -> Result<Option<OrderWithItems>, Error> {
+impl OrderLineItemsAggregateStore for InMemoryStore {
+    fn get(&self, id: i32) -> Result<Option<OrderLineItemsAggregate>, Error> {
         let orders = self
             .orders
             .read()
@@ -80,14 +80,14 @@ impl OrderWithItemsStore for InMemoryStore {
                 .filter(|item_data| item_ids.iter().any(|id| *id == item_data.id))
                 .cloned();
             
-            Ok(Some(OrderWithItems::from_data(data.clone(), items_data)))
+            Ok(Some(OrderLineItemsAggregate::from_data(data.clone(), items_data)))
         }
         else {
             Ok(None)
         }
     }
 
-    fn set(&self, order: OrderWithItems) -> Result<(), Error> {
+    fn set(&self, order: OrderLineItemsAggregate) -> Result<(), Error> {
         let (order_data, order_items_data) = order.into_data();
         let id = order_data.id;
         let order_item_ids = order_items_data.iter().map(|item| item.id).collect();
@@ -122,7 +122,7 @@ impl OrderWithItemsStore for InMemoryStore {
     }
 }
 
-pub(in domain::orders) fn in_memory_store() -> InMemoryStore {
+pub(in domain) fn in_memory_store() -> InMemoryStore {
     InMemoryStore {
         orders: RwLock::new(BTreeMap::new()),
         order_items: RwLock::new(BTreeMap::new()),

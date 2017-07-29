@@ -1,6 +1,7 @@
 use auto_impl::auto_impl;
 
-use domain::products::{ProductData, Resolver, ProductStore};
+use domain::Resolver;
+use domain::products::{ProductData, ProductStore};
 
 #[derive(Serialize)]
 pub struct GetProductResult {

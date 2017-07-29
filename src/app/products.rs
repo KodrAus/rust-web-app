@@ -1,6 +1,7 @@
 use rocket::State;
 use rocket_contrib::Json;
 
+use domain::Resolver;
 use domain::products::*;
 
 #[get("/<id>")]

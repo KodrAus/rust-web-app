@@ -24,6 +24,10 @@ impl Product {
         self.data
     }
 
+    pub fn to_data(&self) -> &ProductData {
+        &self.data
+    }
+
     pub fn new<TTitle>(id: i32, title: TTitle) -> Result<Self, ProductError> 
         where TTitle: Into<String>
     {

@@ -1,11 +1,11 @@
 use rocket;
-use domain;
+use domain::Resolver;
 
 mod products;
 
 pub fn start() {
     rocket::ignite()
-        .manage(domain::products::Resolver::default())
+        .manage(Resolver::default())
         .mount("/products", routes![
             products::get,
             products::post

@@ -15,20 +15,21 @@ pub struct Order {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct OrderItemData {
+pub struct LineItemData {
     pub id: i32,
     pub product_id: i32,
     pub price: f32,
     _private: (),
 }
 
-pub struct OrderItem {
-    data: OrderItemData
+pub struct LineItem {
+    data: LineItemData
 }
 
-pub struct OrderWithItems {
+// TODO: How do we get the line items for an order if we need them elsewhere?
+pub struct OrderLineItemsAggregate {
     order: Order,
-    order_items: Vec<OrderItem>,
+    order_items: Vec<LineItem>,
 }
 
 impl Order {
@@ -50,32 +51,32 @@ impl Order {
     }
 }
 
-impl OrderItem {
-    fn from_data(data: OrderItemData) -> Self {
-        OrderItem {
+impl LineItem {
+    fn from_data(data: LineItemData) -> Self {
+        LineItem {
             data: data
         }
     }
 
-    pub fn into_data(self) -> OrderItemData {
+    pub fn into_data(self) -> LineItemData {
         self.data
     }
 }
 
-impl OrderWithItems {
+impl OrderLineItemsAggregate {
     fn from_data<TItems>(order: OrderData, items: TItems) -> Self 
-        where TItems: IntoIterator<Item = OrderItemData>
+        where TItems: IntoIterator<Item = LineItemData>
     {
         let order = Order::from_data(order);
-        let items = items.into_iter().map(|item| OrderItem::from_data(item)).collect();
+        let items = items.into_iter().map(|item| LineItem::from_data(item)).collect();
 
-        OrderWithItems {
+        OrderLineItemsAggregate {
             order: order,
             order_items: items
         }
     }
 
-    pub fn into_data(self) -> (OrderData, Vec<OrderItemData>) {
+    pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {
         (self.order.into_data(), self.order_items.into_iter().map(|item| item.into_data()).collect())
     }
 
@@ -83,11 +84,12 @@ impl OrderWithItems {
         self.order_items.iter().any(|item| item.data.product_id == product_id)
     }
 
-    pub fn add_product(&mut self, product: Product) -> Result<(), OrderError> {        
-        let ProductData { id, .. } = product.into_data();
+    // TODO: Should we depend on a product entity directly? Seems like the point of having them, but it does couple things
+    pub fn add_product(&mut self, product: &Product) -> Result<(), OrderError> {        
+        let &ProductData { id, .. } = product.to_data();
 
         if !self.contains_product(id) {
-            let order_item = OrderItem::from_data(OrderItemData {
+            let order_item = LineItem::from_data(LineItemData {
                 id: 1,
                 product_id: id,
                 price: 1f32,
@@ -118,9 +120,9 @@ mod tests {
             _private: (),
         };
 
-        let mut order = OrderWithItems::from_data(order_data, vec![]);
+        let mut order = OrderLineItemsAggregate::from_data(order_data, vec![]);
 
-        order.add_product(product).unwrap();
+        order.add_product(&product).unwrap();
 
         assert_eq!(1, order.order_items.len());
         assert!(order.contains_product(1));
