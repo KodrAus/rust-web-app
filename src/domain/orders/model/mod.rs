@@ -10,16 +10,17 @@ pub struct OrderData {
     _private: (),
 }
 
-pub struct Order {
-    data: OrderData
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
     pub id: i32,
     pub product_id: i32,
     pub price: f32,
+    pub quantity: u32,
     _private: (),
+}
+
+pub struct Order {
+    data: OrderData
 }
 
 pub struct LineItem {
@@ -43,6 +44,10 @@ impl Order {
         self.data
     }
 
+    pub fn to_data(&self) -> &OrderData {
+        &self.data
+    }
+
     pub fn new(id: i32) -> Self {
         Order::from_data(OrderData { 
             id: id, 
@@ -61,6 +66,10 @@ impl LineItem {
     pub fn into_data(self) -> LineItemData {
         self.data
     }
+
+    pub fn to_data(&self) -> &LineItemData {
+        &self.data
+    }
 }
 
 impl OrderLineItemsAggregate {
@@ -77,7 +86,15 @@ impl OrderLineItemsAggregate {
     }
 
     pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {
-        (self.order.into_data(), self.order_items.into_iter().map(|item| item.into_data()).collect())
+        let items_data = self.order_items.into_iter().map(|item| item.into_data()).collect();
+
+        (self.order.into_data(), items_data)
+    }
+
+    pub fn to_data(&self) -> (&OrderData, Vec<&LineItemData>) {
+        let items_data = self.order_items.iter().map(|item| item.to_data()).collect();
+
+        (self.order.to_data(), items_data)
     }
 
     pub fn contains_product(&self, product_id: i32) -> bool {
@@ -85,14 +102,19 @@ impl OrderLineItemsAggregate {
     }
 
     // TODO: Should we depend on a product entity directly? Seems like the point of having them, but it does couple things
-    pub fn add_product(&mut self, product: &Product) -> Result<(), OrderError> {        
-        let &ProductData { id, .. } = product.to_data();
+    pub fn add_product(&mut self, product: &Product, quantity: u32) -> Result<(), OrderError> {
+        if quantity == 0 {
+            Err("quantity must be greater than 0")?
+        }
+
+        let &ProductData { id, price, .. } = product.to_data();
 
         if !self.contains_product(id) {
             let order_item = LineItem::from_data(LineItemData {
                 id: 1,
                 product_id: id,
-                price: 1f32,
+                price: price,
+                quantity: quantity,
                 _private: ()
             });
 
@@ -122,7 +144,7 @@ mod tests {
 
         let mut order = OrderLineItemsAggregate::from_data(order_data, vec![]);
 
-        order.add_product(&product).unwrap();
+        order.add_product(&product, 1).unwrap();
 
         assert_eq!(1, order.order_items.len());
         assert!(order.contains_product(1));
