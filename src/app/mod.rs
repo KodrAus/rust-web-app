@@ -8,6 +8,7 @@ pub fn start() {
         .manage(Resolver::default())
         .mount("/products", routes![
             products::get,
-            products::post
+            products::create,
+            products::set_title
         ]).launch();
 }

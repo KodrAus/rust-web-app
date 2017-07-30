@@ -13,11 +13,20 @@ fn get(id: i32, resolver: State<Resolver>) -> Result<Json<GetProductResult>, Que
     Ok(Json(product))
 }
 
-#[post("/<id>/<title>")]
-fn post(id: i32, title: String, resolver: State<Resolver>) -> Result<(), CommandError> {
-    let mut command = resolver.set_product_command();
+#[put("/", format = "application/json", data = "<data>")]
+fn create(data: Json<CreateProduct>, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
+    let mut command = resolver.create_product_command();
 
-    command.set_product(SetProduct { id: id, title: title })?;
+    command.create_product(data.0)?;
+
+    Ok(())
+}
+
+#[post("/<id>/title/<title>")]
+fn set_title(id: i32, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
+    let mut command = resolver.set_product_title_command();
+
+    command.set_product_title(SetProductTitle { id: id, title: title })?;
 
     Ok(())
 }

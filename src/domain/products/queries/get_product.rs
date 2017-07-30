@@ -11,6 +11,7 @@ pub struct GetProductResult {
 
 pub type QueryError = String;
 
+#[derive(Deserialize)]
 pub struct GetProduct {
     pub id: i32
 }

@@ -1,3 +1,5 @@
-mod set_product;
+mod set_product_title;
+pub use self::set_product_title::*;
 
-pub use self::set_product::*;
+mod create_product;
+pub use self::create_product::*;
