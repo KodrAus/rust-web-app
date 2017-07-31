@@ -102,7 +102,6 @@ impl Order {
 
         let &ProductData { id, price, .. } = product.to_data();
 
-        // TODO: Where does LineItemId come from? Just use product id?
         if !self.contains_product(id) {
             let order_item = LineItemData {
                 product_id: id,
