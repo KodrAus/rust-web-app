@@ -19,7 +19,7 @@ pub trait OrderLineItemsAggregateStore {
     fn set(&self, order: OrderLineItemsAggregate) -> Result<(), Error>;
 }
 
-pub(in domain) struct InMemoryStore {
+pub struct InMemoryStore {
     orders: RwLock<BTreeMap<i32, (OrderData, Vec<i32>)>>,
     order_items: RwLock<BTreeMap<i32, LineItemData>>
 }
@@ -122,7 +122,7 @@ impl OrderLineItemsAggregateStore for InMemoryStore {
     }
 }
 
-pub(in domain) fn in_memory_store() -> InMemoryStore {
+pub fn in_memory_store() -> InMemoryStore {
     InMemoryStore {
         orders: RwLock::new(BTreeMap::new()),
         order_items: RwLock::new(BTreeMap::new()),

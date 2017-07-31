@@ -1,3 +1,5 @@
+pub(in domain) mod store;
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CustomerData {
     pub id: i32,

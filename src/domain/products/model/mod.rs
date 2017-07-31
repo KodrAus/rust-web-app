@@ -1,4 +1,4 @@
-pub mod store;
+pub(in domain) mod store;
 
 pub type ProductError = String;
 

@@ -1,4 +1,4 @@
-pub mod store;
+pub(in domain) mod store;
 
 use domain::products::{Product, ProductData};
 use domain::customers::{Customer, CustomerData};
@@ -30,6 +30,8 @@ pub struct LineItem {
 }
 
 // TODO: How do we get the line items for an order if we need them elsewhere?
+// TODO: Should we store `LineItem`s or `LineItemData`. If we want to return `&mut LineItem` then that'll be problematic.
+// But I don't think we should be able to return a `&mut LineItem` because of `mem::replace`.
 pub struct OrderLineItemsAggregate {
     order: Order,
     order_items: Vec<LineItemData>,
