@@ -3,6 +3,8 @@ pub(in domain) mod store;
 use domain::products::{Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
+// TODO: OrderItemsAggregate and OrderItemAggregate are silly names
+
 pub type OrderError = String;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -103,6 +105,10 @@ impl OrderLineItemAggregate {
     }
 
     pub fn set_quantity(&mut self, quantity: u32) -> Result<(), OrderError> {
+        if quantity == 0 {
+            Err("quantity must be greater than 0")?
+        }
+
         self.line_item.data.quantity = quantity;
 
         Ok(())

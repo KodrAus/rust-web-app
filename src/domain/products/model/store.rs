@@ -68,7 +68,6 @@ mod tests {
             price: 1.5f32,
             _private: (),
         });
-
         store.set(product).unwrap();
 
         let found = store.get(1).unwrap().unwrap();

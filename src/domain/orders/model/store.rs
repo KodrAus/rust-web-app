@@ -222,21 +222,15 @@ mod tests {
             customer_id: 1,
             _private: (),
         });
-
         order_store.set(order).unwrap();
 
         let product = Product::new(product_id, "Some product", 1f32).unwrap();
-
         let mut order = line_items_store.get(order_id).unwrap().unwrap();
-
         order.add_product(&product, 1).unwrap();
-
         line_items_store.set(order).unwrap();
 
         let mut order = line_item_store.get(order_id, product_id).unwrap().unwrap();
-
         order.set_quantity(5).unwrap();
-
         line_item_store.set(order).unwrap();
 
         let (_, line_items) = line_items_store.get(order_id).unwrap().unwrap().into_data();
