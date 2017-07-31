@@ -1,12 +1,14 @@
 pub mod store;
 
 use domain::products::{Product, ProductData};
+use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: i32,
+    pub customer_id: i32,
     _private: (),
 }
 
@@ -30,7 +32,7 @@ pub struct LineItem {
 // TODO: How do we get the line items for an order if we need them elsewhere?
 pub struct OrderLineItemsAggregate {
     order: Order,
-    order_items: Vec<LineItem>,
+    order_items: Vec<LineItemData>,
 }
 
 impl Order {
@@ -48,9 +50,12 @@ impl Order {
         &self.data
     }
 
-    pub fn new(id: i32) -> Self {
+    pub fn new(id: i32, customer: &Customer) -> Self {
+        let &CustomerData { id: customer_id, .. } = customer.to_data();
+
         Order::from_data(OrderData { 
             id: id, 
+            customer_id: customer_id,
             _private: () 
         })
     }
@@ -77,7 +82,7 @@ impl OrderLineItemsAggregate {
         where TItems: IntoIterator<Item = LineItemData>
     {
         let order = Order::from_data(order);
-        let items = items.into_iter().map(|item| LineItem::from_data(item)).collect();
+        let items = items.into_iter().collect();
 
         OrderLineItemsAggregate {
             order: order,
@@ -86,19 +91,15 @@ impl OrderLineItemsAggregate {
     }
 
     pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {
-        let items_data = self.order_items.into_iter().map(|item| item.into_data()).collect();
-
-        (self.order.into_data(), items_data)
+        (self.order.into_data(), self.order_items)
     }
 
-    pub fn to_data(&self) -> (&OrderData, Vec<&LineItemData>) {
-        let items_data = self.order_items.iter().map(|item| item.to_data()).collect();
-
-        (self.order.to_data(), items_data)
+    pub fn to_data(&self) -> (&OrderData, &[LineItemData]) {
+        (self.order.to_data(), &self.line_items)
     }
 
     pub fn contains_product(&self, product_id: i32) -> bool {
-        self.order_items.iter().any(|item| item.data.product_id == product_id)
+        self.order_items.iter().any(|item| item.product_id == product_id)
     }
 
     // TODO: Should we depend on a product entity directly? Seems like the point of having them, but it does couple things
@@ -110,13 +111,13 @@ impl OrderLineItemsAggregate {
         let &ProductData { id, price, .. } = product.to_data();
 
         if !self.contains_product(id) {
-            let order_item = LineItem::from_data(LineItemData {
+            let order_item = LineItemData {
                 id: 1,
                 product_id: id,
                 price: price,
                 quantity: quantity,
                 _private: ()
-            });
+            };
 
             self.order_items.push(order_item);
 
@@ -139,6 +140,7 @@ mod tests {
 
         let order_data = OrderData {
             id: 1,
+            customer_id: 1,
             _private: (),
         };
 
