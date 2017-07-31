@@ -3,8 +3,6 @@ pub(in domain) mod store;
 use domain::products::{Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
-// TODO: OrderItemsAggregate and OrderItemAggregate are silly names
-
 pub type OrderError = String;
 
 #[derive(Clone, Serialize, Deserialize)]
