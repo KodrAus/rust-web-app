@@ -29,7 +29,7 @@ impl Resolver {
         self.order_store.clone()
     }
 
-    pub fn order_with_items_store(&self) -> impl order_store::OrderLineItemsAggregateStore {
+    pub fn order_line_item_store(&self) -> impl order_store::OrderLineItemStore {
         self.order_store.clone()
     }
 

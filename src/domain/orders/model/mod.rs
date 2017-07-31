@@ -23,85 +23,29 @@ pub struct LineItemData {
 }
 
 pub struct Order {
-    data: OrderData
-}
-
-pub struct LineItem {
-    data: LineItemData
-}
-
-// TODO: How do we get the line items for an order if we need them elsewhere?
-// TODO: Should we store `LineItem`s or `LineItemData`. If we want to return `&mut LineItem` then that'll be problematic.
-// But I don't think we should be able to return a `&mut LineItem` because of `mem::replace`.
-pub struct OrderLineItemsAggregate {
-    order: Order,
+    order: OrderData,
     line_items: Vec<LineItemData>,
 }
 
-pub struct OrderLineItemAggregate {
-    order: Order,
-    line_item: LineItem,
+pub struct OrderLineItem {
+    order: OrderData,
+    line_item: LineItemData,
 }
 
-impl Order {
-    fn from_data(data: OrderData) -> Self {
-        Order {
-            data: data
-        }
-    }
-
-    pub fn into_data(self) -> OrderData {
-        self.data
-    }
-
-    pub fn to_data(&self) -> &OrderData {
-        &self.data
-    }
-
-    pub fn new(id: i32, customer: &Customer) -> Self {
-        let &CustomerData { id: customer_id, .. } = customer.to_data();
-
-        Order::from_data(OrderData { 
-            id: id, 
-            customer_id: customer_id,
-            _private: () 
-        })
-    }
-}
-
-impl LineItem {
-    fn from_data(data: LineItemData) -> Self {
-        LineItem {
-            data: data
-        }
-    }
-
-    pub fn into_data(self) -> LineItemData {
-        self.data
-    }
-
-    pub fn to_data(&self) -> &LineItemData {
-        &self.data
-    }
-}
-
-impl OrderLineItemAggregate {
+impl OrderLineItem {
     fn from_data(order: OrderData, line_item: LineItemData) -> Self {
-        let order = Order::from_data(order);
-        let line_item = LineItem::from_data(line_item);
-
-        OrderLineItemAggregate {
+        OrderLineItem {
             order: order,
             line_item: line_item
         }
     }
 
     pub fn into_data(self) -> (OrderData, LineItemData) {
-        (self.order.into_data(), self.line_item.into_data())
+        (self.order, self.line_item)
     }
 
     pub fn to_data(&self) -> (&OrderData, &LineItemData) {
-        (self.order.to_data(), &self.line_item.to_data())
+        (&self.order, &self.line_item)
     }
 
     pub fn set_quantity(&mut self, quantity: u32) -> Result<(), OrderError> {
@@ -109,31 +53,42 @@ impl OrderLineItemAggregate {
             Err("quantity must be greater than 0")?
         }
 
-        self.line_item.data.quantity = quantity;
+        self.line_item.quantity = quantity;
 
         Ok(())
     }
 }
 
-impl OrderLineItemsAggregate {
+impl Order {
     fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self 
         where TItems: IntoIterator<Item = LineItemData>
     {
-        let order = Order::from_data(order);
         let line_items = line_items.into_iter().collect();
 
-        OrderLineItemsAggregate {
+        Order {
             order: order,
             line_items: line_items
         }
     }
 
     pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {
-        (self.order.into_data(), self.line_items)
+        (self.order, self.line_items)
     }
 
     pub fn to_data(&self) -> (&OrderData, &[LineItemData]) {
-        (self.order.to_data(), &self.line_items)
+        (&self.order, &self.line_items)
+    }
+
+    pub fn new(id: i32, customer: &Customer) -> Self {
+        let &CustomerData { id: customer_id, .. } = customer.to_data();
+
+        let order_data = OrderData { 
+            id: id, 
+            customer_id: customer_id,
+            _private: () 
+        };
+
+        Order::from_data(order_data, vec![])
     }
 
     pub fn contains_product(&self, product_id: i32) -> bool {
@@ -181,7 +136,7 @@ mod tests {
             _private: (),
         };
 
-        let mut order = OrderLineItemsAggregate::from_data(order_data, vec![]);
+        let mut order = Order::from_data(order_data, vec![]);
 
         order.add_product(&product, 1).unwrap();
 

@@ -3,26 +3,20 @@ use std::collections::btree_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::orders::{Order, OrderData, LineItem, LineItemData, OrderLineItemAggregate, OrderLineItemsAggregate};
+use domain::orders::{Order, OrderLineItem, OrderData, LineItemData};
 
 pub type Error = String;
 
 #[auto_impl(Arc)]
+pub trait OrderLineItemStore {
+    fn get(&self, id: i32, line_item_id: i32) -> Result<Option<OrderLineItem>, Error>;
+    fn set(&self, order: OrderLineItem) -> Result<(), Error>;
+}
+
+#[auto_impl(Arc)]
 pub trait OrderStore {
-    fn get(&self, id: i32) -> Result<Option<Order>, Error>;
+    fn get(&self, order_id: i32) -> Result<Option<Order>, Error>;
     fn set(&self, order: Order) -> Result<(), Error>;
-}
-
-#[auto_impl(Arc)]
-pub trait OrderLineItemAggregateStore {
-    fn get(&self, id: i32, line_item_id: i32) -> Result<Option<OrderLineItemAggregate>, Error>;
-    fn set(&self, order: OrderLineItemAggregate) -> Result<(), Error>;
-}
-
-#[auto_impl(Arc)]
-pub trait OrderLineItemsAggregateStore {
-    fn get(&self, order_id: i32) -> Result<Option<OrderLineItemsAggregate>, Error>;
-    fn set(&self, order: OrderLineItemsAggregate) -> Result<(), Error>;
 }
 
 pub struct InMemoryStore {
@@ -30,46 +24,8 @@ pub struct InMemoryStore {
     order_items: RwLock<BTreeMap<i32, LineItemData>>
 }
 
-impl OrderStore for InMemoryStore {
-    fn get(&self, id: i32) -> Result<Option<Order>, Error> {
-        let orders = self
-            .orders
-            .read()
-            .map_err(|_| "not good!")?;
-
-        if let Some(&(ref data, _)) = orders.get(&id) {
-            Ok(Some(Order::from_data(data.clone())))
-        }
-        else {
-            Ok(None)
-        }
-    }
-
-    fn set(&self, order: Order) -> Result<(), Error> {
-        let data = order.into_data();
-        let id = data.id;
-
-        let mut orders = self
-            .orders
-            .write()
-            .map_err(|_| "not good!")?;
-
-        match orders.entry(id) {
-            Entry::Vacant(entry) => {
-                entry.insert((data, vec![]));
-            },
-            Entry::Occupied(mut entry) => {
-                let mut entry = entry.get_mut();
-                entry.0 = data;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl OrderLineItemAggregateStore for InMemoryStore {
-    fn get(&self, order_id: i32, line_item_id: i32) -> Result<Option<OrderLineItemAggregate>, Error> {
+impl OrderLineItemStore for InMemoryStore {
+    fn get(&self, order_id: i32, line_item_id: i32) -> Result<Option<OrderLineItem>, Error> {
         let orders = self
             .orders
             .read()
@@ -91,14 +47,14 @@ impl OrderLineItemAggregateStore for InMemoryStore {
                 .cloned()
                 .ok_or("line item not found")?;
             
-            Ok(Some(OrderLineItemAggregate::from_data(data.clone(), item_data)))
+            Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
         }
         else {
             Ok(None)
         }
     }
 
-    fn set(&self, order: OrderLineItemAggregate) -> Result<(), Error> {
+    fn set(&self, order: OrderLineItem) -> Result<(), Error> {
         let (order_data, order_item_data) = order.into_data();
         let order_id = order_data.id;
         let order_item_id = order_item_data.product_id;
@@ -129,8 +85,8 @@ impl OrderLineItemAggregateStore for InMemoryStore {
     }
 }
 
-impl OrderLineItemsAggregateStore for InMemoryStore {
-    fn get(&self, id: i32) -> Result<Option<OrderLineItemsAggregate>, Error> {
+impl OrderStore for InMemoryStore {
+    fn get(&self, id: i32) -> Result<Option<Order>, Error> {
         let orders = self
             .orders
             .read()
@@ -147,14 +103,14 @@ impl OrderLineItemsAggregateStore for InMemoryStore {
                 .filter(|item_data| item_ids.iter().any(|id| *id == item_data.product_id))
                 .cloned();
             
-            Ok(Some(OrderLineItemsAggregate::from_data(data.clone(), items_data)))
+            Ok(Some(Order::from_data(data.clone(), items_data)))
         }
         else {
             Ok(None)
         }
     }
 
-    fn set(&self, order: OrderLineItemsAggregate) -> Result<(), Error> {
+    fn set(&self, order: Order) -> Result<(), Error> {
         let (order_data, order_items_data) = order.into_data();
         let id = order_data.id;
         let order_item_ids = order_items_data.iter().map(|item| item.product_id).collect();
@@ -211,29 +167,31 @@ mod tests {
 
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
-        let line_items_store: &OrderLineItemsAggregateStore = &store;
-        let line_item_store: &OrderLineItemAggregateStore = &store;
+        let line_item_store: &OrderLineItemStore = &store;
 
         let order_id = 76i32;
         let product_id = 245i32;
 
-        let order = Order::from_data(OrderData {
-            id: order_id,
-            customer_id: 1,
-            _private: (),
-        });
+        let order = Order::from_data(
+            OrderData {
+                id: order_id,
+                customer_id: 1,
+                _private: (),
+            },
+            vec![]
+        );
         order_store.set(order).unwrap();
 
         let product = Product::new(product_id, "Some product", 1f32).unwrap();
-        let mut order = line_items_store.get(order_id).unwrap().unwrap();
+        let mut order = order_store.get(order_id).unwrap().unwrap();
         order.add_product(&product, 1).unwrap();
-        line_items_store.set(order).unwrap();
+        order_store.set(order).unwrap();
 
         let mut order = line_item_store.get(order_id, product_id).unwrap().unwrap();
         order.set_quantity(5).unwrap();
         line_item_store.set(order).unwrap();
 
-        let (_, line_items) = line_items_store.get(order_id).unwrap().unwrap().into_data();
+        let (_, line_items) = order_store.get(order_id).unwrap().unwrap().into_data();
 
         assert_eq!(1, line_items.len());
         assert_eq!(5, line_items[0].quantity);
