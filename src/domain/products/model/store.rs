@@ -52,3 +52,27 @@ pub fn in_memory_store() -> InMemoryStore {
 pub fn product_store() -> impl ProductStore {
     in_memory_store()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use domain::products::*;
+
+    #[test]
+    fn test_in_memory_store() {
+        let store = in_memory_store();
+
+        let product = Product::from_data(ProductData {
+            id: 1,
+            title: "Some title".into(),
+            price: 1.5f32,
+            _private: (),
+        });
+
+        store.set(product).unwrap();
+
+        let found = store.get(1).unwrap().unwrap();
+
+        assert_eq!(1, found.data.id);
+    } 
+}

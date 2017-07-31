@@ -14,7 +14,6 @@ pub struct OrderData {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
-    pub id: i32,
     pub product_id: i32,
     pub price: f32,
     pub quantity: u32,
@@ -34,7 +33,12 @@ pub struct LineItem {
 // But I don't think we should be able to return a `&mut LineItem` because of `mem::replace`.
 pub struct OrderLineItemsAggregate {
     order: Order,
-    order_items: Vec<LineItemData>,
+    line_items: Vec<LineItemData>,
+}
+
+pub struct OrderLineItemAggregate {
+    order: Order,
+    line_item: LineItem,
 }
 
 impl Order {
@@ -79,21 +83,47 @@ impl LineItem {
     }
 }
 
+impl OrderLineItemAggregate {
+    fn from_data(order: OrderData, line_item: LineItemData) -> Self {
+        let order = Order::from_data(order);
+        let line_item = LineItem::from_data(line_item);
+
+        OrderLineItemAggregate {
+            order: order,
+            line_item: line_item
+        }
+    }
+
+    pub fn into_data(self) -> (OrderData, LineItemData) {
+        (self.order.into_data(), self.line_item.into_data())
+    }
+
+    pub fn to_data(&self) -> (&OrderData, &LineItemData) {
+        (self.order.to_data(), &self.line_item.to_data())
+    }
+
+    pub fn set_quantity(&mut self, quantity: u32) -> Result<(), OrderError> {
+        self.line_item.data.quantity = quantity;
+
+        Ok(())
+    }
+}
+
 impl OrderLineItemsAggregate {
-    fn from_data<TItems>(order: OrderData, items: TItems) -> Self 
+    fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self 
         where TItems: IntoIterator<Item = LineItemData>
     {
         let order = Order::from_data(order);
-        let items = items.into_iter().collect();
+        let line_items = line_items.into_iter().collect();
 
         OrderLineItemsAggregate {
             order: order,
-            order_items: items
+            line_items: line_items
         }
     }
 
     pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {
-        (self.order.into_data(), self.order_items)
+        (self.order.into_data(), self.line_items)
     }
 
     pub fn to_data(&self) -> (&OrderData, &[LineItemData]) {
@@ -101,10 +131,9 @@ impl OrderLineItemsAggregate {
     }
 
     pub fn contains_product(&self, product_id: i32) -> bool {
-        self.order_items.iter().any(|item| item.product_id == product_id)
+        self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
-    // TODO: Should we depend on a product entity directly? Seems like the point of having them, but it does couple things
     pub fn add_product(&mut self, product: &Product, quantity: u32) -> Result<(), OrderError> {
         if quantity == 0 {
             Err("quantity must be greater than 0")?
@@ -112,16 +141,16 @@ impl OrderLineItemsAggregate {
 
         let &ProductData { id, price, .. } = product.to_data();
 
+        // TODO: Where does LineItemId come from? Just use product id?
         if !self.contains_product(id) {
             let order_item = LineItemData {
-                id: 1,
                 product_id: id,
                 price: price,
                 quantity: quantity,
                 _private: ()
             };
 
-            self.order_items.push(order_item);
+            self.line_items.push(order_item);
 
             Ok(())
         }
@@ -138,7 +167,7 @@ mod tests {
 
     #[test]
     fn add_item_to_order() {
-        let product = Product::new(1, "A title").unwrap();
+        let product = Product::new(1, "A title", 1f32).unwrap();
 
         let order_data = OrderData {
             id: 1,
@@ -150,7 +179,7 @@ mod tests {
 
         order.add_product(&product, 1).unwrap();
 
-        assert_eq!(1, order.order_items.len());
+        assert_eq!(1, order.line_items.len());
         assert!(order.contains_product(1));
     }
 }

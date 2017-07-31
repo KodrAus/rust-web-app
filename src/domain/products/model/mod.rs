@@ -2,7 +2,6 @@ pub(in domain) mod store;
 
 pub type ProductError = String;
 
-// TODO: Does price belong here or should we have a service to calculate it?
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
     pub id: i32,
