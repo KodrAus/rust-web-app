@@ -12,4 +12,4 @@ serde = "*"
 serde_derive = "*"
 serde_json = "*"
 
-auto_impl = { version = "*", path = "../auto_impl/auto_impl" }
+auto_impl = "*"
