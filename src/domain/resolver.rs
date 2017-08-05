@@ -21,19 +21,19 @@ impl Default for Resolver {
 }
 
 impl Resolver {
-    pub fn product_store(&self) -> impl product_store::ProductStore {
+    pub(in domain) fn product_store(&self) -> impl product_store::ProductStore {
         self.product_store.clone()
     }
 
-    pub fn order_store(&self) -> impl order_store::OrderStore {
+    pub(in domain) fn order_store(&self) -> impl order_store::OrderStore {
         self.order_store.clone()
     }
 
-    pub fn order_line_item_store(&self) -> impl order_store::OrderLineItemStore {
+    pub(in domain) fn order_line_item_store(&self) -> impl order_store::OrderLineItemStore {
         self.order_store.clone()
     }
 
-    pub fn customer_store(&self) -> impl customer_store::CustomerStore {
+    pub(in domain) fn customer_store(&self) -> impl customer_store::CustomerStore {
         self.customer_store.clone()
     }
 }

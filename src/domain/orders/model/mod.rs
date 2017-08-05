@@ -1,4 +1,4 @@
-pub(in domain) mod store;
+pub mod store;
 
 use domain::products::{Product, ProductData};
 use domain::customers::{Customer, CustomerData};
@@ -20,11 +20,17 @@ pub struct LineItemData {
     _private: (),
 }
 
+/// An order and its line items.
+/// 
+/// Products can be added to an order as a line item, so long as it isn't already there.
 pub struct Order {
     order: OrderData,
     line_items: Vec<LineItemData>,
 }
 
+/// An order and one of its line items.
+/// 
+/// Properties on the line item can be updated.
 pub struct OrderLineItem {
     order: OrderData,
     line_item: LineItemData,
