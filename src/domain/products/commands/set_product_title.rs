@@ -1,11 +1,11 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
-use domain::products::ProductStore;
+use domain::products::{Id, ProductStore};
 
 #[derive(Deserialize)]
 pub struct SetProductTitle {
-    pub id: i32,
+    pub id: Id,
     pub title: String,
 }
 

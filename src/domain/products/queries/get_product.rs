@@ -1,11 +1,11 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
-use domain::products::{ProductData, ProductStore};
+use domain::products::{Id, ProductData, ProductStore};
 
 #[derive(Serialize)]
 pub struct GetProductResult {
-    pub id: i32,
+    pub id: Id,
     pub title: String,
 }
 
@@ -13,7 +13,7 @@ pub type QueryError = String;
 
 #[derive(Deserialize)]
 pub struct GetProduct {
-    pub id: i32
+    pub id: Id
 }
 
 #[auto_impl(Fn)]

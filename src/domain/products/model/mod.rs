@@ -1,16 +1,58 @@
-use std::convert::TryInto;
+use std::convert::{TryInto, TryFrom};
 
 pub mod store;
 
 /// A product id.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Id(i32);
+
+impl Id {
+    pub fn new(id: i32) -> Self {
+        Id(id)
+    }
+
+    fn value(&self) -> i32 {
+        self.0
+    }
+}
 
 /// A product title.
 pub struct Title(String);
 
+impl TryFrom<String> for Title {
+    type Error = ProductError;
+
+    fn try_from(title: String) -> Result<Self, Self::Error> {
+        if title.len() == 0 {
+            Err("title must not be empty")?
+        }
+
+        Ok(Title(title))
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Title {
+    type Error = ProductError;
+
+    fn try_from(title: &'a str) -> Result<Self, Self::Error> {
+        Self::try_from(title.to_owned())
+    }
+}
+
 /// A produce price.
 pub struct Price(f32);
+
+impl TryFrom<f32> for Price {
+    type Error = ProductError;
+
+    fn try_from(price: f32) -> Result<Self, Self::Error> {
+        if !price.is_normal() || !price.is_sign_positive() {
+            Err("price must be greater than 0")?
+        }
+
+        Ok(Price(price))
+    }
+}
 
 pub type ProductError = String;
 

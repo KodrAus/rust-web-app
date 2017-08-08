@@ -1,13 +1,13 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
-use domain::products::{Product, ProductStore};
+use domain::products::{Product, Id, ProductStore};
 
 pub type CreateProductError = String;
 
 #[derive(Deserialize)]
 pub struct CreateProduct {
-    pub id: i32,
+    pub id: Id,
     pub title: String,
     pub price: f32,
 }

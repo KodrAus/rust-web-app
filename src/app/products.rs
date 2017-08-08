@@ -8,7 +8,7 @@ use domain::products::*;
 fn get(id: i32, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
     let query = resolver.get_product_query();
 
-    let product = query.get_product(GetProduct { id: id })?;
+    let product = query.get_product(GetProduct { id: Id::new(id) })?;
 
     Ok(Json(product))
 }
@@ -26,7 +26,7 @@ fn create(data: Json<CreateProduct>, resolver: State<Resolver>) -> Result<(), Se
 fn set_title(id: i32, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
     let mut command = resolver.set_product_title_command();
 
-    command.set_product_title(SetProductTitle { id: id, title: title })?;
+    command.set_product_title(SetProductTitle { id: Id::new(id), title: title })?;
 
     Ok(())
 }

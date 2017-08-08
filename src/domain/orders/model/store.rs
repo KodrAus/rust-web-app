@@ -3,13 +3,16 @@ use std::collections::btree_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
+use domain::products::{Id as ProductId};
 use domain::orders::{Order, OrderLineItem, OrderData, LineItemData};
+
+// TODO: Should we have our own `LineItemId` that is created from a `ProductId`?
 
 pub type Error = String;
 
 #[auto_impl(Arc)]
 pub trait OrderLineItemStore {
-    fn get(&self, id: i32, line_item_id: i32) -> Result<Option<OrderLineItem>, Error>;
+    fn get(&self, id: i32, product_id: ProductId) -> Result<Option<OrderLineItem>, Error>;
     fn set(&self, order: OrderLineItem) -> Result<(), Error>;
 }
 
@@ -20,12 +23,12 @@ pub trait OrderStore {
 }
 
 pub(in domain) struct InMemoryStore {
-    orders: RwLock<BTreeMap<i32, (OrderData, Vec<i32>)>>,
-    order_items: RwLock<BTreeMap<i32, LineItemData>>
+    orders: RwLock<BTreeMap<i32, (OrderData, Vec<ProductId>)>>,
+    order_items: RwLock<BTreeMap<ProductId, LineItemData>>
 }
 
 impl OrderLineItemStore for InMemoryStore {
-    fn get(&self, order_id: i32, line_item_id: i32) -> Result<Option<OrderLineItem>, Error> {
+    fn get(&self, order_id: i32, product_id: ProductId) -> Result<Option<OrderLineItem>, Error> {
         let orders = self
             .orders
             .read()
@@ -37,13 +40,13 @@ impl OrderLineItemStore for InMemoryStore {
                 .read()
                 .map_err(|_| "not good!")?;
 
-            if !item_ids.iter().any(|id| *id == line_item_id) {
+            if !item_ids.iter().any(|id| *id == product_id) {
                 Err("line item not found")?
             }
             
             let item_data = order_items
                 .values()
-                .find(|item_data| item_data.product_id == line_item_id)
+                .find(|item_data| item_data.product_id == product_id)
                 .cloned()
                 .ok_or("line item not found")?;
             

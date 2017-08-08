@@ -1,6 +1,6 @@
 pub mod store;
 
-use domain::products::{Product, ProductData};
+use domain::products::{Id as ProductId, Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
@@ -14,7 +14,7 @@ pub struct OrderData {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
-    pub product_id: i32,
+    pub product_id: ProductId,
     pub price: f32,
     pub quantity: u32,
     _private: (),
@@ -95,7 +95,7 @@ impl Order {
         Order::from_data(order_data, vec![])
     }
 
-    pub fn contains_product(&self, product_id: i32) -> bool {
+    pub fn contains_product(&self, product_id: ProductId) -> bool {
         self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
