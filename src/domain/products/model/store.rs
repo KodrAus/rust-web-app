@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::products::{Product, Id, ProductData};
+use domain::products::{Product, ProductId, ProductData};
 
 pub type Error = String;
 
@@ -11,14 +11,14 @@ pub type Error = String;
 
 #[auto_impl(Arc)]
 pub trait ProductStore {
-    fn get(&self, id: Id) -> Result<Option<Product>, Error>;
+    fn get(&self, id: ProductId) -> Result<Option<Product>, Error>;
     fn set(&self, product: Product) -> Result<(), Error>;
 }
 
-pub(in domain) type InMemoryStore = RwLock<BTreeMap<Id, ProductData>>;
+pub(in domain) type InMemoryStore = RwLock<BTreeMap<ProductId, ProductData>>;
 
 impl ProductStore for InMemoryStore {
-    fn get(&self, id: Id) -> Result<Option<Product>, Error> {
+    fn get(&self, id: ProductId) -> Result<Option<Product>, Error> {
         let products = self
             .read()
             .map_err(|_| "not good!")?;
@@ -62,16 +62,12 @@ mod tests {
     fn test_in_memory_store() {
         let store = in_memory_store();
 
-        let product = Product::from_data(ProductData {
-            id: Id::new(1),
-            title: "Some title",
-            price: 1.5f32,
-            _private: (),
-        });
+        let id = ProductId::new();
+        let product = Product::new(id, "Some title", 1.5f32).unwrap();
         store.set(product).unwrap();
 
-        let found = store.get(1).unwrap().unwrap();
+        let found = store.get(id).unwrap().unwrap();
 
-        assert_eq!(1, found.data.id);
+        assert_eq!(id, found.data.id);
     } 
 }

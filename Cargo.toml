@@ -12,4 +12,6 @@ serde = "*"
 serde_derive = "*"
 serde_json = "*"
 
+uuid = { version = "*", features = ["serde", "v4"] }
+
 auto_impl = "*"

@@ -1,19 +1,64 @@
 pub mod store;
 
-use domain::products::{Id as ProductId, Product, ProductData};
+use std::str::FromStr;
+
+use uuid::Uuid;
+
+use domain::products::{ProductId, Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
 
+/// An order id.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct OrderId(Uuid);
+
+impl OrderId {
+    pub fn new() -> Self {
+        OrderId(Uuid::new_v4())
+    }
+}
+
+impl FromStr for OrderId {
+    type Err = OrderError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
+
+        Ok(OrderId(uuid))
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
-    pub id: i32,
+    pub id: OrderId,
     pub customer_id: i32,
     _private: (),
 }
 
+/// An order line item id.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct LineItemId(Uuid);
+
+impl LineItemId {
+    pub fn new() -> Self {
+        LineItemId(Uuid::new_v4())
+    }
+}
+
+impl FromStr for LineItemId {
+    type Err = OrderError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
+
+        Ok(LineItemId(uuid))
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
+    pub id: LineItemId,
     pub product_id: ProductId,
     pub price: f32,
     pub quantity: u32,
@@ -83,7 +128,7 @@ impl Order {
         (&self.order, &self.line_items)
     }
 
-    pub fn new(id: i32, customer: &Customer) -> Self {
+    pub fn new(id: OrderId, customer: &Customer) -> Self {
         let &CustomerData { id: customer_id, .. } = customer.to_data();
 
         let order_data = OrderData { 
@@ -99,16 +144,17 @@ impl Order {
         self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product(&mut self, product: &Product, quantity: u32) -> Result<(), OrderError> {
+    pub fn add_product(&mut self, id: LineItemId, product: &Product, quantity: u32) -> Result<(), OrderError> {
         if quantity == 0 {
             Err("quantity must be greater than 0")?
         }
 
-        let &ProductData { id, price, .. } = product.to_data();
+        let &ProductData { id: product_id, price, .. } = product.to_data();
 
-        if !self.contains_product(id) {
+        if !self.contains_product(product_id) {
             let order_item = LineItemData {
-                product_id: id,
+                id: id,
+                product_id: product_id,
                 price: price,
                 quantity: quantity,
                 _private: ()
@@ -128,22 +174,22 @@ impl Order {
 mod tests {
     use super::*;
     use domain::products::*;
+    use domain::customers::*;
 
     #[test]
     fn add_item_to_order() {
-        let product = Product::new(1, "A title", 1f32).unwrap();
+        let product_id = ProductId::new();
+        let product = Product::new(product_id, "A title", 1f32).unwrap();
 
-        let order_data = OrderData {
-            id: 1,
-            customer_id: 1,
-            _private: (),
-        };
+        let customer = Customer::new(1);
 
-        let mut order = Order::from_data(order_data, vec![]);
+        let order_id = OrderId::new();
+        let mut order = Order::new(order_id, &customer);
 
-        order.add_product(&product, 1).unwrap();
+        let order_item_id = LineItemId::new();
+        order.add_product(order_item_id, &product, 1).unwrap();
 
         assert_eq!(1, order.line_items.len());
-        assert!(order.contains_product(1));
+        assert!(order.contains_product(product_id));
     }
 }

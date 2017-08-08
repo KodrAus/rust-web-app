@@ -1,18 +1,27 @@
 use std::convert::{TryInto, TryFrom};
+use std::str::FromStr;
+
+use uuid::Uuid;
 
 pub mod store;
 
 /// A product id.
-#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Id(i32);
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ProductId(Uuid);
 
-impl Id {
-    pub fn new(id: i32) -> Self {
-        Id(id)
+impl ProductId {
+    pub fn new() -> Self {
+        ProductId(Uuid::new_v4())
     }
+}
 
-    fn value(&self) -> i32 {
-        self.0
+impl FromStr for ProductId {
+    type Err = ProductError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
+
+        Ok(ProductId(uuid))
     }
 }
 
@@ -58,7 +67,7 @@ pub type ProductError = String;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
-    pub id: Id,
+    pub id: ProductId,
     pub title: String,
     pub price: f32,
     _private: (),
@@ -84,7 +93,7 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TTitle, TPrice>(id: Id, title: TTitle, price: TPrice) -> Result<Self, ProductError> 
+    pub fn new<TTitle, TPrice>(id: ProductId, title: TTitle, price: TPrice) -> Result<Self, ProductError> 
         where TTitle: TryInto<Title, Error = ProductError>,
               TPrice: TryInto<Price, Error = ProductError>
     {

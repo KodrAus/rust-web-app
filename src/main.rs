@@ -8,6 +8,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate auto_impl;
+extern crate uuid;
 
 pub mod domain;
 pub mod app;

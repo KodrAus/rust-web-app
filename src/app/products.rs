@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use rocket::State;
 use rocket_contrib::Json;
 
@@ -5,10 +7,12 @@ use domain::Resolver;
 use domain::products::*;
 
 #[get("/<id>")]
-fn get(id: i32, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
+fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
     let query = resolver.get_product_query();
 
-    let product = query.get_product(GetProduct { id: Id::new(id) })?;
+    let id = ProductId::from_str(&id)?;
+
+    let product = query.get_product(GetProduct { id: id })?;
 
     Ok(Json(product))
 }
@@ -23,10 +27,12 @@ fn create(data: Json<CreateProduct>, resolver: State<Resolver>) -> Result<(), Se
 }
 
 #[post("/<id>/title/<title>")]
-fn set_title(id: i32, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
+fn set_title(id: String, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
     let mut command = resolver.set_product_title_command();
 
-    command.set_product_title(SetProductTitle { id: Id::new(id), title: title })?;
+    let id = ProductId::from_str(&id)?;
+
+    command.set_product_title(SetProductTitle { id: id, title: title })?;
 
     Ok(())
 }
