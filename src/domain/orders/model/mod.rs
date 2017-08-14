@@ -1,59 +1,18 @@
+pub mod id;
 pub mod store;
 
-use std::str::FromStr;
-
-use uuid::Uuid;
+pub use self::id::*;
 
 use domain::products::{ProductId, Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
 
-/// An order id.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct OrderId(Uuid);
-
-impl OrderId {
-    pub fn new() -> Self {
-        OrderId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for OrderId {
-    type Err = OrderError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(OrderId(uuid))
-    }
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: OrderId,
     pub customer_id: i32,
     _private: (),
-}
-
-/// An order line item id.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct LineItemId(Uuid);
-
-impl LineItemId {
-    pub fn new() -> Self {
-        LineItemId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for LineItemId {
-    type Err = OrderError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(LineItemId(uuid))
-    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -82,7 +41,7 @@ pub struct OrderLineItem {
 }
 
 impl OrderLineItem {
-    fn from_data(order: OrderData, line_item: LineItemData) -> Self {
+    pub(self) fn from_data(order: OrderData, line_item: LineItemData) -> Self {
         OrderLineItem {
             order: order,
             line_item: line_item
@@ -109,7 +68,7 @@ impl OrderLineItem {
 }
 
 impl Order {
-    fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self 
+    pub(self) fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self 
         where TItems: IntoIterator<Item = LineItemData>
     {
         let line_items = line_items.into_iter().collect();
@@ -144,11 +103,14 @@ impl Order {
         self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product(&mut self, id: LineItemId, product: &Product, quantity: u32) -> Result<(), OrderError> {
+    pub fn add_product<TLineItemIdProvider>(&mut self, id: TLineItemIdProvider, product: &Product, quantity: u32) -> Result<(), OrderError> 
+        where TLineItemIdProvider: LineItemIdProvider
+    {
         if quantity == 0 {
             Err("quantity must be greater than 0")?
         }
 
+        let id = id.line_item_id()?;
         let &ProductData { id: product_id, price, .. } = product.to_data();
 
         if !self.contains_product(product_id) {

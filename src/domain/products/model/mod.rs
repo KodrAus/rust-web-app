@@ -1,29 +1,9 @@
 use std::convert::{TryInto, TryFrom};
-use std::str::FromStr;
 
-use uuid::Uuid;
-
+pub mod id;
 pub mod store;
 
-/// A product id.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ProductId(Uuid);
-
-impl ProductId {
-    pub fn new() -> Self {
-        ProductId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for ProductId {
-    type Err = ProductError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(ProductId(uuid))
-    }
-}
+pub use self::id::*;
 
 /// A product title.
 pub struct Title(String);
@@ -79,7 +59,7 @@ pub struct Product {
 }
 
 impl Product {
-    fn from_data(data: ProductData) -> Self {
+    pub(self) fn from_data(data: ProductData) -> Self {
         Product {
             data: data
         }

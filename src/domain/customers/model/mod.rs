@@ -11,7 +11,7 @@ pub struct Customer {
 }
 
 impl Customer {
-    fn from_data(data: CustomerData) -> Self {
+    pub(self) fn from_data(data: CustomerData) -> Self {
         Customer {
             data: data
         }
