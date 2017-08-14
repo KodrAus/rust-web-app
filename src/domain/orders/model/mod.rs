@@ -87,7 +87,10 @@ impl Order {
         (&self.order, &self.line_items)
     }
 
-    pub fn new(id: OrderId, customer: &Customer) -> Self {
+    pub fn new<TId>(id: TId, customer: &Customer) -> Result<Self, OrderError> 
+        where TId: OrderIdProvider
+    {
+        let id = id.order_id()?;
         let &CustomerData { id: customer_id, .. } = customer.to_data();
 
         let order_data = OrderData { 
@@ -96,15 +99,15 @@ impl Order {
             _private: () 
         };
 
-        Order::from_data(order_data, vec![])
+        Ok(Order::from_data(order_data, vec![]))
     }
 
     pub fn contains_product(&self, product_id: ProductId) -> bool {
         self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TLineItemIdProvider>(&mut self, id: TLineItemIdProvider, product: &Product, quantity: u32) -> Result<(), OrderError> 
-        where TLineItemIdProvider: LineItemIdProvider
+    pub fn add_product<TId>(&mut self, id: TId, product: &Product, quantity: u32) -> Result<(), OrderError> 
+        where TId: LineItemIdProvider
     {
         if quantity == 0 {
             Err("quantity must be greater than 0")?
@@ -146,7 +149,7 @@ mod tests {
         let customer = Customer::new(1);
 
         let order_id = OrderId::new();
-        let mut order = Order::new(order_id, &customer);
+        let mut order = Order::new(order_id, &customer).unwrap();
 
         let order_item_id = LineItemId::new();
         order.add_product(order_item_id, &product, 1).unwrap();

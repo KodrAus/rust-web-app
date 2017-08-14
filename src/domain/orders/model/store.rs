@@ -177,7 +177,7 @@ mod tests {
 
         let customer = Customer::new(1);
 
-        let order = Order::new(order_id, &customer);
+        let order = Order::new(order_id, &customer).unwrap();
         order_store.set(order).unwrap();
 
         let product = Product::new(product_id, "Some product", 1f32).unwrap();

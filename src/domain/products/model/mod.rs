@@ -73,10 +73,13 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TTitle, TPrice>(id: ProductId, title: TTitle, price: TPrice) -> Result<Self, ProductError> 
-        where TTitle: TryInto<Title, Error = ProductError>,
+    pub fn new<TId, TTitle, TPrice>(id: TId, title: TTitle, price: TPrice) -> Result<Self, ProductError> 
+        where TId: ProductIdProvider,
+              TTitle: TryInto<Title, Error = ProductError>,
               TPrice: TryInto<Price, Error = ProductError>
     {
+        let id = id.product_id()?;
+
         Ok(Product::from_data(ProductData {
             id: id,
             title: title.try_into()?.0,
