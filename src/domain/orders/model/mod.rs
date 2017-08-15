@@ -109,29 +109,28 @@ impl Order {
     pub fn add_product<TId>(&mut self, id: TId, product: &Product, quantity: u32) -> Result<(), OrderError> 
         where TId: LineItemIdProvider
     {
+        let &ProductData { id: product_id, price, .. } = product.to_data();
+
         if quantity == 0 {
             Err("quantity must be greater than 0")?
         }
 
-        let id = id.line_item_id()?;
-        let &ProductData { id: product_id, price, .. } = product.to_data();
-
-        if !self.contains_product(product_id) {
-            let order_item = LineItemData {
-                id: id,
-                product_id: product_id,
-                price: price,
-                quantity: quantity,
-                _private: ()
-            };
-
-            self.line_items.push(order_item);
-
-            Ok(())
-        }
-        else {
+        if self.contains_product(product_id) {
             Err("product is already in order")?
         }
+
+        let id = id.line_item_id()?;
+        let line_item = LineItemData {
+            id: id,
+            product_id: product_id,
+            price: price,
+            quantity: quantity,
+            _private: ()
+        };
+
+        self.line_items.push(line_item);
+
+        Ok(())
     }
 }
 
