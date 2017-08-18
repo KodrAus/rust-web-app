@@ -8,7 +8,7 @@ use domain::products::*;
 
 #[get("/<id>")]
 fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
-    let query = resolver.get_product_query();
+    let query = resolver.products().get_product_query();
 
     let id = ProductId::from_str(&id)?;
 
@@ -19,7 +19,7 @@ fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, 
 
 #[put("/", format = "application/json", data = "<data>")]
 fn create(data: Json<CreateProduct>, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
-    let mut command = resolver.create_product_command();
+    let mut command = resolver.products().create_product_command();
 
     command.create_product(data.0)?;
 
@@ -28,7 +28,7 @@ fn create(data: Json<CreateProduct>, resolver: State<Resolver>) -> Result<(), Se
 
 #[post("/<id>/title/<title>")]
 fn set_title(id: String, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
-    let mut command = resolver.set_product_title_command();
+    let mut command = resolver.products().set_product_title_command();
 
     let id = ProductId::from_str(&id)?;
 

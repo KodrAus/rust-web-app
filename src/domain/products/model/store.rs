@@ -19,7 +19,7 @@ pub trait ProductStore {
     fn set(&self, product: Product) -> Result<(), Error>;
 }
 
-pub(in domain) type InMemoryStore = RwLock<BTreeMap<ProductId, ProductData>>;
+pub(in domain::products) type InMemoryStore = RwLock<BTreeMap<ProductId, ProductData>>;
 
 impl ProductStore for InMemoryStore {
     fn get(&self, id: ProductId) -> Result<Option<Product>, Error> {
@@ -49,7 +49,7 @@ impl ProductStore for InMemoryStore {
     }
 }
 
-pub(in domain) fn in_memory_store() -> InMemoryStore {
+pub(in domain::products) fn in_memory_store() -> InMemoryStore {
     RwLock::new(BTreeMap::new())
 }
 

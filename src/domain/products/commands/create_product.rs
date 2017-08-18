@@ -1,7 +1,6 @@
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::products::{Product, ProductId, ProductStore};
+use domain::products::{Resolver, Product, ProductId, ProductStore};
 
 pub type CreateProductError = String;
 
