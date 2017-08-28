@@ -69,7 +69,7 @@ impl OrderLineItemStore for InMemoryStore {
                 entry.insert((order_data, vec![order_item_id]));
             },
             Entry::Occupied(mut entry) => {
-                let mut entry = entry.get_mut();
+                let entry = entry.get_mut();
                 entry.0 = order_data;
 
                 let mut order_items = self
@@ -125,7 +125,7 @@ impl OrderStore for InMemoryStore {
                 entry.insert((order_data, order_item_ids));
             },
             Entry::Occupied(mut entry) => {
-                let mut entry = entry.get_mut();
+                let entry = entry.get_mut();
                 *entry = (order_data, order_item_ids);
 
                 let mut order_items = self
@@ -159,7 +159,6 @@ pub fn order_store() -> impl OrderStore {
 #[cfg(test)]
 mod tests {
     use domain::orders::*;
-    use domain::products::*;
     use domain::customers::*;
     use super::*;
 

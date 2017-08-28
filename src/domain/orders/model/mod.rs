@@ -1,3 +1,5 @@
+use std::convert::{TryInto, TryFrom};
+
 pub mod id;
 pub mod store;
 
@@ -7,6 +9,21 @@ use domain::products::{ProductId, Product, ProductData};
 use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
+
+/// An order item quantity.
+pub struct Quantity(u32);
+
+impl TryFrom<u32> for Quantity {
+    type Error = OrderError;
+
+    fn try_from(quantity: u32) -> Result<Self, Self::Error> {
+        if quantity < 1 {
+            Err("quantity must be greater than 0")?
+        }
+
+        Ok(Quantity(quantity))
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
@@ -56,12 +73,10 @@ impl OrderLineItem {
         (&self.order, &self.line_item)
     }
 
-    pub fn set_quantity(&mut self, quantity: u32) -> Result<(), OrderError> {
-        if quantity == 0 {
-            Err("quantity must be greater than 0")?
-        }
-
-        self.line_item.quantity = quantity;
+    pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), OrderError> 
+        where TQuantity: TryInto<Quantity, Error = OrderError>
+    {
+        self.line_item.quantity = quantity.try_into()?.0;
 
         Ok(())
     }
@@ -106,14 +121,11 @@ impl Order {
         self.line_items.iter().any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId>(&mut self, id: TId, product: &Product, quantity: u32) -> Result<(), OrderError> 
-        where TId: LineItemIdProvider
+    pub fn add_product<TId, TQuantity>(&mut self, id: TId, product: &Product, quantity: TQuantity) -> Result<(), OrderError> 
+        where TId: LineItemIdProvider,
+              TQuantity: TryInto<Quantity, Error = OrderError>,
     {
         let &ProductData { id: product_id, price, .. } = product.to_data();
-
-        if quantity == 0 {
-            Err("quantity must be greater than 0")?
-        }
 
         if self.contains_product(product_id) {
             Err("product is already in order")?
@@ -124,7 +136,7 @@ impl Order {
             id: id,
             product_id: product_id,
             price: price,
-            quantity: quantity,
+            quantity: quantity.try_into()?.0,
             _private: ()
         };
 
