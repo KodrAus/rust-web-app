@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::products::{Product, ProductId, ProductData};
+use domain::products::{Product, ProductData, ProductId};
 
 pub type Error = String;
 
@@ -23,14 +23,11 @@ pub(in domain::products) type InMemoryStore = RwLock<BTreeMap<ProductId, Product
 
 impl ProductStore for InMemoryStore {
     fn get(&self, id: ProductId) -> Result<Option<Product>, Error> {
-        let products = self
-            .read()
-            .map_err(|_| "not good!")?;
+        let products = self.read().map_err(|_| "not good!")?;
 
         if let Some(data) = products.get(&id) {
             Ok(Some(Product::from_data(data.clone())))
-        }
-        else {
+        } else {
             Ok(None)
         }
     }
@@ -39,9 +36,7 @@ impl ProductStore for InMemoryStore {
         let data = product.into_data();
         let id = data.id;
 
-        let mut products = self
-            .write()
-            .map_err(|_| "not good!")?;
+        let mut products = self.write().map_err(|_| "not good!")?;
 
         products.insert(id, data);
 
@@ -73,5 +68,5 @@ mod tests {
         let found = store.get(id).unwrap().unwrap();
 
         assert_eq!(id, found.data.id);
-    } 
+    }
 }

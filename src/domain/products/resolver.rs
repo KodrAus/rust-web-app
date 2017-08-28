@@ -3,7 +3,7 @@ use std::sync::Arc;
 use domain::products::model::store as product_store;
 
 /// Resolver for products.
-/// 
+///
 /// The `Resolver` type wraps private implementation details and exposes them as traits.
 pub struct Resolver {
     product_store: Arc<product_store::InMemoryStore>,

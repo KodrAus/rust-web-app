@@ -6,9 +6,9 @@ mod products;
 pub fn start() {
     rocket::ignite()
         .manage(Resolver::default())
-        .mount("/products", routes![
-            products::get,
-            products::create,
-            products::set_title
-        ]).launch();
+        .mount(
+            "/products",
+            routes![products::get, products::create, products::set_title],
+        )
+        .launch();
 }

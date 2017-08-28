@@ -3,7 +3,7 @@ use std::sync::Arc;
 use domain::orders::model::store as order_store;
 
 /// Resolver for orders.
-/// 
+///
 /// The `Resolver` type wraps private implementation details and exposes them as traits.
 pub struct Resolver {
     order_store: Arc<order_store::InMemoryStore>,

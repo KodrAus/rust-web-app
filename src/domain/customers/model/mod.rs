@@ -12,9 +12,7 @@ pub struct Customer {
 
 impl Customer {
     pub(self) fn from_data(data: CustomerData) -> Self {
-        Customer {
-            data: data
-        }
+        Customer { data: data }
     }
 
     pub fn to_data(&self) -> &CustomerData {

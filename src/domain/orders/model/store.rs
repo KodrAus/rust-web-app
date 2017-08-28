@@ -3,7 +3,7 @@ use std::collections::btree_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
-use domain::orders::{OrderId, Order, LineItemId, OrderLineItem, OrderData, LineItemData};
+use domain::orders::{LineItemData, LineItemId, Order, OrderData, OrderId, OrderLineItem};
 
 pub type Error = String;
 
@@ -21,35 +21,32 @@ pub trait OrderStore {
 
 pub(in domain) struct InMemoryStore {
     orders: RwLock<BTreeMap<OrderId, (OrderData, Vec<LineItemId>)>>,
-    order_items: RwLock<BTreeMap<LineItemId, LineItemData>>
+    order_items: RwLock<BTreeMap<LineItemId, LineItemData>>,
 }
 
 impl OrderLineItemStore for InMemoryStore {
-    fn get(&self, order_id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
-        let orders = self
-            .orders
-            .read()
-            .map_err(|_| "not good!")?;
+    fn get(
+        &self,
+        order_id: OrderId,
+        line_item_id: LineItemId,
+    ) -> Result<Option<OrderLineItem>, Error> {
+        let orders = self.orders.read().map_err(|_| "not good!")?;
 
         if let Some(&(ref data, ref item_ids)) = orders.get(&order_id) {
-            let order_items = self
-                .order_items
-                .read()
-                .map_err(|_| "not good!")?;
+            let order_items = self.order_items.read().map_err(|_| "not good!")?;
 
             if !item_ids.iter().any(|id| *id == line_item_id) {
                 Err("line item not found")?
             }
-            
+
             let item_data = order_items
                 .values()
                 .find(|item_data| item_data.id == line_item_id)
                 .cloned()
                 .ok_or("line item not found")?;
-            
+
             Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
-        }
-        else {
+        } else {
             Ok(None)
         }
     }
@@ -59,23 +56,17 @@ impl OrderLineItemStore for InMemoryStore {
         let order_id = order_data.id;
         let order_item_id = order_item_data.id;
 
-        let mut orders = self
-            .orders
-            .write()
-            .map_err(|_| "not good!")?;
+        let mut orders = self.orders.write().map_err(|_| "not good!")?;
 
         match orders.entry(order_id) {
             Entry::Vacant(entry) => {
                 entry.insert((order_data, vec![order_item_id]));
-            },
+            }
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 entry.0 = order_data;
 
-                let mut order_items = self
-                    .order_items
-                    .write()
-                    .map_err(|_| "not good!")?;
+                let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
 
                 order_items.insert(order_item_id, order_item_data);
             }
@@ -87,25 +78,18 @@ impl OrderLineItemStore for InMemoryStore {
 
 impl OrderStore for InMemoryStore {
     fn get(&self, id: OrderId) -> Result<Option<Order>, Error> {
-        let orders = self
-            .orders
-            .read()
-            .map_err(|_| "not good!")?;
+        let orders = self.orders.read().map_err(|_| "not good!")?;
 
         if let Some(&(ref data, ref item_ids)) = orders.get(&id) {
-            let order_items = self
-                .order_items
-                .read()
-                .map_err(|_| "not good!")?;
-            
+            let order_items = self.order_items.read().map_err(|_| "not good!")?;
+
             let items_data = order_items
                 .values()
                 .filter(|item_data| item_ids.iter().any(|id| *id == item_data.id))
                 .cloned();
-            
+
             Ok(Some(Order::from_data(data.clone(), items_data)))
-        }
-        else {
+        } else {
             Ok(None)
         }
     }
@@ -115,23 +99,17 @@ impl OrderStore for InMemoryStore {
         let id = order_data.id;
         let order_item_ids = order_items_data.iter().map(|item| item.id).collect();
 
-        let mut orders = self
-            .orders
-            .write()
-            .map_err(|_| "not good!")?;
+        let mut orders = self.orders.write().map_err(|_| "not good!")?;
 
         match orders.entry(id) {
             Entry::Vacant(entry) => {
                 entry.insert((order_data, order_item_ids));
-            },
+            }
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 *entry = (order_data, order_item_ids);
 
-                let mut order_items = self
-                    .order_items
-                    .write()
-                    .map_err(|_| "not good!")?;
+                let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
 
                 for data in order_items_data {
                     let id = data.id;
@@ -164,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_in_memory_store() {
-        use domain::products::{ProductId, Product};
+        use domain::products::{Product, ProductId};
 
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
@@ -184,7 +162,10 @@ mod tests {
         order.add_product(line_item_id, &product, 1).unwrap();
         order_store.set(order).unwrap();
 
-        let mut order = line_item_store.get(order_id, line_item_id).unwrap().unwrap();
+        let mut order = line_item_store
+            .get(order_id, line_item_id)
+            .unwrap()
+            .unwrap();
         order.set_quantity(5).unwrap();
         line_item_store.set(order).unwrap();
 

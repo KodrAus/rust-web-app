@@ -1,6 +1,6 @@
 use auto_impl::auto_impl;
 
-use domain::products::{Resolver, ProductId, ProductData, ProductStore};
+use domain::products::{ProductData, ProductId, ProductStore, Resolver};
 
 #[derive(Serialize)]
 pub struct GetProductResult {
@@ -12,7 +12,7 @@ pub type QueryError = String;
 
 #[derive(Deserialize)]
 pub struct GetProduct {
-    pub id: ProductId
+    pub id: ProductId,
 }
 
 #[auto_impl(Fn)]
@@ -20,15 +20,16 @@ pub trait GetProductQuery {
     fn get_product(&self, query: GetProduct) -> Result<GetProductResult, QueryError>;
 }
 
-pub fn get_product_query<TStore>(store: TStore) -> impl GetProductQuery 
-    where TStore: ProductStore
+pub fn get_product_query<TStore>(store: TStore) -> impl GetProductQuery
+where
+    TStore: ProductStore,
 {
     move |query: GetProduct| {
         let ProductData { id, title, .. } = store.get(query.id)?.ok_or("not found")?.into_data();
 
         Ok(GetProductResult {
             id: id,
-            title: title
+            title: title,
         })
     }
 }

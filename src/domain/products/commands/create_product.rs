@@ -1,6 +1,6 @@
 use auto_impl::auto_impl;
 
-use domain::products::{Resolver, Product, ProductId, ProductStore};
+use domain::products::{Product, ProductId, ProductStore, Resolver};
 
 pub type CreateProductError = String;
 
@@ -16,20 +16,18 @@ pub trait CreateProductCommand {
     fn create_product(&mut self, command: CreateProduct) -> Result<(), CreateProductError>;
 }
 
-pub fn create_product_command<TStore>(store: TStore) -> impl CreateProductCommand 
-    where TStore: ProductStore
+pub fn create_product_command<TStore>(store: TStore) -> impl CreateProductCommand
+where
+    TStore: ProductStore,
 {
-    move |command: CreateProduct| {
-        if let Some(_) = store.get(command.id)? {
-            Err("already exists")?
-        }
-        else {
-            let product = Product::new(command.id, command.title, command.price)?;
+    move |command: CreateProduct| if let Some(_) = store.get(command.id)? {
+        Err("already exists")?
+    } else {
+        let product = Product::new(command.id, command.title, command.price)?;
 
-            store.set(product)?;
+        store.set(product)?;
 
-            Ok(())
-        }
+        Ok(())
     }
 }
 

@@ -2,7 +2,7 @@ use domain::products::resolver::Resolver as ProductResolver;
 use domain::orders::resolver::Resolver as OrderResolver;
 
 /// Resolver for the domain.
-/// 
+///
 /// The `Resolver` type wraps resolvers from other modules.
 pub struct Resolver {
     product_resolver: ProductResolver,

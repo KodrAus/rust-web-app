@@ -1,11 +1,11 @@
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 
 pub mod id;
 pub mod store;
 
 pub use self::id::*;
 
-use domain::products::{ProductId, Product, ProductData};
+use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData};
 
 pub type OrderError = String;
@@ -42,7 +42,7 @@ pub struct LineItemData {
 }
 
 /// An order and its line items.
-/// 
+///
 /// Products can be added to an order as a line item, so long as it isn't already there.
 pub struct Order {
     order: OrderData,
@@ -50,7 +50,7 @@ pub struct Order {
 }
 
 /// An order and one of its line items.
-/// 
+///
 /// Properties on the line item can be updated.
 pub struct OrderLineItem {
     order: OrderData,
@@ -61,7 +61,7 @@ impl OrderLineItem {
     pub(self) fn from_data(order: OrderData, line_item: LineItemData) -> Self {
         OrderLineItem {
             order: order,
-            line_item: line_item
+            line_item: line_item,
         }
     }
 
@@ -73,8 +73,9 @@ impl OrderLineItem {
         (&self.order, &self.line_item)
     }
 
-    pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), OrderError> 
-        where TQuantity: TryInto<Quantity, Error = OrderError>
+    pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), OrderError>
+    where
+        TQuantity: TryInto<Quantity, Error = OrderError>,
     {
         self.line_item.quantity = quantity.try_into()?.0;
 
@@ -83,14 +84,15 @@ impl OrderLineItem {
 }
 
 impl Order {
-    pub(self) fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self 
-        where TItems: IntoIterator<Item = LineItemData>
+    pub(self) fn from_data<TItems>(order: OrderData, line_items: TItems) -> Self
+    where
+        TItems: IntoIterator<Item = LineItemData>,
     {
         let line_items = line_items.into_iter().collect();
 
         Order {
             order: order,
-            line_items: line_items
+            line_items: line_items,
         }
     }
 
@@ -102,30 +104,45 @@ impl Order {
         (&self.order, &self.line_items)
     }
 
-    pub fn new<TId>(id: TId, customer: &Customer) -> Result<Self, OrderError> 
-        where TId: OrderIdProvider
+    pub fn new<TId>(id: TId, customer: &Customer) -> Result<Self, OrderError>
+    where
+        TId: OrderIdProvider,
     {
         let id = id.order_id()?;
-        let &CustomerData { id: customer_id, .. } = customer.to_data();
+        let &CustomerData {
+            id: customer_id, ..
+        } = customer.to_data();
 
-        let order_data = OrderData { 
-            id: id, 
+        let order_data = OrderData {
+            id: id,
             customer_id: customer_id,
-            _private: () 
+            _private: (),
         };
 
         Ok(Order::from_data(order_data, vec![]))
     }
 
     pub fn contains_product(&self, product_id: ProductId) -> bool {
-        self.line_items.iter().any(|item| item.product_id == product_id)
+        self.line_items
+            .iter()
+            .any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId, TQuantity>(&mut self, id: TId, product: &Product, quantity: TQuantity) -> Result<(), OrderError> 
-        where TId: LineItemIdProvider,
-              TQuantity: TryInto<Quantity, Error = OrderError>,
+    pub fn add_product<TId, TQuantity>(
+        &mut self,
+        id: TId,
+        product: &Product,
+        quantity: TQuantity,
+    ) -> Result<(), OrderError>
+    where
+        TId: LineItemIdProvider,
+        TQuantity: TryInto<Quantity, Error = OrderError>,
     {
-        let &ProductData { id: product_id, price, .. } = product.to_data();
+        let &ProductData {
+            id: product_id,
+            price,
+            ..
+        } = product.to_data();
 
         if self.contains_product(product_id) {
             Err("product is already in order")?
@@ -137,7 +154,7 @@ impl Order {
             product_id: product_id,
             price: price,
             quantity: quantity.try_into()?.0,
-            _private: ()
+            _private: (),
         };
 
         self.line_items.push(line_item);

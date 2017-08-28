@@ -1,4 +1,4 @@
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 
 pub mod id;
 pub mod store;
@@ -55,14 +55,12 @@ pub struct ProductData {
 
 /// A product with metadata.
 pub struct Product {
-    data: ProductData
+    data: ProductData,
 }
 
 impl Product {
     pub(self) fn from_data(data: ProductData) -> Self {
-        Product {
-            data: data
-        }
+        Product { data: data }
     }
 
     pub fn into_data(self) -> ProductData {
@@ -73,10 +71,15 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(id: TId, title: TTitle, price: TPrice) -> Result<Self, ProductError> 
-        where TId: ProductIdProvider,
-              TTitle: TryInto<Title, Error = ProductError>,
-              TPrice: TryInto<Price, Error = ProductError>
+    pub fn new<TId, TTitle, TPrice>(
+        id: TId,
+        title: TTitle,
+        price: TPrice,
+    ) -> Result<Self, ProductError>
+    where
+        TId: ProductIdProvider,
+        TTitle: TryInto<Title, Error = ProductError>,
+        TPrice: TryInto<Price, Error = ProductError>,
     {
         let id = id.product_id()?;
 
@@ -88,8 +91,9 @@ impl Product {
         }))
     }
 
-    pub fn set_title<TTitle>(&mut self, title: TTitle) -> Result<(), ProductError> 
-        where TTitle: TryInto<Title, Error = ProductError>
+    pub fn set_title<TTitle>(&mut self, title: TTitle) -> Result<(), ProductError>
+    where
+        TTitle: TryInto<Title, Error = ProductError>,
     {
         self.data.title = title.try_into()?.0;
 

@@ -1,6 +1,6 @@
 use auto_impl::auto_impl;
 
-use domain::products::{Resolver, ProductId, ProductStore};
+use domain::products::{ProductId, ProductStore, Resolver};
 
 #[derive(Deserialize)]
 pub struct SetProductTitle {
@@ -15,8 +15,9 @@ pub trait SetProductTitleCommand {
     fn set_product_title(&mut self, command: SetProductTitle) -> Result<(), SetProductTitleError>;
 }
 
-pub fn set_product_title_command<TStore>(store: TStore) -> impl SetProductTitleCommand 
-    where TStore: ProductStore
+pub fn set_product_title_command<TStore>(store: TStore) -> impl SetProductTitleCommand
+where
+    TStore: ProductStore,
 {
     move |command: SetProductTitle| {
         let product = {
@@ -24,8 +25,7 @@ pub fn set_product_title_command<TStore>(store: TStore) -> impl SetProductTitleC
                 product.set_title(command.title)?;
 
                 product
-            }
-            else {
+            } else {
                 Err("not found")?
             }
         };
