@@ -152,26 +152,38 @@ mod tests {
         let line_item_id = LineItemId::new();
         let product_id = ProductId::new();
 
-        let customer = Customer::new(1);
+        // Create an order in the store
+        {
+            let order = Order::new(order_id, &Customer::new(1)).unwrap();
+            order_store.set(order).unwrap();
+        }
+        // Add a product to the order
+        {
+            let mut order = order_store.get(order_id).unwrap().unwrap();
+            order
+                .add_product(
+                    line_item_id,
+                    &Product::new(product_id, "Some product", 1f32).unwrap(),
+                    1,
+                )
+                .unwrap();
+            order_store.set(order).unwrap();
+        }
+        // Update the product in the order
+        {
+            let mut order = line_item_store
+                .get(order_id, line_item_id)
+                .unwrap()
+                .unwrap();
+            order.set_quantity(5).unwrap();
+            line_item_store.set(order).unwrap();
+        }
+        // Get the product with the order
+        {
+            let (_, line_items) = order_store.get(order_id).unwrap().unwrap().into_data();
 
-        let order = Order::new(order_id, &customer).unwrap();
-        order_store.set(order).unwrap();
-
-        let product = Product::new(product_id, "Some product", 1f32).unwrap();
-        let mut order = order_store.get(order_id).unwrap().unwrap();
-        order.add_product(line_item_id, &product, 1).unwrap();
-        order_store.set(order).unwrap();
-
-        let mut order = line_item_store
-            .get(order_id, line_item_id)
-            .unwrap()
-            .unwrap();
-        order.set_quantity(5).unwrap();
-        line_item_store.set(order).unwrap();
-
-        let (_, line_items) = order_store.get(order_id).unwrap().unwrap().into_data();
-
-        assert_eq!(1, line_items.len());
-        assert_eq!(5, line_items[0].quantity);
+            assert_eq!(1, line_items.len());
+            assert_eq!(5, line_items[0].quantity);
+        }
     }
 }

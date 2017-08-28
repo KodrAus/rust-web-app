@@ -185,4 +185,30 @@ mod tests {
         assert_eq!(1, order.line_items.len());
         assert!(order.contains_product(product_id));
     }
+
+    #[test]
+    fn quantity_must_be_greater_than_0() {
+        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+
+        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+
+        assert!(order.add_product(LineItemId::new(), &product, 0).is_err());
+
+        order.add_product(LineItemId::new(), &product, 1).unwrap();
+        let (order_data, mut line_item_data) = order.into_data();
+        let mut order = OrderLineItem::from_data(order_data, line_item_data.pop().unwrap());
+
+        assert!(order.set_quantity(0).is_err());
+    }
+
+    #[test]
+    fn product_must_not_be_in_order_when_adding() {
+        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+
+        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+
+        order.add_product(LineItemId::new(), &product, 1).unwrap();
+
+        assert!(order.add_product(LineItemId::new(), &product, 1).is_err());
+    }
 }

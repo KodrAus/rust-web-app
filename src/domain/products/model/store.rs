@@ -44,6 +44,16 @@ impl ProductStore for InMemoryStore {
     }
 }
 
+impl<'a> ProductStore for &'a InMemoryStore {
+    fn get(&self, id: ProductId) -> Result<Option<Product>, Error> {
+        (*self).get(id)
+    }
+
+    fn set(&self, product: Product) -> Result<(), Error> {
+        (*self).set(product)
+    }
+}
+
 pub(in domain::products) fn in_memory_store() -> InMemoryStore {
     RwLock::new(BTreeMap::new())
 }
@@ -62,11 +72,16 @@ mod tests {
         let store = in_memory_store();
 
         let id = ProductId::new();
-        let product = Product::new(id, "Some title", 1.5f32).unwrap();
-        store.set(product).unwrap();
 
-        let found = store.get(id).unwrap().unwrap();
-
-        assert_eq!(id, found.data.id);
+        // Create a product in the store
+        {
+            let product = Product::new(id, "Some title", 1.5f32).unwrap();
+            store.set(product).unwrap();
+        }
+        // Get the product from the store
+        {
+            let found = store.get(id).unwrap().unwrap();
+            assert_eq!(id, found.data.id);
+        }
     }
 }

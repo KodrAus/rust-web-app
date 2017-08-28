@@ -100,3 +100,23 @@ impl Product {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn title_must_be_non_empty() {
+        assert!(Product::new(ProductId::new(), "", 1f32).is_err());
+
+        let mut product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+
+        assert!(product.set_title("").is_err());
+    }
+
+    #[test]
+    fn price_must_be_greater_than_0() {
+        assert!(Product::new(ProductId::new(), "A title", 0f32).is_err());
+        assert!(Product::new(ProductId::new(), "A title", -1f32).is_err());
+    }
+}
