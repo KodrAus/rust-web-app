@@ -1,9 +1,15 @@
+// TODO: Should `OrderLineItem` contain `OrderData` or just an `OrderId`?
+// And should `Order` just contain a `Vec<LineItemId>`?
+// I think we need some optimistic concurrency here in the form of a version.
+
 use std::convert::{TryFrom, TryInto};
 
 pub mod id;
+pub mod version;
 pub mod store;
 
 pub use self::id::*;
+pub use self::version::*;
 
 use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData};
@@ -28,6 +34,7 @@ impl TryFrom<u32> for Quantity {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: OrderId,
+    pub version: Version,
     pub customer_id: i32,
     _private: (),
 }
@@ -35,6 +42,7 @@ pub struct OrderData {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
     pub id: LineItemId,
+    pub version: Version,
     pub product_id: ProductId,
     pub price: f32,
     pub quantity: u32,
@@ -65,12 +73,12 @@ impl OrderLineItem {
         }
     }
 
-    pub fn into_data(self) -> (OrderData, LineItemData) {
-        (self.order, self.line_item)
+    pub fn into_data(self) -> (OrderId, LineItemData) {
+        (self.order.id, self.line_item)
     }
 
-    pub fn to_data(&self) -> (&OrderData, &LineItemData) {
-        (&self.order, &self.line_item)
+    pub fn to_data(&self) -> (OrderId, &LineItemData) {
+        (self.order.id, &self.line_item)
     }
 
     pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), OrderError>
@@ -115,6 +123,7 @@ impl Order {
 
         let order_data = OrderData {
             id: id,
+            version: Version::default(),
             customer_id: customer_id,
             _private: (),
         };
@@ -151,6 +160,7 @@ impl Order {
         let id = id.line_item_id()?;
         let line_item = LineItemData {
             id: id,
+            version: Version::default(),
             product_id: product_id,
             price: price,
             quantity: quantity.try_into()?.0,

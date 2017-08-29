@@ -35,10 +35,12 @@ impl OrderLineItemStore for InMemoryStore {
         if let Some(&(ref data, ref item_ids)) = orders.get(&order_id) {
             let order_items = self.order_items.read().map_err(|_| "not good!")?;
 
+            // Check that the line item is part of the order
             if !item_ids.iter().any(|id| *id == line_item_id) {
                 Err("line item not found")?
             }
 
+            // Find the line item
             let item_data = order_items
                 .values()
                 .find(|item_data| item_data.id == line_item_id)
@@ -52,23 +54,32 @@ impl OrderLineItemStore for InMemoryStore {
     }
 
     fn set(&self, order: OrderLineItem) -> Result<(), Error> {
-        let (order_data, order_item_data) = order.into_data();
-        let order_id = order_data.id;
-        let order_item_id = order_item_data.id;
+        let (order_id, mut order_item_data) = order.into_data();
+        let line_item_id = order_item_data.id;
 
-        let mut orders = self.orders.write().map_err(|_| "not good!")?;
+        let orders = self.orders.read().map_err(|_| "not good!")?;
 
-        match orders.entry(order_id) {
+        // Check that the line item is part of the order
+        let &(_, ref item_ids) = orders.get(&order_id).ok_or("order not found")?;
+        if !item_ids.iter().any(|id| *id == line_item_id) {
+            Err("line item not found")?
+        }
+
+        let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
+
+        match order_items.entry(line_item_id) {
             Entry::Vacant(entry) => {
-                entry.insert((order_data, vec![order_item_id]));
+                order_item_data.version.next();
+                entry.insert(order_item_data);
             }
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
-                entry.0 = order_data;
+                if entry.version != order_item_data.version {
+                    Err("optimistic concurrency fail")?
+                }
 
-                let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
-
-                order_items.insert(order_item_id, order_item_data);
+                order_item_data.version.next();
+                *entry = order_item_data;
             }
         }
 
@@ -95,28 +106,35 @@ impl OrderStore for InMemoryStore {
     }
 
     fn set(&self, order: Order) -> Result<(), Error> {
-        let (order_data, order_items_data) = order.into_data();
+        let (mut order_data, order_items_data) = order.into_data();
         let id = order_data.id;
         let order_item_ids = order_items_data.iter().map(|item| item.id).collect();
 
+        // Update the order
         let mut orders = self.orders.write().map_err(|_| "not good!")?;
-
         match orders.entry(id) {
             Entry::Vacant(entry) => {
+                order_data.version.next();
                 entry.insert((order_data, order_item_ids));
             }
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
-                *entry = (order_data, order_item_ids);
-
-                let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
-
-                for data in order_items_data {
-                    let id = data.id;
-
-                    order_items.insert(id, data);
+                if entry.0.version != order_data.version {
+                    Err("optimistic concurrency fail")?
                 }
+
+                order_data.version.next();
+                *entry = (order_data, order_item_ids);
             }
+        }
+
+        // Insert the line items
+        let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
+        for mut data in order_items_data {
+            let id = data.id;
+
+            data.version.next();
+            order_items.insert(id, data);
         }
 
         Ok(())
@@ -138,12 +156,11 @@ pub fn order_store() -> impl OrderStore {
 mod tests {
     use domain::orders::*;
     use domain::customers::*;
+    use domain::products::*;
     use super::*;
 
     #[test]
     fn test_in_memory_store() {
-        use domain::products::{Product, ProductId};
-
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
@@ -184,6 +201,75 @@ mod tests {
 
             assert_eq!(1, line_items.len());
             assert_eq!(5, line_items[0].quantity);
+        }
+    }
+
+    #[test]
+    fn add_order_twice_fails_concurrency_check() {
+        let store = in_memory_store();
+        let order_store: &OrderStore = &store;
+
+        let order_data = OrderData {
+            id: OrderId::new(),
+            version: Version::default(),
+            customer_id: 1,
+            _private: (),
+        };
+
+        // Create an order in the store
+        {
+            let order = Order::from_data(order_data.clone(), Vec::<LineItemData>::new());
+            order_store.set(order).unwrap();
+        }
+        // Attempting to create a second time fails optimistic concurrency check
+        {
+            let order = Order::from_data(order_data, Vec::<LineItemData>::new());
+            assert!(order_store.set(order).is_err());
+        }
+    }
+
+    #[test]
+    fn set_order_item_twice_fails_concurrency_check() {
+        let store = in_memory_store();
+        let order_store: &OrderStore = &store;
+        let line_item_store: &OrderLineItemStore = &store;
+        
+        let order_id = OrderId::new();
+        let line_item_id = LineItemId::new();
+
+        let order_data = OrderData {
+            id: order_id,
+            version: Version::default(),
+            customer_id: 1,
+            _private: (),
+        };
+
+        let line_item_data = LineItemData {
+            id: line_item_id,
+            version: Version::default(),
+            product_id: ProductId::new(),
+            quantity: 1,
+            price: 2f32,
+            _private: (),
+        };
+
+        // Create an order in the store
+        {
+            let order = Order::from_data(order_data, vec![line_item_data]);
+            order_store.set(order).unwrap();
+        }
+        // Attempting to update a line item twice fails optimistic concurrency check
+        {
+            let get_item = || line_item_store.get(order_id, line_item_id).unwrap().unwrap();
+            let mut line_item_a = get_item();
+            let mut line_item_b = get_item();
+
+            line_item_a.set_quantity(3).unwrap();
+            line_item_b.set_quantity(2).unwrap();
+
+            line_item_store.set(line_item_a).unwrap();
+
+            assert!(line_item_store.set(line_item_b).is_err());
         }
     }
 }
