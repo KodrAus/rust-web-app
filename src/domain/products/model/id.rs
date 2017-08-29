@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use uuid::Uuid;
+use domain::id::Id;
 
 pub type ProductIdError = String;
 
@@ -11,26 +9,24 @@ pub trait ProductIdProvider {
 
 /// A product id.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ProductId(Uuid);
-
-impl ProductId {
-    pub fn new() -> Self {
-        ProductId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for ProductId {
-    type Err = ProductIdError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(ProductId(uuid))
-    }
-}
+pub struct ProductId(pub Id);
 
 impl ProductIdProvider for ProductId {
     fn product_id(self) -> Result<ProductId, ProductIdError> {
         Ok(self)
+    }
+}
+
+pub struct NextProductId;
+
+impl NextProductId {
+    pub fn next(&self) -> ProductId {
+        ProductId(Id::new())
+    }
+}
+
+impl ProductIdProvider for NextProductId {
+    fn product_id(self) -> Result<ProductId, ProductIdError> {
+        Ok(self.next())
     }
 }

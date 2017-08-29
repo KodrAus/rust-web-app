@@ -69,7 +69,7 @@ impl OrderLineItemStore for InMemoryStore {
 
         match order_items.entry(line_item_id) {
             Entry::Vacant(entry) => {
-                order_item_data.version.next();
+                order_item_data.version.0.next();
                 entry.insert(order_item_data);
             }
             Entry::Occupied(mut entry) => {
@@ -78,7 +78,7 @@ impl OrderLineItemStore for InMemoryStore {
                     Err("optimistic concurrency fail")?
                 }
 
-                order_item_data.version.next();
+                order_item_data.version.0.next();
                 *entry = order_item_data;
             }
         }
@@ -114,7 +114,7 @@ impl OrderStore for InMemoryStore {
         let mut orders = self.orders.write().map_err(|_| "not good!")?;
         match orders.entry(id) {
             Entry::Vacant(entry) => {
-                order_data.version.next();
+                order_data.version.0.next();
                 entry.insert((order_data, order_item_ids));
             }
             Entry::Occupied(mut entry) => {
@@ -123,7 +123,7 @@ impl OrderStore for InMemoryStore {
                     Err("optimistic concurrency fail")?
                 }
 
-                order_data.version.next();
+                order_data.version.0.next();
                 *entry = (order_data, order_item_ids);
             }
         }
@@ -133,7 +133,7 @@ impl OrderStore for InMemoryStore {
         for mut data in order_items_data {
             let id = data.id;
 
-            data.version.next();
+            data.version.0.next();
             order_items.insert(id, data);
         }
 
@@ -165,9 +165,8 @@ mod tests {
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
 
-        let order_id = OrderId::new();
-        let line_item_id = LineItemId::new();
-        let product_id = ProductId::new();
+        let order_id = NextOrderId.next();
+        let line_item_id = NextLineItemId.next();
 
         // Create an order in the store
         {
@@ -180,7 +179,7 @@ mod tests {
             order
                 .add_product(
                     line_item_id,
-                    &Product::new(product_id, "Some product", 1f32).unwrap(),
+                    &Product::new(NextProductId, "Some product", 1f32).unwrap(),
                     1,
                 )
                 .unwrap();
@@ -209,23 +208,14 @@ mod tests {
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
 
-        let order_data = OrderData {
-            id: OrderId::new(),
-            version: Version::default(),
-            customer_id: 1,
-            _private: (),
-        };
+        let order_id = NextOrderId.next();
+        let customer = Customer::new(1);
 
         // Create an order in the store
-        {
-            let order = Order::from_data(order_data.clone(), Vec::<LineItemData>::new());
-            order_store.set(order).unwrap();
-        }
+        order_store.set(Order::new(order_id, &customer).unwrap()).unwrap();
+
         // Attempting to create a second time fails optimistic concurrency check
-        {
-            let order = Order::from_data(order_data, Vec::<LineItemData>::new());
-            assert!(order_store.set(order).is_err());
-        }
+        assert!(order_store.set(Order::new(order_id, &customer).unwrap()).is_err());
     }
 
     #[test]
@@ -234,28 +224,17 @@ mod tests {
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
         
-        let order_id = OrderId::new();
-        let line_item_id = LineItemId::new();
-
-        let order_data = OrderData {
-            id: order_id,
-            version: Version::default(),
-            customer_id: 1,
-            _private: (),
-        };
-
-        let line_item_data = LineItemData {
-            id: line_item_id,
-            version: Version::default(),
-            product_id: ProductId::new(),
-            quantity: 1,
-            price: 2f32,
-            _private: (),
-        };
+        let order_id = NextOrderId.next();
+        let line_item_id = NextLineItemId.next();
 
         // Create an order in the store
         {
-            let order = Order::from_data(order_data, vec![line_item_data]);
+            let customer = Customer::new(1);
+            let product = Product::new(NextProductId, "A title", 3f32).unwrap();
+
+            let mut order = Order::new(order_id, &customer).unwrap();
+            order.add_product(line_item_id, &product, 1).unwrap();
+
             order_store.set(order).unwrap();
         }
         // Attempting to update a line item twice fails optimistic concurrency check

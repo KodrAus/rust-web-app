@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use uuid::Uuid;
+use domain::id::Id;
 
 pub type OrderIdError = String;
 
@@ -11,27 +9,25 @@ pub trait OrderIdProvider {
 
 /// An order id.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct OrderId(Uuid);
-
-impl OrderId {
-    pub fn new() -> Self {
-        OrderId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for OrderId {
-    type Err = OrderIdError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(OrderId(uuid))
-    }
-}
+pub struct OrderId(pub Id);
 
 impl OrderIdProvider for OrderId {
     fn order_id(self) -> Result<OrderId, OrderIdError> {
         Ok(self)
+    }
+}
+
+pub struct NextOrderId;
+
+impl NextOrderId {
+    pub fn next(&self) -> OrderId {
+        OrderId(Id::new())
+    }
+}
+
+impl OrderIdProvider for NextOrderId {
+    fn order_id(self) -> Result<OrderId, OrderIdError> {
+        Ok(self.next())
     }
 }
 
@@ -44,26 +40,24 @@ pub trait LineItemIdProvider {
 
 /// An order line item id.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct LineItemId(Uuid);
-
-impl LineItemId {
-    pub fn new() -> Self {
-        LineItemId(Uuid::new_v4())
-    }
-}
-
-impl FromStr for LineItemId {
-    type Err = LineItemIdError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let uuid = Uuid::parse_str(s).map_err(|_| "invalid id")?;
-
-        Ok(LineItemId(uuid))
-    }
-}
+pub struct LineItemId(pub Id);
 
 impl LineItemIdProvider for LineItemId {
     fn line_item_id(self) -> Result<LineItemId, LineItemIdError> {
         Ok(self)
+    }
+}
+
+pub struct NextLineItemId;
+
+impl NextLineItemId {
+    pub fn next(&self) -> LineItemId {
+        LineItemId(Id::new())
+    }
+}
+
+impl LineItemIdProvider for NextLineItemId {
+    fn line_item_id(self) -> Result<LineItemId, LineItemIdError> {
+        Ok(self.next())
     }
 }

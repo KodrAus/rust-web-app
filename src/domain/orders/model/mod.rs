@@ -34,7 +34,7 @@ impl TryFrom<u32> for Quantity {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: OrderId,
-    pub version: Version,
+    pub version: OrderVersion,
     pub customer_id: i32,
     _private: (),
 }
@@ -42,7 +42,7 @@ pub struct OrderData {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
     pub id: LineItemId,
-    pub version: Version,
+    pub version: LineItemVersion,
     pub product_id: ProductId,
     pub price: f32,
     pub quantity: u32,
@@ -123,7 +123,7 @@ impl Order {
 
         let order_data = OrderData {
             id: id,
-            version: Version::default(),
+            version: OrderVersion::default(),
             customer_id: customer_id,
             _private: (),
         };
@@ -160,7 +160,7 @@ impl Order {
         let id = id.line_item_id()?;
         let line_item = LineItemData {
             id: id,
-            version: Version::default(),
+            version: LineItemVersion::default(),
             product_id: product_id,
             price: price,
             quantity: quantity.try_into()?.0,
@@ -181,15 +181,15 @@ mod tests {
 
     #[test]
     fn add_item_to_order() {
-        let product_id = ProductId::new();
+        let product_id = NextProductId.next();
         let product = Product::new(product_id, "A title", 1f32).unwrap();
 
         let customer = Customer::new(1);
 
-        let order_id = OrderId::new();
+        let order_id = NextOrderId.next();
         let mut order = Order::new(order_id, &customer).unwrap();
 
-        let order_item_id = LineItemId::new();
+        let order_item_id = NextLineItemId.next();
         order.add_product(order_item_id, &product, 1).unwrap();
 
         assert_eq!(1, order.line_items.len());
@@ -198,13 +198,13 @@ mod tests {
 
     #[test]
     fn quantity_must_be_greater_than_0() {
-        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+        let mut order = Order::new(NextOrderId, &Customer::new(1)).unwrap();
 
-        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+        let product = Product::new(NextProductId, "A title", 1f32).unwrap();
 
-        assert!(order.add_product(LineItemId::new(), &product, 0).is_err());
+        assert!(order.add_product(NextLineItemId, &product, 0).is_err());
 
-        order.add_product(LineItemId::new(), &product, 1).unwrap();
+        order.add_product(NextLineItemId, &product, 1).unwrap();
         let (order_data, mut line_item_data) = order.into_data();
         let mut order = OrderLineItem::from_data(order_data, line_item_data.pop().unwrap());
 
@@ -213,12 +213,12 @@ mod tests {
 
     #[test]
     fn product_must_not_be_in_order_when_adding() {
-        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+        let mut order = Order::new(NextOrderId, &Customer::new(1)).unwrap();
 
-        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+        let product = Product::new(NextProductId, "A title", 1f32).unwrap();
 
-        order.add_product(LineItemId::new(), &product, 1).unwrap();
+        order.add_product(NextLineItemId, &product, 1).unwrap();
 
-        assert!(order.add_product(LineItemId::new(), &product, 1).is_err());
+        assert!(order.add_product(NextLineItemId, &product, 1).is_err());
     }
 }

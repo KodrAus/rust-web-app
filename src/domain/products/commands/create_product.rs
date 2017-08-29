@@ -46,16 +46,15 @@ impl Resolver {
 #[cfg(test)]
 mod tests {
     use domain::products::model::store::in_memory_store;
+    use domain::products::*;
     use super::*;
 
     #[test]
     fn err_if_already_exists() {
         let store = in_memory_store();
 
-        let product_id = ProductId::new();
-
         let create = CreateProduct {
-            id: product_id,
+            id: NextProductId.next(),
             title: "Test Product".into(),
             price: 1f32,
         };

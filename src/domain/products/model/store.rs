@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::btree_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
@@ -33,12 +34,26 @@ impl ProductStore for InMemoryStore {
     }
 
     fn set(&self, product: Product) -> Result<(), Error> {
-        let data = product.into_data();
+        let mut data = product.into_data();
         let id = data.id;
 
         let mut products = self.write().map_err(|_| "not good!")?;
 
-        products.insert(id, data);
+        match products.entry(id) {
+            Entry::Vacant(entry) => {
+                data.version.0.next();
+                entry.insert(data);
+            }
+            Entry::Occupied(mut entry) => {
+                let entry = entry.get_mut();
+                if entry.version != data.version {
+                    Err("optimistic concurrency fail")?
+                }
+
+                data.version.0.next();
+                *entry = data;
+            }
+        }
 
         Ok(())
     }
@@ -71,7 +86,7 @@ mod tests {
     fn test_in_memory_store() {
         let store = in_memory_store();
 
-        let id = ProductId::new();
+        let id = NextProductId.next();
 
         // Create a product in the store
         {
@@ -83,5 +98,18 @@ mod tests {
             let found = store.get(id).unwrap().unwrap();
             assert_eq!(id, found.data.id);
         }
+    }
+
+    #[test]
+    fn add_order_twice_fails_concurrency_check() {
+        let store = in_memory_store();
+
+        let id = NextProductId.next();
+
+        // Create a product in the store
+        store.set(Product::new(id, "Some title", 1.5f32).unwrap()).unwrap();
+
+        // Attempting to create a second time fails optimistic concurrency check
+        assert!(store.set(Product::new(id, "Some title", 1.5f32).unwrap()).is_err());
     }
 }

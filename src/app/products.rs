@@ -4,15 +4,16 @@ use rocket::State;
 use rocket_contrib::Json;
 
 use domain::Resolver;
+use domain::id::*;
 use domain::products::*;
 
 #[get("/<id>")]
 fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
     let query = resolver.products().get_product_query();
 
-    let id = ProductId::from_str(&id)?;
+    let id = Id::from_str(&id)?;
 
-    let product = query.get_product(GetProduct { id: id })?;
+    let product = query.get_product(GetProduct { id: ProductId(id) })?;
 
     Ok(Json(product))
 }
@@ -37,10 +38,10 @@ fn set_title(
 ) -> Result<(), SetProductTitleError> {
     let mut command = resolver.products().set_product_title_command();
 
-    let id = ProductId::from_str(&id)?;
+    let id = Id::from_str(&id)?;
 
     command.set_product_title(SetProductTitle {
-        id: id,
+        id: ProductId(id),
         title: title,
     })?;
 
