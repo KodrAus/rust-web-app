@@ -41,7 +41,7 @@ impl ProductStore for InMemoryStore {
 
         match products.entry(id) {
             Entry::Vacant(entry) => {
-                data.version.0.next();
+                data.version.next();
                 entry.insert(data);
             }
             Entry::Occupied(mut entry) => {
@@ -50,7 +50,7 @@ impl ProductStore for InMemoryStore {
                     Err("optimistic concurrency fail")?
                 }
 
-                data.version.0.next();
+                data.version.next();
                 *entry = data;
             }
         }

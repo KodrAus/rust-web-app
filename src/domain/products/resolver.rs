@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use domain::products::id::*;
 use domain::products::model::store as product_store;
 
 /// Resolver for products.
@@ -20,5 +21,9 @@ impl Default for Resolver {
 impl Resolver {
     pub(in domain) fn product_store(&self) -> impl product_store::ProductStore {
         self.product_store.clone()
+    }
+
+    pub fn product_id_provider(&self) -> impl ProductIdProvider {
+        NextProductId
     }
 }

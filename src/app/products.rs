@@ -1,33 +1,45 @@
-use std::str::FromStr;
+use std::convert::TryFrom;
 
 use rocket::State;
 use rocket_contrib::Json;
 
 use domain::Resolver;
-use domain::id::*;
 use domain::products::*;
 
 #[get("/<id>")]
 fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
     let query = resolver.products().get_product_query();
 
-    let id = Id::from_str(&id)?;
+    let id = ProductId::try_from(&id)?;
 
-    let product = query.get_product(GetProduct { id: ProductId(id) })?;
+    let product = query.get_product(GetProduct { id: id })?;
 
     Ok(Json(product))
 }
 
+#[derive(Deserialize)]
+pub struct Create {
+    pub title: String,
+    pub price: f32,
+}
+
 #[put("/", format = "application/json", data = "<data>")]
 fn create(
-    data: Json<CreateProduct>,
+    data: Json<Create>,
     resolver: State<Resolver>,
-) -> Result<(), SetProductTitleError> {
+) -> Result<Json<ProductId>, SetProductTitleError> {
+    let id_provider = resolver.products().product_id_provider();
     let mut command = resolver.products().create_product_command();
 
-    command.create_product(data.0)?;
+    let id = id_provider.product_id()?;
 
-    Ok(())
+    command.create_product(CreateProduct {
+        id: id,
+        title: data.0.title,
+        price: data.0.price,
+    })?;
+
+    Ok(Json(id))
 }
 
 #[post("/<id>/title/<title>")]
@@ -38,10 +50,10 @@ fn set_title(
 ) -> Result<(), SetProductTitleError> {
     let mut command = resolver.products().set_product_title_command();
 
-    let id = Id::from_str(&id)?;
+    let id = ProductId::try_from(&id)?;
 
     command.set_product_title(SetProductTitle {
-        id: ProductId(id),
+        id: id,
         title: title,
     })?;
 

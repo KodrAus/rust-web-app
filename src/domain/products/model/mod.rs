@@ -1,11 +1,11 @@
 use std::convert::{TryFrom, TryInto};
 
 pub mod id;
-pub mod version;
 pub mod store;
 
 pub use self::id::*;
-pub use self::version::*;
+
+use domain::version::Version;
 
 /// A product title.
 pub struct Title(String);
@@ -50,7 +50,7 @@ pub type ProductError = String;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
     pub id: ProductId,
-    pub version: ProductVersion,
+    pub version: Version,
     pub title: String,
     pub price: f32,
     _private: (),
@@ -88,7 +88,7 @@ impl Product {
 
         Ok(Product::from_data(ProductData {
             id: id,
-            version: ProductVersion::default(),
+            version: Version::default(),
             title: title.try_into()?.0,
             price: price.try_into()?.0,
             _private: (),

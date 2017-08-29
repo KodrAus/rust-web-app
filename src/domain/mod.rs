@@ -1,4 +1,3 @@
-pub mod id;
 pub mod version;
 
 pub mod products;

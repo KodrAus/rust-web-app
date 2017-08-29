@@ -69,7 +69,7 @@ impl OrderLineItemStore for InMemoryStore {
 
         match order_items.entry(line_item_id) {
             Entry::Vacant(entry) => {
-                order_item_data.version.0.next();
+                order_item_data.version.next();
                 entry.insert(order_item_data);
             }
             Entry::Occupied(mut entry) => {
@@ -78,7 +78,7 @@ impl OrderLineItemStore for InMemoryStore {
                     Err("optimistic concurrency fail")?
                 }
 
-                order_item_data.version.0.next();
+                order_item_data.version.next();
                 *entry = order_item_data;
             }
         }
@@ -114,7 +114,7 @@ impl OrderStore for InMemoryStore {
         let mut orders = self.orders.write().map_err(|_| "not good!")?;
         match orders.entry(id) {
             Entry::Vacant(entry) => {
-                order_data.version.0.next();
+                order_data.version.next();
                 entry.insert((order_data, order_item_ids));
             }
             Entry::Occupied(mut entry) => {
@@ -123,7 +123,7 @@ impl OrderStore for InMemoryStore {
                     Err("optimistic concurrency fail")?
                 }
 
-                order_data.version.0.next();
+                order_data.version.next();
                 *entry = (order_data, order_item_ids);
             }
         }
@@ -133,7 +133,7 @@ impl OrderStore for InMemoryStore {
         for mut data in order_items_data {
             let id = data.id;
 
-            data.version.0.next();
+            data.version.next();
             order_items.insert(id, data);
         }
 
