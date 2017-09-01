@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
-use std::collections::btree_map::Entry;
+use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
@@ -20,8 +20,8 @@ pub trait OrderStore {
 }
 
 pub(in domain) struct InMemoryStore {
-    orders: RwLock<BTreeMap<OrderId, (OrderData, Vec<LineItemId>)>>,
-    order_items: RwLock<BTreeMap<LineItemId, LineItemData>>,
+    orders: RwLock<HashMap<OrderId, (OrderData, HashSet<LineItemId>)>>,
+    order_items: RwLock<HashMap<LineItemId, LineItemData>>,
 }
 
 impl OrderLineItemStore for InMemoryStore {
@@ -36,7 +36,7 @@ impl OrderLineItemStore for InMemoryStore {
             let order_items = self.order_items.read().map_err(|_| "not good!")?;
 
             // Check that the line item is part of the order
-            if !item_ids.iter().any(|id| *id == line_item_id) {
+            if !item_ids.contains(&line_item_id) {
                 Err("line item not found")?
             }
 
@@ -61,7 +61,7 @@ impl OrderLineItemStore for InMemoryStore {
 
         // Check that the line item is part of the order
         let &(_, ref item_ids) = orders.get(&order_id).ok_or("order not found")?;
-        if !item_ids.iter().any(|id| *id == line_item_id) {
+        if !item_ids.contains(&line_item_id) {
             Err("line item not found")?
         }
 
@@ -143,8 +143,8 @@ impl OrderStore for InMemoryStore {
 
 pub(in domain) fn in_memory_store() -> InMemoryStore {
     InMemoryStore {
-        orders: RwLock::new(BTreeMap::new()),
-        order_items: RwLock::new(BTreeMap::new()),
+        orders: RwLock::new(HashMap::new()),
+        order_items: RwLock::new(HashMap::new()),
     }
 }
 

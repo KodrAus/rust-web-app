@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
-use std::collections::btree_map::Entry;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::sync::RwLock;
 use auto_impl::auto_impl;
 
@@ -20,7 +20,7 @@ pub trait ProductStore {
     fn set(&self, product: Product) -> Result<(), Error>;
 }
 
-pub(in domain::products) type InMemoryStore = RwLock<BTreeMap<ProductId, ProductData>>;
+pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
 
 impl ProductStore for InMemoryStore {
     fn get(&self, id: ProductId) -> Result<Option<Product>, Error> {
@@ -70,7 +70,7 @@ impl<'a> ProductStore for &'a InMemoryStore {
 }
 
 pub(in domain::products) fn in_memory_store() -> InMemoryStore {
-    RwLock::new(BTreeMap::new())
+    RwLock::new(HashMap::new())
 }
 
 pub fn product_store() -> impl ProductStore {
