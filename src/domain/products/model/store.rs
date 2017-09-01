@@ -101,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn add_order_twice_fails_concurrency_check() {
+    fn add_product_twice_fails_concurrency_check() {
         let store = in_memory_store();
 
         let id = ProductId::new();
