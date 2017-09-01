@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use domain::orders::id::*;
+use domain::id::{IdProvider, NextId};
+use domain::orders::{OrderData, LineItemData};
 use domain::orders::model::store as order_store;
 
 /// Resolver for orders.
@@ -27,11 +28,11 @@ impl Resolver {
         self.order_store.clone()
     }
 
-    pub fn order_id_provider(&self) -> impl OrderIdProvider {
-        NextOrderId
+    pub fn order_id_provider(&self) -> impl IdProvider<OrderData> {
+        NextId::<OrderData>::new()
     }
 
-    pub fn line_item_id_provider(&self) -> impl LineItemIdProvider {
-        NextLineItemId
+    pub fn line_item_id_provider(&self) -> impl IdProvider<LineItemData> {
+        NextId::<LineItemData>::new()
     }
 }

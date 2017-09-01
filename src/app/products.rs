@@ -4,6 +4,7 @@ use rocket::State;
 use rocket_contrib::Json;
 
 use domain::Resolver;
+use domain::id::IdProvider;
 use domain::products::*;
 
 #[get("/<id>")]
@@ -31,7 +32,7 @@ fn create(
     let id_provider = resolver.products().product_id_provider();
     let mut command = resolver.products().create_product_command();
 
-    let id = id_provider.product_id()?;
+    let id = id_provider.id()?;
 
     command.create_product(CreateProduct {
         id: id,

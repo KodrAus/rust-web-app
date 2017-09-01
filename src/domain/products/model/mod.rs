@@ -1,11 +1,12 @@
 use std::convert::{TryFrom, TryInto};
 
-pub mod id;
 pub mod store;
 
-pub use self::id::*;
-
+use domain::id::{Id, IdProvider};
 use domain::version::Version;
+
+pub type ProductId = Id<ProductData>;
+pub type ProductVersion = Version<ProductData>;
 
 /// A product title.
 pub struct Title(String);
@@ -50,7 +51,7 @@ pub type ProductError = String;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
     pub id: ProductId,
-    pub version: Version,
+    pub version: ProductVersion,
     pub title: String,
     pub price: f32,
     _private: (),
@@ -75,20 +76,20 @@ impl Product {
     }
 
     pub fn new<TId, TTitle, TPrice>(
-        id: TId,
+        id_provider: TId,
         title: TTitle,
         price: TPrice,
     ) -> Result<Self, ProductError>
     where
-        TId: ProductIdProvider,
+        TId: IdProvider<ProductData>,
         TTitle: TryInto<Title, Error = ProductError>,
         TPrice: TryInto<Price, Error = ProductError>,
     {
-        let id = id.product_id()?;
+        let id = id_provider.id()?;
 
         Ok(Product::from_data(ProductData {
             id: id,
-            version: Version::default(),
+            version: ProductVersion::default(),
             title: title.try_into()?.0,
             price: price.try_into()?.0,
             _private: (),
@@ -111,16 +112,16 @@ mod tests {
 
     #[test]
     fn title_must_be_non_empty() {
-        assert!(Product::new(NextProductId, "", 1f32).is_err());
+        assert!(Product::new(ProductId::new(), "", 1f32).is_err());
 
-        let mut product = Product::new(NextProductId, "A title", 1f32).unwrap();
+        let mut product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
 
         assert!(product.set_title("").is_err());
     }
 
     #[test]
     fn price_must_be_greater_than_0() {
-        assert!(Product::new(NextProductId, "A title", 0f32).is_err());
-        assert!(Product::new(NextProductId, "A title", -1f32).is_err());
+        assert!(Product::new(ProductId::new(), "A title", 0f32).is_err());
+        assert!(Product::new(ProductId::new(), "A title", -1f32).is_err());
     }
 }

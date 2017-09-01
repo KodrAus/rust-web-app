@@ -86,7 +86,7 @@ mod tests {
     fn test_in_memory_store() {
         let store = in_memory_store();
 
-        let id = NextProductId.next();
+        let id = ProductId::new();
 
         // Create a product in the store
         {
@@ -104,7 +104,7 @@ mod tests {
     fn add_order_twice_fails_concurrency_check() {
         let store = in_memory_store();
 
-        let id = NextProductId.next();
+        let id = ProductId::new();
 
         // Create a product in the store
         store.set(Product::new(id, "Some title", 1.5f32).unwrap()).unwrap();

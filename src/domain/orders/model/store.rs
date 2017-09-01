@@ -165,8 +165,8 @@ mod tests {
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
 
-        let order_id = NextOrderId.next();
-        let line_item_id = NextLineItemId.next();
+        let order_id = OrderId::new();
+        let line_item_id = LineItemId::new();
 
         // Create an order in the store
         {
@@ -179,7 +179,7 @@ mod tests {
             order
                 .add_product(
                     line_item_id,
-                    &Product::new(NextProductId, "Some product", 1f32).unwrap(),
+                    &Product::new(ProductId::new(), "Some product", 1f32).unwrap(),
                     1,
                 )
                 .unwrap();
@@ -208,7 +208,7 @@ mod tests {
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
 
-        let order_id = NextOrderId.next();
+        let order_id = OrderId::new();
         let customer = Customer::new(1);
 
         // Create an order in the store
@@ -224,13 +224,13 @@ mod tests {
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
         
-        let order_id = NextOrderId.next();
-        let line_item_id = NextLineItemId.next();
+        let order_id = OrderId::new();
+        let line_item_id = LineItemId::new();
 
         // Create an order in the store
         {
             let customer = Customer::new(1);
-            let product = Product::new(NextProductId, "A title", 3f32).unwrap();
+            let product = Product::new(ProductId::new(), "A title", 3f32).unwrap();
 
             let mut order = Order::new(order_id, &customer).unwrap();
             order.add_product(line_item_id, &product, 1).unwrap();

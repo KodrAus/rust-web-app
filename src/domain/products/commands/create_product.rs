@@ -54,7 +54,7 @@ mod tests {
         let store = in_memory_store();
 
         let create = CreateProduct {
-            id: NextProductId.next(),
+            id: ProductId::new(),
             title: "Test Product".into(),
             price: 1f32,
         };
