@@ -12,18 +12,20 @@ It's not about specific Rust frameworks or libraries.
 
 # How it works
 
+The following sections describe some of the pieces that make up the application and why they're put together the way they are.
+
 ## Domain folders
 
-The project layout is focused mostly on privacy. By limiting the scope of certain items, you also limit the scope of potential breakage. In Rust, items that are private in a module _are visible to all of that modules children_. That might sound like a bad thing, but we leverage it to prevent domain APIs from leaking implementation details for the sake of outside concerns, like serialisation and storage.
+The project layout is focused mostly on privacy. By limiting the scope of certain items, you also limit the scope of potential breakage. In Rust, items that are private in a module _are visible to all of that module's children_. That might sound like a bad thing, but we leverage it to prevent domain APIs from leaking implementation details for the sake of outside concerns, like serialisation and storage.
 
 We split each core concept in the application into its own (mostly) self-contained folder, like `products` or `customers`. Each folder encapsulates everything there is to know about a particular set of entities:
 
 - What data those entities manage
 - How that data is stored (`/store`)
-- How that data can be queries (`/queries`)
+- How that data can be queried (`/queries`)
 - How that data can be changed (`/commands`)
 
-Entities within a folder can depend on entities within another folder, like an `Order` depending on a `Product` when adding it.
+Entities can depend on entities from another folder, like an `Order` depending on a `Product` when adding it.
 
 These folders are _sort of_ heavy-weight, but in a proper application adding new domain folders could be simplified using macros. I haven't used macros in this application so the code remains easy to follow.
 
@@ -47,9 +49,9 @@ Dependency injection does have benefits as a practice to lean on when designing 
 
 Injectable components live in their own module. That module contains:
 
-- _Storage:_ A trait that describes the component that is blanket implemented for a few smart pointers, like `Arc`, `Box`.
 - _Resolution:_ an impl block for a shared `Resolver` type that contains a method that returns the default implementation without requiring its dependencies.
 - _Injection:_ a function that provides a default implementation, requiring its dependencies as generics and returning an `impl Trait`. You never know what concrete type this default implementation uses.
+- _Storage:_ A trait that describes the component that is blanket implemented for a few smart pointers, like `Arc`, `Box`.
 
 The shared `Resolver` sounds a bit service-locator-y, and it is, but because the dependency resolution is wholly contained in impl blocks on the `Resolver` itself we avoid the issue of depending on magic global state in our app logic.
 
@@ -65,6 +67,8 @@ The entities are the heart of the application. Despite the lack of a real busine
 - _Write-only_. You can get a _read-only_ view of an entity by calling `.to_data()`. While viewing an entity you can't call modifying behaviour on it. This is guaranteed by Rust's borrowing system. An entity can move ownership into its read-only data with `.into_data()`. This is a one-way operation, so any changes made to state can't be persisted back to the store.
 
 The goal of an entity is to encapsulate the invariants of some key domain concept. The entities here are easy to use with either a mock in-memory store or an external database. We should be careful not to rely on state changes with one entity being reflected in another because they happen to point to the same source.
+
+Entities also need to be careful not to depend on the datatypes of another entity because there's no guarantee that data is actually valid. Instead they depend on an entity and convert it into data as needed, so they always know that state is valid.
 
 ### Stores
 
@@ -96,3 +100,14 @@ It's a pattern that's easier to follow than using a macro to reduce boilerplate 
 Each persistable entity has a `version` field. This field is a non-sequential identifier that corresponds to the state of the entity at a given point in time. When an entity is fetched from the store we hydrate its version, this is then checked just before updating and if they don't match we balk. 
 
 The version check works fine for the in-memory store because we have an exclusive lock on the data (only 1 caller can modify state at a time), but will need a different approach for a proper db. We can probably update where the id and version match, select the number of updated records and balk if it's 0 (means the version didn't match, or it doesn't exist).
+
+## Commands and queries
+
+The application follows a command-query-responsibility-separation design. The commands capture some domain interaction and work directly on entities whereas queries are totally arbitrary. This application doesn't use any special infrastructure for realising CQRS, they're just simple traits implemented using the dependency injection pattern described earlier. Essentially:
+
+- Commands return a `Result<()>`
+- Queries return a `Result<T>`
+- Commands require a `&mut self` receiver
+- Queries require a `&self` receiver
+
+The difference in mutability means commands can call queries but queries can't call commands.
