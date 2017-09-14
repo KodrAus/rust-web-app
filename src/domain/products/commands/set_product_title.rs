@@ -1,6 +1,7 @@
 use auto_impl::auto_impl;
 
-use domain::products::{ProductId, ProductStore, Resolver};
+use domain::Resolver;
+use domain::products::{ProductId, ProductStore};
 
 #[derive(Clone, Deserialize)]
 pub struct SetProductTitle {
@@ -36,7 +37,7 @@ where
 
 impl Resolver {
     pub fn set_product_title_command(&self) -> impl SetProductTitleCommand {
-        let store = self.product_store();
+        let store = self.products().product_store();
 
         set_product_title_command(store)
     }

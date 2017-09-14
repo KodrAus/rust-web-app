@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 use std::cmp::Ordering;
-use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::fmt::{self, Formatter, Result as FmtResult};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use uuid::Uuid;
@@ -11,7 +11,13 @@ pub type IdError = String;
 #[derive(Serialize, Deserialize)]
 pub struct Id<T>(Uuid, PhantomData<T>);
 
-impl<T> Debug for Id<T> {
+impl<T> fmt::Debug for Id<T> {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        self.0.fmt(f)
+    }
+}
+
+impl<T> fmt::Display for Id<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         self.0.fmt(f)
     }
@@ -23,7 +29,7 @@ impl<T> Clone for Id<T> {
     }
 }
 
-impl<T> Copy for Id<T> { }
+impl<T> Copy for Id<T> {}
 
 impl<T> PartialEq for Id<T> {
     fn eq(&self, other: &Self) -> bool {
@@ -35,7 +41,7 @@ impl<T> PartialEq for Id<T> {
     }
 }
 
-impl<T> Eq for Id<T> { }
+impl<T> Eq for Id<T> {}
 
 impl<T> PartialOrd for Id<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -61,22 +67,25 @@ impl<T> Id<T> {
     }
 }
 
-impl<'a , T> TryFrom<&'a str> for Id<T> {
+impl<'a, T> TryFrom<&'a str> for Id<T> {
     type Error = IdError;
 
     fn try_from(id: &'a str) -> Result<Self, Self::Error> {
-        Ok(Id(Uuid::parse_str(id).map_err(|e| format!("{}", e))?, PhantomData))
+        Ok(Id(
+            Uuid::parse_str(id).map_err(|e| format!("{}", e))?,
+            PhantomData,
+        ))
     }
 }
 
 /// A builder for a new id.
 pub trait IdProvider<T> {
-    fn id(self) -> Result<Id<T>, IdError>;
+    fn id(&self) -> Result<Id<T>, IdError>;
 }
 
 impl<T> IdProvider<T> for Id<T> {
-    fn id(self) -> Result<Id<T>, IdError> {
-        Ok(self)
+    fn id(&self) -> Result<Id<T>, IdError> {
+        Ok(*self)
     }
 }
 
@@ -93,7 +102,7 @@ impl<T> NextId<T> {
 }
 
 impl<T> IdProvider<T> for NextId<T> {
-    fn id(self) -> Result<Id<T>, IdError> {
+    fn id(&self) -> Result<Id<T>, IdError> {
         Ok(self.next())
     }
 }

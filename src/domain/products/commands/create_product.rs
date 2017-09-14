@@ -1,6 +1,7 @@
 use auto_impl::auto_impl;
 
-use domain::products::{Product, ProductId, ProductStore, Resolver};
+use domain::Resolver;
+use domain::products::{Product, ProductId, ProductStore};
 
 pub type CreateProductError = String;
 
@@ -37,7 +38,7 @@ where
 
 impl Resolver {
     pub fn create_product_command(&self) -> impl CreateProductCommand {
-        let store = self.product_store();
+        let store = self.products().product_store();
 
         create_product_command(store)
     }

@@ -7,15 +7,26 @@ use domain::Resolver;
 use domain::id::IdProvider;
 use domain::products::*;
 
+#[derive(Serialize)]
+pub struct Get {
+    pub id: String,
+    pub title: String,
+    pub price: f32,
+}
+
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<GetProductResult>, QueryError> {
-    let query = resolver.products().get_product_query();
+fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, QueryError> {
+    let query = resolver.get_product_query();
 
     let id = ProductId::try_from(&id)?;
 
-    let product = query.get_product(GetProduct { id: id })?;
+    let product = query.get_product(GetProduct { id: id })?.into_data();
 
-    Ok(Json(product))
+    Ok(Json(Get {
+        id: product.id.to_string(),
+        title: product.title,
+        price: product.price,
+    }))
 }
 
 #[derive(Deserialize)]
@@ -28,9 +39,9 @@ pub struct Create {
 fn create(
     data: Json<Create>,
     resolver: State<Resolver>,
-) -> Result<Json<ProductId>, SetProductTitleError> {
+) -> Result<Json<ProductId>, CreateProductError> {
     let id_provider = resolver.products().product_id_provider();
-    let mut command = resolver.products().create_product_command();
+    let mut command = resolver.create_product_command();
 
     let id = id_provider.id()?;
 
@@ -49,7 +60,7 @@ fn set_title(
     title: String,
     resolver: State<Resolver>,
 ) -> Result<(), SetProductTitleError> {
-    let mut command = resolver.products().set_product_title_command();
+    let mut command = resolver.set_product_title_command();
 
     let id = ProductId::try_from(&id)?;
 

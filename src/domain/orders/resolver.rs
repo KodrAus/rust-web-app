@@ -13,9 +13,7 @@ pub struct Resolver {
 
 impl Default for Resolver {
     fn default() -> Self {
-        Resolver {
-            order_store: Arc::new(order_store::in_memory_store()),
-        }
+        Resolver { order_store: Arc::new(order_store::in_memory_store()) }
     }
 }
 

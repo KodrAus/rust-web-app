@@ -63,6 +63,11 @@ pub struct OrderLineItem {
     line_item: LineItemData,
 }
 
+pub enum IntoLineItem {
+    InOrder(OrderLineItem),
+    NotInOrder(Order),
+}
+
 impl OrderLineItem {
     pub(self) fn from_data(order: OrderData, line_item: LineItemData) -> Self {
         OrderLineItem {
@@ -110,14 +115,27 @@ impl Order {
         (&self.order, &self.line_items)
     }
 
+    pub fn into_line_item(self, product_id: ProductId) -> IntoLineItem {
+        if !self.contains_product(product_id) {
+            IntoLineItem::NotInOrder(self)
+        } else {
+            let Order { order, line_items, .. } = self;
+
+            let item = line_items
+                .into_iter()
+                .find(|item| item.product_id == product_id)
+                .unwrap();
+
+            IntoLineItem::InOrder(OrderLineItem::from_data(order, item))
+        }
+    }
+
     pub fn new<TId>(id_provider: TId, customer: &Customer) -> Result<Self, OrderError>
     where
         TId: IdProvider<OrderData>,
     {
         let id = id_provider.id()?;
-        let &CustomerData {
-            id: customer_id, ..
-        } = customer.to_data();
+        let &CustomerData { id: customer_id, .. } = customer.to_data();
 
         let order_data = OrderData {
             id: id,
@@ -130,9 +148,9 @@ impl Order {
     }
 
     pub fn contains_product(&self, product_id: ProductId) -> bool {
-        self.line_items
-            .iter()
-            .any(|item| item.product_id == product_id)
+        self.line_items.iter().any(
+            |item| item.product_id == product_id,
+        )
     }
 
     pub fn add_product<TId, TQuantity>(

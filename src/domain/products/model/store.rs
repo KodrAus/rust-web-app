@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
-use auto_impl::auto_impl;
 
 use domain::products::{Product, ProductData, ProductId};
 
@@ -14,11 +13,21 @@ pub type Error = String;
 // - `Iterator<Item = &ProductData>
 // - `Vec<Product>: FromIterator<Item = &ProductData>`
 
-#[auto_impl(Arc)]
-pub trait ProductStore {
-    fn get(&self, id: ProductId) -> Result<Option<Product>, Error>;
-    fn set(&self, product: Product) -> Result<(), Error>;
+// `syn` doesn't recognise `pub(restricted)`, so we re-export the store
+mod re_export {
+    use auto_impl::auto_impl;
+
+    use domain::products::{Product, ProductId};
+    use super::Error;
+
+    #[auto_impl(Arc)]
+    pub trait ProductStore {
+        fn get(&self, id: ProductId) -> Result<Option<Product>, Error>;
+        fn set(&self, product: Product) -> Result<(), Error>;
+    }
 }
+
+pub(in domain::products) use self::re_export::ProductStore;
 
 pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
 
@@ -107,9 +116,15 @@ mod tests {
         let id = ProductId::new();
 
         // Create a product in the store
-        store.set(Product::new(id, "Some title", 1.5f32).unwrap()).unwrap();
+        store
+            .set(Product::new(id, "Some title", 1.5f32).unwrap())
+            .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(store.set(Product::new(id, "Some title", 1.5f32).unwrap()).is_err());
+        assert!(
+            store
+                .set(Product::new(id, "Some title", 1.5f32).unwrap())
+                .is_err()
+        );
     }
 }

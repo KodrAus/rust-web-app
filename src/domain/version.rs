@@ -1,16 +1,22 @@
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::fmt::{self, Formatter, Result as FmtResult};
 use std::marker::PhantomData;
 use uuid::Uuid;
 
 /// A version.
-/// 
+///
 /// The version provides optimistic concurrency.
 #[derive(Serialize, Deserialize)]
 pub struct Version<T>(Uuid, PhantomData<T>);
 
-impl<T> Debug for Version<T> {
+impl<T> fmt::Debug for Version<T> {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        self.0.fmt(f)
+    }
+}
+
+impl<T> fmt::Display for Version<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         self.0.fmt(f)
     }
@@ -22,7 +28,7 @@ impl<T> Clone for Version<T> {
     }
 }
 
-impl<T> Copy for Version<T> { }
+impl<T> Copy for Version<T> {}
 
 impl<T> Default for Version<T> {
     fn default() -> Self {
@@ -40,7 +46,7 @@ impl<T> PartialEq for Version<T> {
     }
 }
 
-impl<T> Eq for Version<T> { }
+impl<T> Eq for Version<T> {}
 
 impl<T> PartialOrd for Version<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {

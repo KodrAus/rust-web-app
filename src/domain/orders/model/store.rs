@@ -1,23 +1,39 @@
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
-use auto_impl::auto_impl;
 
 use domain::orders::{LineItemData, LineItemId, Order, OrderData, OrderId, OrderLineItem};
 
 pub type Error = String;
 
-#[auto_impl(Arc)]
-pub trait OrderLineItemStore {
-    fn get(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;
-    fn set(&self, order: OrderLineItem) -> Result<(), Error>;
+// TODO: Combine these stores
+
+// `syn` doesn't recognise `pub(restricted)`, so we re-export the store
+mod re_export {
+    use auto_impl::auto_impl;
+
+    use domain::orders::{LineItemId, Order, OrderId, OrderLineItem};
+    use super::Error;
+
+    #[auto_impl(Arc)]
+    pub trait OrderLineItemStore {
+        fn get(
+            &self,
+            id: OrderId,
+            line_item_id: LineItemId,
+        ) -> Result<Option<OrderLineItem>, Error>;
+        fn set(&self, order: OrderLineItem) -> Result<(), Error>;
+    }
+
+    #[auto_impl(Arc)]
+    pub trait OrderStore {
+        fn get(&self, order_id: OrderId) -> Result<Option<Order>, Error>;
+        fn set(&self, order: Order) -> Result<(), Error>;
+    }
 }
 
-#[auto_impl(Arc)]
-pub trait OrderStore {
-    fn get(&self, order_id: OrderId) -> Result<Option<Order>, Error>;
-    fn set(&self, order: Order) -> Result<(), Error>;
-}
+pub(in domain::orders) use self::re_export::OrderStore;
+pub(in domain::orders) use self::re_export::OrderLineItemStore;
 
 pub(in domain) struct InMemoryStore {
     orders: RwLock<HashMap<OrderId, (OrderData, HashSet<LineItemId>)>>,
@@ -212,10 +228,16 @@ mod tests {
         let customer = Customer::new(1);
 
         // Create an order in the store
-        order_store.set(Order::new(order_id, &customer).unwrap()).unwrap();
+        order_store
+            .set(Order::new(order_id, &customer).unwrap())
+            .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(order_store.set(Order::new(order_id, &customer).unwrap()).is_err());
+        assert!(
+            order_store
+                .set(Order::new(order_id, &customer).unwrap())
+                .is_err()
+        );
     }
 
     #[test]
@@ -223,7 +245,7 @@ mod tests {
         let store = in_memory_store();
         let order_store: &OrderStore = &store;
         let line_item_store: &OrderLineItemStore = &store;
-        
+
         let order_id = OrderId::new();
         let line_item_id = LineItemId::new();
 
@@ -239,7 +261,12 @@ mod tests {
         }
         // Attempting to update a line item twice fails optimistic concurrency check
         {
-            let get_item = || line_item_store.get(order_id, line_item_id).unwrap().unwrap();
+            let get_item = || {
+                line_item_store
+                    .get(order_id, line_item_id)
+                    .unwrap()
+                    .unwrap()
+            };
             let mut line_item_a = get_item();
             let mut line_item_b = get_item();
 
