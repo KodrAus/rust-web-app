@@ -20,7 +20,7 @@ where
     TStore: ProductStore,
 {
     move |query: GetProduct| {
-        let product = store.get(query.id)?.ok_or("not found")?;
+        let product = store.get_product(query.id)?.ok_or("not found")?;
 
         Ok(product)
     }

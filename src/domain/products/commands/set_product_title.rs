@@ -22,7 +22,7 @@ where
 {
     move |command: SetProductTitle| {
         let product = {
-            if let Some(mut product) = store.get(command.id)? {
+            if let Some(mut product) = store.get_product(command.id)? {
                 product.set_title(command.title)?;
 
                 product
@@ -31,7 +31,7 @@ where
             }
         };
 
-        store.set(product)
+        store.set_product(product)
     }
 }
 

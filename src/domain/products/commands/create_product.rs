@@ -23,14 +23,14 @@ where
 {
     move |command: CreateProduct| {
         let product = {
-            if store.get(command.id)?.is_some() {
+            if store.get_product(command.id)?.is_some() {
                 Err("already exists")?
             } else {
                 Product::new(command.id, command.title, command.price)?
             }
         };
 
-        store.set(product)?;
+        store.set_product(product)?;
 
         Ok(())
     }

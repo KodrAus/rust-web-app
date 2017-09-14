@@ -2,7 +2,7 @@ use std::convert::{TryFrom, TryInto};
 
 pub mod store;
 
-use domain::id::{Id, IdProvider};
+use domain::id::{Id, NextId, IdProvider};
 use domain::version::Version;
 use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData};
@@ -10,8 +10,10 @@ use domain::customers::{Customer, CustomerData};
 pub type OrderError = String;
 
 pub type OrderId = Id<OrderData>;
+pub type NextOrderId = NextId<OrderData>;
 pub type OrderVersion = Version<OrderData>;
 pub type LineItemId = Id<LineItemData>;
+pub type NextLineItemId = NextId<LineItemData>;
 pub type LineItemVersion = Version<LineItemData>;
 
 /// An order item quantity.
@@ -115,7 +117,7 @@ impl Order {
         (&self.order, &self.line_items)
     }
 
-    pub fn into_line_item(self, product_id: ProductId) -> IntoLineItem {
+    pub fn into_line_item_for_product(self, product_id: ProductId) -> IntoLineItem {
         if !self.contains_product(product_id) {
             IntoLineItem::NotInOrder(self)
         } else {

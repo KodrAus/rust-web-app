@@ -22,10 +22,6 @@ impl Resolver {
         self.order_store.clone()
     }
 
-    pub(in domain) fn line_item_store(&self) -> impl order_store::OrderLineItemStore {
-        self.order_store.clone()
-    }
-
     pub fn order_id_provider(&self) -> impl IdProvider<OrderData> {
         NextId::<OrderData>::new()
     }
