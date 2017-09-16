@@ -4,7 +4,7 @@
 
 This repository contains a sample Rust application for an online store. The goal is to demonstrate some design patterns that leverage the Rust language to build scalable and maintainable applications.
 
-In the absense of some external measure of success you can't really evaluate how useful this particular piece of software is. So the best we can do is document some of the arbitrary design decisions that have lead to this shape. For anyone reading this code, I'd encourage you to scrutinise it based on those design decisions, think of the constraints you face in your own environment and how those might inform the software.
+It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue. For anyone reading this code, I'd encourage you to scrutinise it based on those design decisions, think of the constraints you face in your own environment and how those might inform the software.
 
 # What's this not about?
 

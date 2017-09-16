@@ -12,6 +12,7 @@ pub trait CustomerStore {
     fn set(&self, customer: Customer) -> Result<(), Error>;
 }
 
+/// A test in-memory customer store.
 pub type InMemoryStore = RwLock<BTreeMap<i32, CustomerData>>;
 
 impl CustomerStore for InMemoryStore {

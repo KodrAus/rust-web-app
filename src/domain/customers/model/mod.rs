@@ -1,4 +1,8 @@
-pub(in domain) mod store;
+/*!
+Entities for customers.
+*/
+
+pub mod store;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CustomerData {

@@ -8,7 +8,6 @@ pub type Error = String;
 
 // TODO: A trait for iterating over products? It'll be a leaky abstraction, but necessary for queries until there's a db
 // Maybe just `pub(in domain::products)`?
-
 // Should have:
 // - `Iterator<Item = &ProductData>
 // - `Vec<Product>: FromIterator<Item = &ProductData>`
@@ -39,6 +38,7 @@ mod re_export {
 
 pub(in domain::products) use self::re_export::ProductStore;
 
+/// A test in-memory product store.
 pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
 
 impl ProductStore for InMemoryStore {

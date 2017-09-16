@@ -1,3 +1,10 @@
+/*!
+Entities for orders and line items.
+
+The separation between `Order` and `OrderLineItem` is kind of arbitrary, and may end up being a bit of a nuisance.
+If this becomes the case then rather than coupling the two together even more, we should make sure they're separated.
+*/
+
 use std::convert::{TryFrom, TryInto};
 
 pub mod store;

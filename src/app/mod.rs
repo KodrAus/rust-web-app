@@ -1,3 +1,7 @@
+/*!
+Rocket app configuration.
+*/
+
 use rocket;
 use domain::Resolver;
 

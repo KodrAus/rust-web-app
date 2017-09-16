@@ -1,3 +1,12 @@
+/*!
+An example Rust web application.
+
+The project is split into two main parts:
+
+- The rocket web application where the app is configured and hosted
+- The _domain_ where the app logic is defined
+*/
+
 #![feature(plugin, proc_macro, conservative_impl_trait, try_from)]
 #![plugin(rocket_codegen)]
 

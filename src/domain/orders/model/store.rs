@@ -1,9 +1,3 @@
-/*!
-This module contains an implementation of some persistent storage for orders and order line items.
-The separation between the two entities is kind of arbitrary, and may end up being a bit of a nuisance.
-If this becomes the case then rather than coupling the two together even more, we should make sure they're separated.
-*/
-
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
@@ -57,6 +51,7 @@ mod re_export {
 
 pub(in domain::orders) use self::re_export::OrderStore;
 
+/// A test in-memory order store.
 pub(in domain) struct InMemoryStore {
     orders: RwLock<HashMap<OrderId, (OrderData, HashSet<LineItemId>)>>,
     order_items: RwLock<HashMap<LineItemId, LineItemData>>,

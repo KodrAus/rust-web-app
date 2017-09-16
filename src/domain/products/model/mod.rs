@@ -1,3 +1,7 @@
+/*!
+Entities for products.
+*/
+
 use std::convert::{TryFrom, TryInto};
 
 pub mod store;
