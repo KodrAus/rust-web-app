@@ -9,7 +9,7 @@ use std::convert::{TryFrom, TryInto};
 
 pub mod store;
 
-use domain::id::{Id, NextId, IdProvider};
+use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
 use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData};
@@ -128,7 +128,9 @@ impl Order {
         if !self.contains_product(product_id) {
             IntoLineItem::NotInOrder(self)
         } else {
-            let Order { order, line_items, .. } = self;
+            let Order {
+                order, line_items, ..
+            } = self;
 
             let item = line_items
                 .into_iter()
@@ -144,7 +146,9 @@ impl Order {
         TId: IdProvider<OrderData>,
     {
         let id = id_provider.id()?;
-        let &CustomerData { id: customer_id, .. } = customer.to_data();
+        let &CustomerData {
+            id: customer_id, ..
+        } = customer.to_data();
 
         let order_data = OrderData {
             id: id,
@@ -157,17 +161,12 @@ impl Order {
     }
 
     pub fn contains_product(&self, product_id: ProductId) -> bool {
-        self.line_items.iter().any(
-            |item| item.product_id == product_id,
-        )
+        self.line_items
+            .iter()
+            .any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId, TQuantity>(
-        &mut self,
-        id_provider: TId,
-        product: &Product,
-        quantity: TQuantity,
-    ) -> Result<(), OrderError>
+    pub fn add_product<TId, TQuantity>(&mut self, id_provider: TId, product: &Product, quantity: TQuantity) -> Result<(), OrderError>
     where
         TId: IdProvider<LineItemData>,
         TQuantity: TryInto<Quantity, Error = OrderError>,

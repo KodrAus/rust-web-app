@@ -15,23 +15,18 @@ mod re_export {
 
     #[auto_impl(Arc)]
     pub trait OrderStore {
-        fn get_line_item(
-            &self,
-            id: OrderId,
-            line_item_id: LineItemId,
-        ) -> Result<Option<OrderLineItem>, Error>;
+        fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;
         fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error>;
 
         fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error>;
         fn set_order(&self, order: Order) -> Result<(), Error>;
     }
 
-    impl<'a, T> OrderStore for &'a T where T: OrderStore {
-        fn get_line_item(
-            &self,
-            id: OrderId,
-            line_item_id: LineItemId,
-        ) -> Result<Option<OrderLineItem>, Error> {
+    impl<'a, T> OrderStore for &'a T
+    where
+        T: OrderStore,
+    {
+        fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
             (*self).get_line_item(id, line_item_id)
         }
 
@@ -110,11 +105,7 @@ impl OrderStore for InMemoryStore {
         Ok(())
     }
 
-    fn get_line_item(
-        &self,
-        id: OrderId,
-        line_item_id: LineItemId,
-    ) -> Result<Option<OrderLineItem>, Error> {
+    fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
         let orders = self.orders.read().map_err(|_| "not good!")?;
 
         if let Some(&(ref data, ref item_ids)) = orders.get(&id) {

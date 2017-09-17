@@ -1,1 +1,2 @@
 error_on_line_overflow_comments = false
+max_width = 1000

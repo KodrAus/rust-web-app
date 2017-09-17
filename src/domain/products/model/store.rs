@@ -25,7 +25,10 @@ mod re_export {
         fn set_product(&self, product: Product) -> Result<(), Error>;
     }
 
-    impl<'a, T> ProductStore for &'a T where T: ProductStore {
+    impl<'a, T> ProductStore for &'a T
+    where
+        T: ProductStore,
+    {
         fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error> {
             (*self).get_product(id)
         }

@@ -36,10 +36,7 @@ pub struct Create {
 }
 
 #[put("/", format = "application/json", data = "<data>")]
-fn create(
-    data: Json<Create>,
-    resolver: State<Resolver>,
-) -> Result<Json<ProductId>, CreateProductError> {
+fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, CreateProductError> {
     let id_provider = resolver.products().product_id_provider();
     let mut command = resolver.create_product_command();
 
@@ -55,11 +52,7 @@ fn create(
 }
 
 #[post("/<id>/title/<title>")]
-fn set_title(
-    id: String,
-    title: String,
-    resolver: State<Resolver>,
-) -> Result<(), SetProductTitleError> {
+fn set_title(id: String, title: String, resolver: State<Resolver>) -> Result<(), SetProductTitleError> {
     let mut command = resolver.set_product_title_command();
 
     let id = ProductId::try_from(&id)?;

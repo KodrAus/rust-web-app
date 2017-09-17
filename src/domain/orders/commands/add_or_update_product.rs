@@ -4,7 +4,7 @@ use domain::Resolver;
 use domain::id::IdProvider;
 use domain::products::ProductId;
 use domain::products::queries::{GetProduct, GetProductQuery};
-use domain::orders::{LineItemId, LineItemData, IntoLineItem, OrderId, OrderStore};
+use domain::orders::{IntoLineItem, LineItemData, LineItemId, OrderId, OrderStore};
 
 pub type AddOrUpdateProductError = String;
 
@@ -20,45 +20,41 @@ pub trait AddOrUpdateProductCommand {
     fn add_or_update_product(&mut self, command: AddOrUpdateProduct) -> Result<LineItemId, AddOrUpdateProductError>;
 }
 
-pub fn add_or_update_product_command<TStore, TLineItemIdProvider, TGetProduct>(
-    store: TStore,
-    id_provider: TLineItemIdProvider,
-    query: TGetProduct,
-) -> impl AddOrUpdateProductCommand
+pub fn add_or_update_product_command<TStore, TLineItemIdProvider, TGetProduct>(store: TStore, id_provider: TLineItemIdProvider, query: TGetProduct) -> impl AddOrUpdateProductCommand
 where
     TStore: OrderStore,
     TLineItemIdProvider: IdProvider<LineItemData>,
     TGetProduct: GetProductQuery,
 {
-    move |command: AddOrUpdateProduct| {
-        if let Some(order) = store.get_order(command.id)? {
-            let id = match order.into_line_item_for_product(command.product_id) {
-                IntoLineItem::InOrder(mut line_item) => {
-                    let id = {
-                        let (_, line_item) = line_item.to_data();
-                        line_item.id
-                    };
+    move |command: AddOrUpdateProduct| if let Some(order) = store.get_order(command.id)? {
+        let id = match order.into_line_item_for_product(command.product_id) {
+            IntoLineItem::InOrder(mut line_item) => {
+                let id = {
+                    let (_, line_item) = line_item.to_data();
+                    line_item.id
+                };
 
-                    line_item.set_quantity(command.quantity)?;
-                    store.set_line_item(line_item)?;
+                line_item.set_quantity(command.quantity)?;
+                store.set_line_item(line_item)?;
 
-                    id
-                }
-                IntoLineItem::NotInOrder(mut order) => {
-                    let id = id_provider.id()?;
-                    let product = query.get_product(GetProduct { id: command.product_id })?;
+                id
+            }
+            IntoLineItem::NotInOrder(mut order) => {
+                let id = id_provider.id()?;
+                let product = query.get_product(GetProduct {
+                    id: command.product_id,
+                })?;
 
-                    order.add_product(id, &product, command.quantity)?;
-                    store.set_order(order)?;
+                order.add_product(id, &product, command.quantity)?;
+                store.set_order(order)?;
 
-                    id
-                }
-            };
+                id
+            }
+        };
 
-            Ok(id)
-        } else {
-            Err("not found")?
-        }
+        Ok(id)
+    } else {
+        Err("not found")?
     }
 }
 
@@ -91,16 +87,22 @@ mod tests {
 
         let store = in_memory_store();
         store.set_order(order).unwrap();
-        
-        let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| Product::new(product_id, "A title", 1.5f32));
+
+        let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
+            Product::new(product_id, "A title", 1.5f32)
+        });
 
         let line_item_id = cmd.add_or_update_product(AddOrUpdateProduct {
             id: order_id,
             product_id: product_id,
-            quantity: quantity
+            quantity: quantity,
         }).unwrap();
 
-        let (_, line_item) = store.get_line_item(order_id, line_item_id).unwrap().unwrap().into_data();
+        let (_, line_item) = store
+            .get_line_item(order_id, line_item_id)
+            .unwrap()
+            .unwrap()
+            .into_data();
 
         assert_eq!(quantity, line_item.quantity);
     }
@@ -118,16 +120,22 @@ mod tests {
 
         let store = in_memory_store();
         store.set_order(order).unwrap();
-        
-        let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| Product::new(product_id, "A title", 1.5f32));
+
+        let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
+            Product::new(product_id, "A title", 1.5f32)
+        });
 
         let updated_line_item_id = cmd.add_or_update_product(AddOrUpdateProduct {
             id: order_id,
             product_id: product_id,
-            quantity: quantity
+            quantity: quantity,
         }).unwrap();
 
-        let (_, line_item) = store.get_line_item(order_id, line_item_id).unwrap().unwrap().into_data();
+        let (_, line_item) = store
+            .get_line_item(order_id, line_item_id)
+            .unwrap()
+            .unwrap()
+            .into_data();
 
         assert_eq!(line_item_id, updated_line_item_id);
         assert_eq!(quantity, line_item.quantity);

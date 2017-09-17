@@ -79,11 +79,7 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(
-        id_provider: TId,
-        title: TTitle,
-        price: TPrice,
-    ) -> Result<Self, ProductError>
+    pub fn new<TId, TTitle, TPrice>(id_provider: TId, title: TTitle, price: TPrice) -> Result<Self, ProductError>
     where
         TId: IdProvider<ProductData>,
         TTitle: TryInto<Title, Error = ProductError>,
