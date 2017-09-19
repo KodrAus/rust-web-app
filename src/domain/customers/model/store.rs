@@ -87,7 +87,7 @@ pub fn customer_store() -> impl CustomerStore {
 mod tests {
     use super::*;
     use domain::customers::*;
-    use domain::customers::model::test_data;
+    use domain::customers::model::test_data::CustomerBuilder;
 
     #[test]
     fn test_in_memory_store() {
@@ -96,15 +96,13 @@ mod tests {
         let id = CustomerId::new();
 
         // Create a customer in the store
-        {
-            let customer = test_data::CustomerBuilder::new().id(id).build();
-            store.set_customer(customer).unwrap();
-        }
+        store
+            .set_customer(CustomerBuilder::new().id(id).build())
+            .unwrap();
+
         // Get the customer from the store
-        {
-            let found = store.get_customer(id).unwrap().unwrap();
-            assert_eq!(id, found.data.id);
-        }
+        let found = store.get_customer(id).unwrap().unwrap();
+        assert_eq!(id, found.data.id);
     }
 
     #[test]
@@ -115,13 +113,13 @@ mod tests {
 
         // Create a customer in the store
         store
-            .set_customer(test_data::CustomerBuilder::new().id(id).build())
+            .set_customer(CustomerBuilder::new().id(id).build())
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(
             store
-                .set_customer(test_data::CustomerBuilder::new().id(id).build())
+                .set_customer(CustomerBuilder::new().id(id).build())
                 .is_err()
         );
     }

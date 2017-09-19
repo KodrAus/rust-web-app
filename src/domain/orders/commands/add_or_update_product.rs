@@ -77,17 +77,18 @@ mod tests {
 
     #[test]
     fn add_item_if_not_in_order() {
+        let store = in_memory_store();
+
         let order_id = OrderId::new();
         let product_id = ProductId::new();
         let quantity = 3;
 
-        let order = OrderBuilder::new().id(order_id).build();
-
-        let store = in_memory_store();
-        store.set_order(order).unwrap();
+        store
+            .set_order(OrderBuilder::new().id(order_id).build())
+            .unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: Result<_, GetProductQueryError> = Ok(ProductBuilder::new().id(product_id).build());
+            let product: GetProductQueryResult = Ok(ProductBuilder::new().id(product_id).build());
             product
         });
 
@@ -108,22 +109,25 @@ mod tests {
 
     #[test]
     fn update_quantity_if_in_order() {
+        let store = in_memory_store();
+
         let order_id = OrderId::new();
         let product_id = ProductId::new();
         let line_item_id = LineItemId::new();
         let quantity = 3;
 
-        let product = ProductBuilder::new().id(product_id).build();
         let order = OrderBuilder::new()
             .id(order_id)
-            .add_product(product, move |line_item| line_item.id(line_item_id))
+            .add_product(
+                ProductBuilder::new().id(product_id).build(),
+                move |line_item| line_item.id(line_item_id),
+            )
             .build();
 
-        let store = in_memory_store();
         store.set_order(order).unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: Result<_, GetProductQueryError> = Ok(ProductBuilder::new().id(product_id).build());
+            let product: GetProductQueryResult = Ok(ProductBuilder::new().id(product_id).build());
             product
         });
 

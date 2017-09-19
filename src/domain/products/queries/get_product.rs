@@ -4,6 +4,7 @@ use domain::Resolver;
 use domain::products::{Product, ProductId, ProductStore};
 
 pub type GetProductQueryError = String;
+pub type GetProductQueryResult = Result<Product, GetProductQueryError>;
 
 #[derive(Deserialize)]
 pub struct GetProduct {

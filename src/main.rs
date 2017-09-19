@@ -13,10 +13,8 @@ The project is split into two main parts:
 extern crate auto_impl;
 extern crate rocket;
 extern crate rocket_contrib;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 extern crate uuid;
 
 pub mod domain;

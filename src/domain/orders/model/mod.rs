@@ -76,6 +76,10 @@ pub struct OrderLineItem {
     line_item: LineItemData,
 }
 
+/// An attempt to turn an order into a line item.
+///
+/// If the line item was in the order then the result is `InOrder`.
+/// If the line item was not in the order then the result is `NotInOrder`.
 pub enum IntoLineItem {
     InOrder(OrderLineItem),
     NotInOrder(Order),
@@ -218,19 +222,21 @@ impl Entity for OrderLineItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use domain::orders::model::test_data::default_order;
+    use domain::products::model::test_data::{default_product, ProductBuilder};
     use domain::customers::model::test_data::default_customer;
 
     #[test]
     fn add_item_to_order() {
+        let order_id = OrderId::new();
         let product_id = ProductId::new();
-        let product = Product::new(product_id, "A title", 1f32).unwrap();
+        let order_item_id = LineItemId::new();
+        let product = ProductBuilder::new().id(product_id).build();
 
         let customer = default_customer();
 
-        let order_id = OrderId::new();
         let mut order = Order::new(order_id, &customer).unwrap();
 
-        let order_item_id = LineItemId::new();
         order.add_product(order_item_id, &product, 1).unwrap();
 
         assert_eq!(1, order.line_items.len());
@@ -239,13 +245,13 @@ mod tests {
 
     #[test]
     fn quantity_must_be_greater_than_0() {
-        let mut order = Order::new(OrderId::new(), &default_customer()).unwrap();
-
-        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+        let mut order = default_order();
+        let product = default_product();
 
         assert!(order.add_product(LineItemId::new(), &product, 0).is_err());
 
         order.add_product(LineItemId::new(), &product, 1).unwrap();
+
         let (order_data, mut line_item_data) = order.into_data();
         let mut order = OrderLineItem::from_data(order_data, line_item_data.pop().unwrap());
 
@@ -254,9 +260,8 @@ mod tests {
 
     #[test]
     fn product_must_not_be_in_order_when_adding() {
-        let mut order = Order::new(OrderId::new(), &default_customer()).unwrap();
-
-        let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+        let mut order = default_order();
+        let product = default_product();
 
         order.add_product(LineItemId::new(), &product, 1).unwrap();
 

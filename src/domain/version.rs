@@ -7,6 +7,7 @@ use uuid::Uuid;
 /// A version.
 ///
 /// The version provides optimistic concurrency.
+/// Versions have a phantom generic type so you can't compare `Version<T>` to `Version<U>`.
 #[derive(Serialize, Deserialize)]
 pub struct Version<T>(Uuid, PhantomData<T>);
 

@@ -190,35 +190,30 @@ mod tests {
         let line_item_id = LineItemId::new();
 
         // Create an order in the store
-        {
-            store
-                .set_order(OrderBuilder::new().id(order_id).build())
-                .unwrap();
-        }
-        // Add a product to the order
-        {
-            let mut order = store.get_order(order_id).unwrap().unwrap();
-            order
-                .add_product(line_item_id, &default_product(), 1)
-                .unwrap();
-            store.set_order(order).unwrap();
-        }
-        // Update the product in the order
-        {
-            let mut line_item = store
-                .get_line_item(order_id, line_item_id)
-                .unwrap()
-                .unwrap();
-            line_item.set_quantity(5).unwrap();
-            store.set_line_item(line_item).unwrap();
-        }
-        // Get the product with the order
-        {
-            let (_, line_items) = store.get_order(order_id).unwrap().unwrap().into_data();
+        store
+            .set_order(OrderBuilder::new().id(order_id).build())
+            .unwrap();
 
-            assert_eq!(1, line_items.len());
-            assert_eq!(5, line_items[0].quantity);
-        }
+        // Add a product to the order
+        let mut order = store.get_order(order_id).unwrap().unwrap();
+        order
+            .add_product(line_item_id, &default_product(), 1)
+            .unwrap();
+        store.set_order(order).unwrap();
+
+        // Update the product in the order
+        let mut line_item = store
+            .get_line_item(order_id, line_item_id)
+            .unwrap()
+            .unwrap();
+        line_item.set_quantity(5).unwrap();
+        store.set_line_item(line_item).unwrap();
+
+        // Get the product with the order
+        let (_, line_items) = store.get_order(order_id).unwrap().unwrap().into_data();
+
+        assert_eq!(1, line_items.len());
+        assert_eq!(5, line_items[0].quantity);
     }
 
     #[test]
@@ -248,32 +243,31 @@ mod tests {
         let line_item_id = LineItemId::new();
 
         // Create an order in the store
-        {
-            let product = Product::new(ProductId::new(), "A title", 3f32).unwrap();
-            let order = OrderBuilder::new()
-                .id(order_id)
-                .add_product(product, move |line_item| line_item.id(line_item_id))
-                .build();
+        let order = OrderBuilder::new()
+            .id(order_id)
+            .add_product(
+                default_product(),
+                move |line_item| line_item.id(line_item_id),
+            )
+            .build();
 
-            store.set_order(order).unwrap();
-        }
+        store.set_order(order).unwrap();
+
         // Attempting to update a line item twice fails optimistic concurrency check
-        {
-            let get_item = || {
-                store
-                    .get_line_item(order_id, line_item_id)
-                    .unwrap()
-                    .unwrap()
-            };
-            let mut line_item_a = get_item();
-            let mut line_item_b = get_item();
+        let get_item = || {
+            store
+                .get_line_item(order_id, line_item_id)
+                .unwrap()
+                .unwrap()
+        };
+        let mut line_item_a = get_item();
+        let mut line_item_b = get_item();
 
-            line_item_a.set_quantity(3).unwrap();
-            line_item_b.set_quantity(2).unwrap();
+        line_item_a.set_quantity(3).unwrap();
+        line_item_b.set_quantity(2).unwrap();
 
-            store.set_line_item(line_item_a).unwrap();
+        store.set_line_item(line_item_a).unwrap();
 
-            assert!(store.set_line_item(line_item_b).is_err());
-        }
+        assert!(store.set_line_item(line_item_b).is_err());
     }
 }

@@ -8,6 +8,8 @@ use uuid::Uuid;
 pub type IdError = String;
 
 /// An id.
+///
+/// Ids have a phantom generic parameter so you can't compare an `Id<T>` to an `Id<U>`.
 #[derive(Serialize, Deserialize)]
 pub struct Id<T>(Uuid, PhantomData<T>);
 

@@ -20,7 +20,7 @@ impl Default for OrderBuilder {
     fn default() -> Self {
         OrderBuilder {
             order: default_order(),
-            line_items: Vec::new(),
+            line_items: vec![],
         }
     }
 }

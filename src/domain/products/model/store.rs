@@ -102,15 +102,12 @@ mod tests {
         let id = ProductId::new();
 
         // Create a product in the store
-        {
-            let product = test_data::ProductBuilder::new().id(id).build();
-            store.set_product(product).unwrap();
-        }
+        let product = test_data::ProductBuilder::new().id(id).build();
+        store.set_product(product).unwrap();
+
         // Get the product from the store
-        {
-            let found = store.get_product(id).unwrap().unwrap();
-            assert_eq!(id, found.data.id);
-        }
+        let found = store.get_product(id).unwrap().unwrap();
+        assert_eq!(id, found.data.id);
     }
 
     #[test]
