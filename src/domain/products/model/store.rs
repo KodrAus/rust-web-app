@@ -93,6 +93,7 @@ pub fn product_store() -> impl ProductStore {
 mod tests {
     use super::*;
     use domain::products::*;
+    use domain::products::model::test_data;
 
     #[test]
     fn test_in_memory_store() {
@@ -102,7 +103,7 @@ mod tests {
 
         // Create a product in the store
         {
-            let product = Product::new(id, "Some title", 1.5f32).unwrap();
+            let product = test_data::ProductBuilder::new().id(id).build();
             store.set_product(product).unwrap();
         }
         // Get the product from the store
@@ -120,13 +121,13 @@ mod tests {
 
         // Create a product in the store
         store
-            .set_product(Product::new(id, "Some title", 1.5f32).unwrap())
+            .set_product(test_data::ProductBuilder::new().id(id).build())
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(
             store
-                .set_product(Product::new(id, "Some title", 1.5f32).unwrap())
+                .set_product(test_data::ProductBuilder::new().id(id).build())
                 .is_err()
         );
     }

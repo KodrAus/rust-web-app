@@ -6,10 +6,15 @@ use std::convert::{TryFrom, TryInto};
 
 pub mod store;
 
-use domain::id::{Id, IdProvider};
+#[cfg(test)]
+pub mod test_data;
+
+use domain::entity::Entity;
+use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
 
 pub type ProductId = Id<ProductData>;
+pub type NextProductId = NextId<ProductData>;
 pub type ProductVersion = Version<ProductData>;
 
 /// A product title.
@@ -104,6 +109,13 @@ impl Product {
 
         Ok(())
     }
+}
+
+impl Entity for Product {
+    type Id = ProductId;
+    type Version = ProductVersion;
+    type Data = ProductData;
+    type Error = ProductError;
 }
 
 #[cfg(test)]

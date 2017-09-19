@@ -19,3 +19,5 @@ pub mod customers;
 
 mod resolver;
 pub use self::resolver::*;
+
+pub mod entity;

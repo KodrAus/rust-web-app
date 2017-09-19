@@ -176,8 +176,9 @@ pub fn order_store() -> impl OrderStore {
 
 #[cfg(test)]
 mod tests {
+    use domain::orders::model::test_data::OrderBuilder;
     use domain::orders::*;
-    use domain::customers::*;
+    use domain::products::model::test_data::default_product;
     use domain::products::*;
     use super::*;
 
@@ -190,29 +191,26 @@ mod tests {
 
         // Create an order in the store
         {
-            let order = Order::new(order_id, &Customer::new(1)).unwrap();
-            store.set_order(order).unwrap();
+            store
+                .set_order(OrderBuilder::new().id(order_id).build())
+                .unwrap();
         }
         // Add a product to the order
         {
             let mut order = store.get_order(order_id).unwrap().unwrap();
             order
-                .add_product(
-                    line_item_id,
-                    &Product::new(ProductId::new(), "Some product", 1f32).unwrap(),
-                    1,
-                )
+                .add_product(line_item_id, &default_product(), 1)
                 .unwrap();
             store.set_order(order).unwrap();
         }
         // Update the product in the order
         {
-            let mut order = store
+            let mut line_item = store
                 .get_line_item(order_id, line_item_id)
                 .unwrap()
                 .unwrap();
-            order.set_quantity(5).unwrap();
-            store.set_line_item(order).unwrap();
+            line_item.set_quantity(5).unwrap();
+            store.set_line_item(line_item).unwrap();
         }
         // Get the product with the order
         {
@@ -228,17 +226,16 @@ mod tests {
         let store = in_memory_store();
 
         let order_id = OrderId::new();
-        let customer = Customer::new(1);
 
         // Create an order in the store
         store
-            .set_order(Order::new(order_id, &customer).unwrap())
+            .set_order(OrderBuilder::new().id(order_id).build())
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(
             store
-                .set_order(Order::new(order_id, &customer).unwrap())
+                .set_order(OrderBuilder::new().id(order_id).build())
                 .is_err()
         );
     }
@@ -252,11 +249,11 @@ mod tests {
 
         // Create an order in the store
         {
-            let customer = Customer::new(1);
             let product = Product::new(ProductId::new(), "A title", 3f32).unwrap();
-
-            let mut order = Order::new(order_id, &customer).unwrap();
-            order.add_product(line_item_id, &product, 1).unwrap();
+            let order = OrderBuilder::new()
+                .id(order_id)
+                .add_product(product, move |line_item| line_item.id(line_item_id))
+                .build();
 
             store.set_order(order).unwrap();
         }

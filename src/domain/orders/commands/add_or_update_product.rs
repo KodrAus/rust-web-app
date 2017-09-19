@@ -29,10 +29,7 @@ where
     move |command: AddOrUpdateProduct| if let Some(order) = store.get_order(command.id)? {
         let id = match order.into_line_item_for_product(command.product_id) {
             IntoLineItem::InOrder(mut line_item) => {
-                let id = {
-                    let (_, line_item) = line_item.to_data();
-                    line_item.id
-                };
+                let (_, &LineItemData { id, .. }) = line_item.to_data();
 
                 line_item.set_quantity(command.quantity)?;
                 store.set_line_item(line_item)?;
@@ -71,10 +68,11 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
-    use domain::customers::*;
     use domain::products::*;
-    use domain::orders::model::store::in_memory_store;
+    use domain::products::model::test_data::ProductBuilder;
     use domain::orders::*;
+    use domain::orders::model::store::in_memory_store;
+    use domain::orders::model::test_data::OrderBuilder;
     use super::*;
 
     #[test]
@@ -83,13 +81,14 @@ mod tests {
         let product_id = ProductId::new();
         let quantity = 3;
 
-        let order = Order::new(order_id, &Customer::new(1)).unwrap();
+        let order = OrderBuilder::new().id(order_id).build();
 
         let store = in_memory_store();
         store.set_order(order).unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            Product::new(product_id, "A title", 1.5f32)
+            let product: Result<_, GetProductQueryError> = Ok(ProductBuilder::new().id(product_id).build());
+            product
         });
 
         let line_item_id = cmd.add_or_update_product(AddOrUpdateProduct {
@@ -114,15 +113,18 @@ mod tests {
         let line_item_id = LineItemId::new();
         let quantity = 3;
 
-        let product = Product::new(product_id, "A title", 1.5f32).unwrap();
-        let mut order = Order::new(order_id, &Customer::new(1)).unwrap();
-        order.add_product(line_item_id, &product, 1).unwrap();
+        let product = ProductBuilder::new().id(product_id).build();
+        let order = OrderBuilder::new()
+            .id(order_id)
+            .add_product(product, move |line_item| line_item.id(line_item_id))
+            .build();
 
         let store = in_memory_store();
         store.set_order(order).unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            Product::new(product_id, "A title", 1.5f32)
+            let product: Result<_, GetProductQueryError> = Ok(ProductBuilder::new().id(product_id).build());
+            product
         });
 
         let updated_line_item_id = cmd.add_or_update_product(AddOrUpdateProduct {

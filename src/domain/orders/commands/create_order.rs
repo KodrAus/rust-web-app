@@ -47,6 +47,7 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
+    use domain::customers::model::test_data::default_customer;
     use domain::orders::model::store::in_memory_store;
     use domain::orders::*;
     use super::*;
@@ -55,7 +56,7 @@ mod tests {
     fn err_if_already_exists() {
         let store = in_memory_store();
 
-        let customer = Customer::new(1).unwrap();
+        let customer = default_customer();
 
         let create = CreateOrder {
             id: OrderId::new(),

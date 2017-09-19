@@ -9,10 +9,14 @@ use std::convert::{TryFrom, TryInto};
 
 pub mod store;
 
+#[cfg(test)]
+pub mod test_data;
+
+use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
 use domain::products::{Product, ProductData, ProductId};
-use domain::customers::{Customer, CustomerData};
+use domain::customers::{Customer, CustomerData, CustomerId};
 
 pub type OrderError = String;
 
@@ -42,7 +46,7 @@ impl TryFrom<u32> for Quantity {
 pub struct OrderData {
     pub id: OrderId,
     pub version: OrderVersion,
-    pub customer_id: i32,
+    pub customer_id: CustomerId,
     _private: (),
 }
 
@@ -197,18 +201,31 @@ impl Order {
     }
 }
 
+impl Entity for Order {
+    type Id = OrderId;
+    type Version = OrderVersion;
+    type Data = OrderData;
+    type Error = OrderError;
+}
+
+impl Entity for OrderLineItem {
+    type Id = LineItemId;
+    type Version = LineItemVersion;
+    type Data = LineItemData;
+    type Error = OrderError;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::products::*;
-    use domain::customers::*;
+    use domain::customers::model::test_data::default_customer;
 
     #[test]
     fn add_item_to_order() {
         let product_id = ProductId::new();
         let product = Product::new(product_id, "A title", 1f32).unwrap();
 
-        let customer = Customer::new(1);
+        let customer = default_customer();
 
         let order_id = OrderId::new();
         let mut order = Order::new(order_id, &customer).unwrap();
@@ -222,7 +239,7 @@ mod tests {
 
     #[test]
     fn quantity_must_be_greater_than_0() {
-        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+        let mut order = Order::new(OrderId::new(), &default_customer()).unwrap();
 
         let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
 
@@ -237,7 +254,7 @@ mod tests {
 
     #[test]
     fn product_must_not_be_in_order_when_adding() {
-        let mut order = Order::new(OrderId::new(), &Customer::new(1)).unwrap();
+        let mut order = Order::new(OrderId::new(), &default_customer()).unwrap();
 
         let product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
 

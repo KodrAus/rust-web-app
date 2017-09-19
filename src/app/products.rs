@@ -15,7 +15,7 @@ pub struct Get {
 }
 
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, QueryError> {
+fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, GetProductQueryError> {
     let query = resolver.get_product_query();
 
     let id = ProductId::try_from(&id)?;

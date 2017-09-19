@@ -3,7 +3,7 @@ use auto_impl::auto_impl;
 use domain::Resolver;
 use domain::products::{Product, ProductId, ProductStore};
 
-pub type QueryError = String;
+pub type GetProductQueryError = String;
 
 #[derive(Deserialize)]
 pub struct GetProduct {
@@ -12,7 +12,7 @@ pub struct GetProduct {
 
 #[auto_impl(Fn)]
 pub trait GetProductQuery {
-    fn get_product(&self, query: GetProduct) -> Result<Product, QueryError>;
+    fn get_product(&self, query: GetProduct) -> Result<Product, GetProductQueryError>;
 }
 
 pub fn get_product_query<TStore>(store: TStore) -> impl GetProductQuery
