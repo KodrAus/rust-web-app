@@ -2,13 +2,14 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::fmt::{self, Formatter, Result as FmtResult};
 use std::marker::PhantomData;
+use serde::ser::{Serialize, Serializer};
+use serde::de::{Deserialize, Deserializer};
 use uuid::Uuid;
 
 /// A version.
 ///
 /// The version provides optimistic concurrency.
 /// Versions have a phantom generic type so you can't compare `Version<T>` to `Version<U>`.
-#[derive(Serialize, Deserialize)]
 pub struct Version<T>(Uuid, PhantomData<T>);
 
 impl<T> fmt::Debug for Version<T> {
@@ -64,6 +65,25 @@ impl<T> Ord for Version<T> {
 impl<T> Hash for Version<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.hash(state);
+    }
+}
+
+impl<T> Serialize for Version<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for Version<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let id = Uuid::deserialize(deserializer)?;
+        Ok(Version(id, PhantomData))
     }
 }
 

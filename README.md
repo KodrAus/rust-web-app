@@ -4,7 +4,9 @@
 
 This repository contains a sample Rust application for an online store. The goal is to demonstrate some design patterns that leverage the Rust language to build scalable and maintainable applications.
 
-It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue. For anyone reading this code, I'd encourage you to scrutinise it based on those design decisions, think of the constraints you face in your own environment and how those might inform the software.
+It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue.
+
+It's difficult to design software in a vacuum and when you don't have a real domain to drive what's important then design decisions can feel arbitrary. I've made an effort to document decisions and the reasons behind them, but questions like _should we split order items from orders?_ can't really be answered from a purely technical perspective. For anyone reading this code, I'd encourage you to scrutinise it based on those arbitrary design decisions, think of the constraints you face in your own environment and how those might inform your own decisions when building applications in Rust.
 
 # What's this not about?
 
@@ -25,7 +27,11 @@ We split each core concept in the application into its own (mostly) self-contain
 - How that data can be queried (`/queries`)
 - How that data can be changed (`/commands`)
 
-Entities can depend on entities from another folder, like an `Order` depending on a `Product` when adding it.
+Entities can depend on entities from another folder, like an `Order` depending on a `Product` when adding it. There's a privacy hierarchy in each domain folder:
+
+- Entities are globally accessible, but have a private `from_data` method
+- The store is only accessible within the domain folder and depends on `from_data`
+- Commands and queries are globally accessible and depend on the store as an implementation detail
 
 These folders are _sort of_ heavy-weight, but in a proper application adding new domain folders could be simplified using macros. I haven't used macros in this application so the code remains easy to follow.
 

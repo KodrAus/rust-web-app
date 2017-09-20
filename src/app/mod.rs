@@ -6,6 +6,8 @@ use rocket;
 use domain::Resolver;
 
 mod products;
+mod orders;
+mod customers;
 
 pub fn start() {
     rocket::ignite()
@@ -14,5 +16,10 @@ pub fn start() {
             "/products",
             routes![products::get, products::create, products::set_title],
         )
+        .mount(
+            "/orders",
+            routes![orders::create, orders::add_or_update_product],
+        )
+        .mount("/customers", routes![customers::create])
         .launch();
 }

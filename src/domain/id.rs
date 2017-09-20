@@ -3,6 +3,8 @@ use std::cmp::Ordering;
 use std::fmt::{self, Formatter, Result as FmtResult};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
+use serde::ser::{Serialize, Serializer};
+use serde::de::{Deserialize, Deserializer};
 use uuid::Uuid;
 
 pub type IdError = String;
@@ -10,7 +12,6 @@ pub type IdError = String;
 /// An id.
 ///
 /// Ids have a phantom generic parameter so you can't compare an `Id<T>` to an `Id<U>`.
-#[derive(Serialize, Deserialize)]
 pub struct Id<T>(Uuid, PhantomData<T>);
 
 impl<T> fmt::Debug for Id<T> {
@@ -77,6 +78,25 @@ impl<'a, T> TryFrom<&'a str> for Id<T> {
             Uuid::parse_str(id).map_err(|e| format!("{}", e))?,
             PhantomData,
         ))
+    }
+}
+
+impl<T> Serialize for Id<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for Id<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let id = Uuid::deserialize(deserializer)?;
+        Ok(Id(id, PhantomData))
     }
 }
 

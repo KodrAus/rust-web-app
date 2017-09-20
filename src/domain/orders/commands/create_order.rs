@@ -1,7 +1,9 @@
 use auto_impl::auto_impl;
 
-use domain::customers::Customer;
-use domain::orders::{Order, OrderId, OrderStore, Resolver};
+use domain::customers::CustomerId;
+use domain::customers::queries::{GetCustomer, GetCustomerQuery};
+use domain::orders::{Order, OrderId, OrderStore};
+use domain::Resolver;
 
 pub type CreateOrderError = String;
 
@@ -16,22 +18,24 @@ pub trait CreateOrderCommand {
     fn create_order<'a>(&mut self, command: CreateOrder) -> Result<(), CreateOrderError>;
 }
 
-pub fn create_order_command<TStore, TCustomerStore>(store: TStore, customer_store: TCustomerStore) -> impl CreateOrderCommand
+pub fn create_order_command<TStore, TGetCustomer>(store: TStore, query: TGetCustomer) -> impl CreateOrderCommand
 where
     TStore: OrderStore,
-    TCustomerStore: CustomerStore,
+    TGetCustomer: GetCustomerQuery,
 {
     move |command: CreateOrder| {
         let order = {
-            if store.get(command.id)?.is_some() {
+            if store.get_order(command.id)?.is_some() {
                 Err("already exists")?
             } else {
-                let customer = customer_store.get(command.customer_id)?;
+                let customer = query.get_customer(GetCustomer {
+                    id: command.customer_id,
+                })?;
                 Order::new(command.id, &customer)?
             }
         };
 
-        store.set(order)?;
+        store.set_order(order)?;
 
         Ok(())
     }
@@ -39,15 +43,17 @@ where
 
 impl Resolver {
     pub fn create_order_command(&self) -> impl CreateOrderCommand {
-        let store = self.order_store();
+        let store = self.orders().order_store();
+        let query = self.get_customer_query();
 
-        create_order_command(store)
+        create_order_command(store, query)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use domain::customers::model::test_data::default_customer;
+    use domain::customers::*;
+    use domain::customers::model::test_data::CustomerBuilder;
     use domain::orders::model::store::in_memory_store;
     use domain::orders::*;
     use super::*;
@@ -56,16 +62,20 @@ mod tests {
     fn err_if_already_exists() {
         let store = in_memory_store();
 
-        let customer = default_customer();
+        let customer_id = CustomerId::new();
 
         let create = CreateOrder {
             id: OrderId::new(),
+            customer_id: customer_id,
         };
 
-        let mut cmd = create_order_command(&store);
+        let mut cmd = create_order_command(&store, move |_| {
+            let customer: GetCustomerQueryResult = Ok(CustomerBuilder::new().id(customer_id).build());
+            customer
+        });
 
-        cmd.create_order(create.clone(), &customer).unwrap();
+        cmd.create_order(create.clone()).unwrap();
 
-        assert!(cmd.create_order(create, &customer).is_err());
+        assert!(cmd.create_order(create).is_err());
     }
 }

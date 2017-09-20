@@ -3,6 +3,10 @@ Entities for orders and line items.
 
 The separation between `Order` and `OrderLineItem` is kind of arbitrary, and may end up being a bit of a nuisance.
 If this becomes the case then rather than coupling the two together even more, we should make sure they're separated.
+
+The main idea right now is that `OrderLineItem` is a _subset_ of `Order` for a single product.
+This kind of suggests it shouldn't have an id of its own, and instead should be a composite of `(OrderId, ProductId)`.
+We'll probably need to come back here one day to work this out properly.
 */
 
 use std::convert::{TryFrom, TryInto};
