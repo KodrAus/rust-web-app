@@ -6,11 +6,11 @@ This repository contains a sample Rust application for an online store. The goal
 
 It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue.
 
-It's difficult to design software in a vacuum and when you don't have a real domain to drive what's important then design decisions can feel arbitrary. I've made an effort to document decisions and the reasons behind them, but questions like _should we split order items from orders?_ can't really be answered from a purely technical perspective. For anyone reading this code, I'd encourage you to scrutinise it based on those arbitrary design decisions, think of the constraints you face in your own environment and how those might inform your own decisions when building applications in Rust.
+It's difficult to design software in a vacuum. When you don't have a real domain to drive what's important then design decisions can feel arbitrary. I've made an effort to document decisions and the reasons behind them, but questions like _should we split order items from orders?_ can't really be answered from a purely technical perspective. For anyone reading this code, I'd encourage you to scrutinise it based on those arbitrary design decisions, think of the constraints you face in your own environment and how those might inform your own decisions when building applications in Rust.
 
 # What's this not about?
 
-It's not about specific Rust frameworks or libraries.
+It's not about specific Rust frameworks or libraries, or about solving problems inherent to an online shopping application.
 
 # How it works
 
