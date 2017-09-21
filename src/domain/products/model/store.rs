@@ -6,19 +6,15 @@ use domain::products::{Product, ProductData, ProductId};
 
 pub type Error = String;
 
-// TODO: A trait for iterating over products? It'll be a leaky abstraction, but necessary for queries until there's a db
-// Maybe just `pub(in domain::products)`?
-// Should have:
-// - `Iterator<Item = &ProductData>
-// - `Vec<Product>: FromIterator<Item = &ProductData>`
-
 // `syn` doesn't recognise `pub(restricted)`, so we re-export the store
 mod re_export {
+    use std::vec::IntoIter;
     use auto_impl::auto_impl;
 
-    use domain::products::{Product, ProductId};
+    use domain::products::{Product, ProductData, ProductId};
     use super::Error;
 
+    /// A place to persist and fetch product entities.
     #[auto_impl(Arc)]
     pub trait ProductStore {
         fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error>;
@@ -37,9 +33,36 @@ mod re_export {
             (*self).set_product(product)
         }
     }
+
+    /// An additional store for fetching multiple product records at a time.
+    /// 
+    /// This trait is an implementation detail that lets us fetch more than one product.
+    /// It will probably need to be refactored or just removed when we add a proper database.
+    /// The fact that it's internal to `domain::products` though means the scope of breakage is a bit smaller.
+    /// Commands and queries that depend on `ProductStoreFilter` won't need to break their public API.
+    #[auto_impl(Arc)]
+    pub trait ProductStoreFilter {
+        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+        where
+            F: Fn(&ProductData) -> bool;
+    }
+
+    pub type Iter = IntoIter<ProductData>;
+
+    impl<'a, T> ProductStoreFilter for &'a T
+    where
+        T: ProductStoreFilter,
+    {
+        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+        where
+            F: Fn(&ProductData) -> bool,
+        {
+            (*self).filter(predicate)
+        }
+    }
 }
 
-pub(in domain::products) use self::re_export::ProductStore;
+pub(in domain::products) use self::re_export::{Iter, ProductStore, ProductStoreFilter};
 
 /// A test in-memory product store.
 pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
@@ -78,6 +101,22 @@ impl ProductStore for InMemoryStore {
         }
 
         Ok(())
+    }
+}
+
+impl ProductStoreFilter for InMemoryStore {
+    fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+    where
+        F: Fn(&ProductData) -> bool,
+    {
+        let products: Vec<_> = self.read()
+            .map_err(|_| "not good!")?
+            .values()
+            .filter(|p| predicate(*p))
+            .cloned()
+            .collect();
+
+        Ok(products.into_iter())
     }
 }
 

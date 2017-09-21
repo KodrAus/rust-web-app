@@ -24,6 +24,10 @@ impl Resolver {
         self.product_store.clone()
     }
 
+    pub(in domain::products) fn product_store_filter(&self) -> impl product_store::ProductStoreFilter {
+        self.product_store.clone()
+    }
+
     pub fn product_id_provider(&self) -> impl IdProvider<ProductData> {
         NextId::<ProductData>::new()
     }

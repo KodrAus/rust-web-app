@@ -13,6 +13,7 @@ mod re_export {
     use domain::orders::{LineItemId, Order, OrderId, OrderLineItem};
     use super::Error;
 
+    /// A place to persist and fetch order entities.
     #[auto_impl(Arc)]
     pub trait OrderStore {
         fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;

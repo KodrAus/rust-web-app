@@ -5,7 +5,7 @@ pub mod queries;
 
 pub use self::resolver::*;
 pub use self::model::*;
-pub(self) use self::model::store::ProductStore;
+pub(self) use self::model::store::{ProductStore, ProductStoreFilter};
 
 pub use self::commands::*;
 pub use self::queries::*;

@@ -18,7 +18,7 @@ pub fn start() {
         )
         .mount(
             "/orders",
-            routes![orders::create, orders::add_or_update_product],
+            routes![orders::get, orders::create, orders::add_or_update_product],
         )
         .mount("/customers", routes![customers::create])
         .launch();

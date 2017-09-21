@@ -13,6 +13,7 @@ mod re_export {
     use domain::customers::{Customer, CustomerId};
     use super::Error;
 
+    /// A place to persist and fetch customer entities.
     #[auto_impl(Arc)]
     pub trait CustomerStore {
         fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;

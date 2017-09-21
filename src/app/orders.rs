@@ -9,6 +9,17 @@ use domain::orders::*;
 use domain::customers::*;
 use domain::products::*;
 
+#[get("/<id>")]
+fn get(id: String, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, GetOrderQueryError> {
+    let query = resolver.get_order_with_products_query();
+
+    let id = OrderId::try_from(&id)?;
+
+    let order = query.get_order_with_products(GetOrderWithProducts { id: id })?;
+
+    Ok(Json(order))
+}
+
 #[derive(Deserialize)]
 pub struct Create {
     pub customer: String,
