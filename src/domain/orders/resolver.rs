@@ -25,4 +25,8 @@ impl OrdersResolver {
     pub(in domain::orders) fn order_store(&self) -> impl order_store::OrderStore {
         self.order_store.clone()
     }
+
+    pub(in domain::orders) fn order_store_filter(&self) -> impl order_store::OrderStoreFilter {
+        self.order_store.clone()
+    }
 }

@@ -38,7 +38,7 @@ mod re_export {
 
     /**
     An additional store for fetching multiple product records at a time.
-    
+
     This trait is an implementation detail that lets us fetch more than one product.
     It will probably need to be refactored or just removed when we add a proper database.
     The fact that it's internal to `domain::products` though means the scope of breakage is a bit smaller.

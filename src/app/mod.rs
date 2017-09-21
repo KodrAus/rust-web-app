@@ -20,6 +20,6 @@ pub fn start() {
             "/orders",
             routes![orders::get, orders::create, orders::add_or_update_product],
         )
-        .mount("/customers", routes![customers::create])
+        .mount("/customers", routes![customers::get, customers::create])
         .launch();
 }

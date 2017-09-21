@@ -10,9 +10,10 @@ pub type Error = String;
 
 // `syn` doesn't recognise `pub(restricted)`, so we re-export the store
 mod re_export {
+    use std::vec::IntoIter;
     use auto_impl::auto_impl;
 
-    use domain::orders::{LineItemId, Order, OrderId, OrderLineItem};
+    use domain::orders::{LineItemId, Order, OrderData, OrderId, OrderLineItem};
     use super::Error;
 
     /** A place to persist and fetch order entities. */
@@ -45,9 +46,38 @@ mod re_export {
             (*self).set_order(order)
         }
     }
+
+    /**
+    An additional store for fetching multiple order records at a time.
+
+    This trait is an implementation detail that lets us fetch more than one order.
+    It will probably need to be refactored or just removed when we add a proper database.
+    The fact that it's internal to `domain::orders` though means the scope of breakage is a bit smaller.
+    Commands and queries that depend on `OrderStoreFilter` won't need to break their public API.
+    */
+    #[auto_impl(Arc)]
+    pub trait OrderStoreFilter {
+        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+        where
+            F: Fn(&OrderData) -> bool;
+    }
+
+    pub type Iter = IntoIter<OrderData>;
+
+    impl<'a, T> OrderStoreFilter for &'a T
+    where
+        T: OrderStoreFilter,
+    {
+        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+        where
+            F: Fn(&OrderData) -> bool,
+        {
+            (*self).filter(predicate)
+        }
+    }
 }
 
-pub(in domain::orders) use self::re_export::OrderStore;
+pub(in domain::orders) use self::re_export::{Iter, OrderStore, OrderStoreFilter};
 
 /** A test in-memory order store. */
 pub(in domain) struct InMemoryStore {
@@ -163,6 +193,23 @@ impl OrderStore for InMemoryStore {
         }
 
         Ok(())
+    }
+}
+
+impl OrderStoreFilter for InMemoryStore {
+    fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+    where
+        F: Fn(&OrderData) -> bool,
+    {
+        let orders: Vec<_> = self.orders
+            .read()
+            .map_err(|_| "not good!")?
+            .values()
+            .filter(|o| predicate(&o.0))
+            .map(|o| o.0.clone())
+            .collect();
+
+        Ok(orders.into_iter())
     }
 }
 

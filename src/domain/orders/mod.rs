@@ -7,7 +7,7 @@ pub mod commands;
 
 pub use self::resolver::*;
 pub use self::model::*;
-pub(self) use self::model::store::OrderStore;
+pub(self) use self::model::store::{OrderStore, OrderStoreFilter};
 
 pub use self::queries::*;
 pub use self::commands::*;
