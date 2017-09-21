@@ -81,36 +81,40 @@ pub(in domain::orders) use self::re_export::{Iter, OrderStore, OrderStoreFilter}
 
 /** A test in-memory order store. */
 pub(in domain) struct InMemoryStore {
-    orders: RwLock<HashMap<OrderId, (OrderData, HashSet<LineItemId>)>>,
-    order_items: RwLock<HashMap<LineItemId, LineItemData>>,
+    data: RwLock<InMemoryStoreInner>,
+}
+
+struct InMemoryStoreInner {
+    orders: HashMap<OrderId, (OrderData, HashSet<LineItemId>)>,
+    line_items: HashMap<LineItemId, LineItemData>,
 }
 
 impl OrderStore for InMemoryStore {
     fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error> {
-        let orders = self.orders.read().map_err(|_| "not good!")?;
+        let store_data = self.data.read().map_err(|_| "not good!")?;
 
-        if let Some(&(ref data, ref item_ids)) = orders.get(&id) {
-            let order_items = self.order_items.read().map_err(|_| "not good!")?;
-
-            let items_data = order_items
+        if let Some(&(ref order_data, ref item_ids)) = store_data.orders.get(&id) {
+            let items_data = store_data
+                .line_items
                 .values()
                 .filter(|item_data| item_ids.iter().any(|id| *id == item_data.id))
                 .cloned();
 
-            Ok(Some(Order::from_data(data.clone(), items_data)))
+            Ok(Some(Order::from_data(order_data.clone(), items_data)))
         } else {
             Ok(None)
         }
     }
 
     fn set_order(&self, order: Order) -> Result<(), Error> {
-        let (mut order_data, order_items_data) = order.into_data();
+        let mut store_data = self.data.write().map_err(|_| "not good!")?;
+
+        let (mut order_data, line_items_data) = order.into_data();
         let id = order_data.id;
-        let order_item_ids = order_items_data.iter().map(|item| item.id).collect();
+        let order_item_ids = line_items_data.iter().map(|item| item.id).collect();
 
         // Update the order
-        let mut orders = self.orders.write().map_err(|_| "not good!")?;
-        match orders.entry(id) {
+        match store_data.orders.entry(id) {
             Entry::Vacant(entry) => {
                 order_data.version.next();
                 entry.insert((order_data, order_item_ids));
@@ -127,30 +131,28 @@ impl OrderStore for InMemoryStore {
         }
 
         // Insert the line items
-        let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
-        for mut data in order_items_data {
+        for mut data in line_items_data {
             let id = data.id;
 
             data.version.next();
-            order_items.insert(id, data);
+            store_data.line_items.insert(id, data);
         }
 
         Ok(())
     }
 
     fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
-        let orders = self.orders.read().map_err(|_| "not good!")?;
+        let store_data = &self.data.read().map_err(|_| "not good!")?;
 
-        if let Some(&(ref data, ref item_ids)) = orders.get(&id) {
-            let order_items = self.order_items.read().map_err(|_| "not good!")?;
-
+        if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
             // Check that the line item is part of the order
             if !item_ids.contains(&line_item_id) {
                 Err("line item not found")?
             }
 
             // Find the line item
-            let item_data = order_items
+            let item_data = store_data
+                .line_items
                 .values()
                 .find(|item_data| item_data.id == line_item_id)
                 .cloned()
@@ -163,20 +165,20 @@ impl OrderStore for InMemoryStore {
     }
 
     fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
+        let mut store_data = self.data.write().map_err(|_| "not good!")?;
+
         let (order_id, mut order_item_data) = order.into_data();
         let line_item_id = order_item_data.id;
 
-        let orders = self.orders.read().map_err(|_| "not good!")?;
-
         // Check that the line item is part of the order
-        let &(_, ref item_ids) = orders.get(&order_id).ok_or("order not found")?;
-        if !item_ids.contains(&line_item_id) {
-            Err("line item not found")?
+        {
+            let &(_, ref item_ids) = store_data.orders.get(&order_id).ok_or("order not found")?;
+            if !item_ids.contains(&line_item_id) {
+                Err("line item not found")?
+            }
         }
 
-        let mut order_items = self.order_items.write().map_err(|_| "not good!")?;
-
-        match order_items.entry(line_item_id) {
+        match store_data.line_items.entry(line_item_id) {
             Entry::Vacant(entry) => {
                 order_item_data.version.next();
                 entry.insert(order_item_data);
@@ -201,9 +203,10 @@ impl OrderStoreFilter for InMemoryStore {
     where
         F: Fn(&OrderData) -> bool,
     {
-        let orders: Vec<_> = self.orders
-            .read()
-            .map_err(|_| "not good!")?
+        let store_data = &self.data.read().map_err(|_| "not good!")?;
+
+        let orders: Vec<_> = store_data
+            .orders
             .values()
             .filter(|o| predicate(&o.0))
             .map(|o| o.0.clone())
@@ -215,8 +218,10 @@ impl OrderStoreFilter for InMemoryStore {
 
 pub(in domain) fn in_memory_store() -> InMemoryStore {
     InMemoryStore {
-        orders: RwLock::new(HashMap::new()),
-        order_items: RwLock::new(HashMap::new()),
+        data: RwLock::new(InMemoryStoreInner {
+            orders: HashMap::new(),
+            line_items: HashMap::new(),
+        }),
     }
 }
 
