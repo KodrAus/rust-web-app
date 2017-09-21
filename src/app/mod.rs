@@ -5,9 +5,9 @@ Rocket app configuration.
 use rocket;
 use domain::Resolver;
 
-mod products;
-mod orders;
-mod customers;
+pub mod products;
+pub mod orders;
+pub mod customers;
 
 pub fn start() {
     rocket::ignite()

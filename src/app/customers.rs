@@ -1,3 +1,5 @@
+/*! `/customers` */
+
 use std::convert::TryFrom;
 
 use rocket::State;
@@ -9,8 +11,9 @@ use domain::customers::*;
 
 pub type Error = String;
 
+/** `GET /customers/<id>` */
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
+pub fn get(id: String, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
     let query = resolver.get_customer_with_orders_query();
 
     let id = CustomerId::try_from(&id)?;
@@ -20,8 +23,9 @@ fn get(id: String, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>
     Ok(Json(order))
 }
 
+/** `PUT /customers` */
 #[put("/", format = "application/json")]
-fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
+pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
     let id_provider = resolver.customer_id_provider();
     let mut command = resolver.create_customer_command();
 

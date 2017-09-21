@@ -1,3 +1,5 @@
+/*! `/products` */
+
 use std::convert::TryFrom;
 
 use rocket::State;
@@ -16,8 +18,9 @@ pub struct Get {
     pub price: f32,
 }
 
+/** `GET /products/<id>` */
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
+pub fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
     let query = resolver.get_product_query();
 
     let id = ProductId::try_from(&id)?;
@@ -37,8 +40,9 @@ pub struct Create {
     pub price: f32,
 }
 
+/** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
-fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, Error> {
+pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, Error> {
     let id_provider = resolver.product_id_provider();
     let mut command = resolver.create_product_command();
 
@@ -53,6 +57,7 @@ fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductI
     Ok(Json(id))
 }
 
+/** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
 fn set_title(id: String, title: String, resolver: State<Resolver>) -> Result<(), Error> {
     let mut command = resolver.set_product_title_command();

@@ -1,3 +1,4 @@
+/*! `/orders` */
 use std::convert::TryFrom;
 
 use rocket::State;
@@ -11,8 +12,9 @@ use domain::products::*;
 
 pub type Error = String;
 
+/** `GET /orders/<id>` */
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, Error> {
+pub fn get(id: String, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, Error> {
     let query = resolver.get_order_with_products_query();
 
     let id = OrderId::try_from(&id)?;
@@ -27,8 +29,9 @@ pub struct Create {
     pub customer: String,
 }
 
+/** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
-fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, Error> {
+pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, Error> {
     let id_provider = resolver.order_id_provider();
     let mut command = resolver.create_order_command();
 
@@ -48,8 +51,9 @@ pub struct ProductQuantity {
     quantity: u32,
 }
 
+/** `POST /orders/<id>/products/<product_id>` */
 #[post("/<id>/products/<product_id>", format = "application/json", data = "<data>")]
-fn add_or_update_product(id: String, product_id: String, data: Json<ProductQuantity>, resolver: State<Resolver>) -> Result<Json<LineItemId>, Error> {
+pub fn add_or_update_product(id: String, product_id: String, data: Json<ProductQuantity>, resolver: State<Resolver>) -> Result<Json<LineItemId>, Error> {
     let mut command = resolver.add_or_update_product_command();
 
     let id = OrderId::try_from(&id)?;
