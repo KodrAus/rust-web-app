@@ -1,5 +1,7 @@
-mod set_product_title;
-pub use self::set_product_title::*;
+/*! Commands for modifying product state. */
 
-mod create_product;
-pub use self::create_product::*;
+pub mod create_product;
+pub use self::create_product::{CreateProduct, CreateProductCommand};
+
+pub mod set_product_title;
+pub use self::set_product_title::{SetProductTitle, SetProductTitleCommand};

@@ -1,3 +1,5 @@
+/*! Domain module for products. */
+
 pub mod resolver;
 pub mod model;
 pub mod commands;

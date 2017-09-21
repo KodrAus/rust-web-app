@@ -9,8 +9,10 @@ use domain::orders::*;
 use domain::customers::*;
 use domain::products::*;
 
+pub type Error = String;
+
 #[get("/<id>")]
-fn get(id: String, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, GetOrderQueryError> {
+fn get(id: String, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, Error> {
     let query = resolver.get_order_with_products_query();
 
     let id = OrderId::try_from(&id)?;
@@ -26,8 +28,8 @@ pub struct Create {
 }
 
 #[put("/", format = "application/json", data = "<data>")]
-fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, CreateOrderError> {
-    let id_provider = resolver.orders().order_id_provider();
+fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, Error> {
+    let id_provider = resolver.order_id_provider();
     let mut command = resolver.create_order_command();
 
     let id = id_provider.id()?;
@@ -47,7 +49,7 @@ pub struct ProductQuantity {
 }
 
 #[post("/<id>/products/<product_id>", format = "application/json", data = "<data>")]
-fn add_or_update_product(id: String, product_id: String, data: Json<ProductQuantity>, resolver: State<Resolver>) -> Result<Json<LineItemId>, AddOrUpdateProductError> {
+fn add_or_update_product(id: String, product_id: String, data: Json<ProductQuantity>, resolver: State<Resolver>) -> Result<Json<LineItemId>, Error> {
     let mut command = resolver.add_or_update_product_command();
 
     let id = OrderId::try_from(&id)?;

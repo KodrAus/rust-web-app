@@ -1,3 +1,5 @@
+/*! Domain module for customers. */
+
 pub mod resolver;
 pub mod model;
 pub mod queries;

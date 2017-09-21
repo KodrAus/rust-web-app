@@ -1,3 +1,5 @@
+/*! Contains the `CreateOrderCommand` type. */
+
 use auto_impl::auto_impl;
 
 use domain::customers::CustomerId;
@@ -5,19 +7,23 @@ use domain::customers::queries::{GetCustomer, GetCustomerQuery};
 use domain::orders::{Order, OrderId, OrderStore};
 use domain::Resolver;
 
-pub type CreateOrderError = String;
+pub type Error = String;
+pub type Result = ::std::result::Result<(), Error>;
 
+/** Input for a `CreateOrderCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateOrder {
     pub id: OrderId,
     pub customer_id: CustomerId,
 }
 
+/** Create a new order. */
 #[auto_impl(FnMut)]
 pub trait CreateOrderCommand {
-    fn create_order<'a>(&mut self, command: CreateOrder) -> Result<(), CreateOrderError>;
+    fn create_order<'a>(&mut self, command: CreateOrder) -> Result;
 }
 
+/** Default implementation for a `CreateOrderCommand`. */
 pub fn create_order_command<TStore, TGetCustomer>(store: TStore, query: TGetCustomer) -> impl CreateOrderCommand
 where
     TStore: OrderStore,
@@ -53,6 +59,7 @@ impl Resolver {
 #[cfg(test)]
 mod tests {
     use domain::customers::*;
+    use domain::customers::queries::get_customer::Result as QueryResult;
     use domain::customers::model::test_data::CustomerBuilder;
     use domain::orders::model::store::in_memory_store;
     use domain::orders::*;
@@ -70,7 +77,7 @@ mod tests {
         };
 
         let mut cmd = create_order_command(&store, move |_| {
-            let customer: GetCustomerQueryResult = Ok(CustomerBuilder::new().id(customer_id).build());
+            let customer: QueryResult = Ok(CustomerBuilder::new().id(customer_id).build());
             customer
         });
 

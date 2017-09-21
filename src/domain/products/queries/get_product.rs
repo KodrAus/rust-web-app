@@ -1,21 +1,26 @@
+/*! Contains the `GetProductQuery` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
 use domain::products::{Product, ProductId, ProductStore};
 
-pub type GetProductQueryError = String;
-pub type GetProductQueryResult = Result<Product, GetProductQueryError>;
+pub type Error = String;
+pub type Result = ::std::result::Result<Product, Error>;
 
+/** Input for a `GetProductQuery`. */
 #[derive(Deserialize)]
 pub struct GetProduct {
     pub id: ProductId,
 }
 
+/** Get a product entity. */
 #[auto_impl(Fn)]
 pub trait GetProductQuery {
-    fn get_product(&self, query: GetProduct) -> Result<Product, GetProductQueryError>;
+    fn get_product(&self, query: GetProduct) -> Result;
 }
 
+/** Default implementation for a `GetProductQuery`. */
 pub fn get_product_query<TStore>(store: TStore) -> impl GetProductQuery
 where
     TStore: ProductStore,

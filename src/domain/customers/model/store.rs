@@ -1,3 +1,5 @@
+/*! Persistent customer storage. */
+
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
@@ -13,7 +15,7 @@ mod re_export {
     use domain::customers::{Customer, CustomerId};
     use super::Error;
 
-    /// A place to persist and fetch customer entities.
+    /** A place to persist and fetch customers. */
     #[auto_impl(Arc)]
     pub trait CustomerStore {
         fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;
@@ -36,7 +38,7 @@ mod re_export {
 
 pub(in domain::customers) use self::re_export::CustomerStore;
 
-/// A test in-memory customer store.
+/* A test in-memory customer store. */
 pub type InMemoryStore = RwLock<HashMap<CustomerId, CustomerData>>;
 
 impl CustomerStore for InMemoryStore {
@@ -80,6 +82,7 @@ pub fn in_memory_store() -> InMemoryStore {
     RwLock::new(HashMap::new())
 }
 
+/** Default implementation for a `CustomerStore`. */
 pub fn customer_store() -> impl CustomerStore {
     in_memory_store()
 }

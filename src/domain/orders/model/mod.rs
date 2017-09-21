@@ -1,5 +1,5 @@
 /*!
-Entities for orders and line items.
+Contains the `Order` and `OrderLineItem` entities.
 
 The separation between `Order` and `OrderLineItem` is kind of arbitrary, and may end up being a bit of a nuisance.
 If this becomes the case then rather than coupling the two together even more, we should make sure they're separated.
@@ -16,13 +16,14 @@ pub mod store;
 #[cfg(test)]
 pub mod test_data;
 
+use domain::Resolver;
 use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
 use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData, CustomerId};
 
-pub type OrderError = String;
+pub type Error = String;
 
 pub type OrderId = Id<OrderData>;
 pub type NextOrderId = NextId<OrderData>;
@@ -31,11 +32,15 @@ pub type LineItemId = Id<LineItemData>;
 pub type NextLineItemId = NextId<LineItemData>;
 pub type LineItemVersion = Version<LineItemData>;
 
-/// An order item quantity.
+/**
+An order item quantity.
+
+Quantities must be greater than zero.
+*/
 pub struct Quantity(u32);
 
 impl TryFrom<u32> for Quantity {
-    type Error = OrderError;
+    type Error = Error;
 
     fn try_from(quantity: u32) -> Result<Self, Self::Error> {
         if quantity < 1 {
@@ -46,6 +51,7 @@ impl TryFrom<u32> for Quantity {
     }
 }
 
+/** Data for an order. */
 #[derive(Clone, Serialize, Deserialize)]
 pub struct OrderData {
     pub id: OrderId,
@@ -54,6 +60,7 @@ pub struct OrderData {
     _private: (),
 }
 
+/** Data for a single order line item. */
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LineItemData {
     pub id: LineItemId,
@@ -64,26 +71,32 @@ pub struct LineItemData {
     _private: (),
 }
 
-/// An order and its line items.
-///
-/// Products can be added to an order as a line item, so long as it isn't already there.
+/**
+An order and its line items.
+
+Products can be added to an order as a line item.
+*/
 pub struct Order {
     order: OrderData,
     line_items: Vec<LineItemData>,
 }
 
-/// An order and one of its line items.
-///
-/// Properties on the line item can be updated.
+/**
+An order and one of its line items.
+
+Properties on the line item can be updated.
+*/
 pub struct OrderLineItem {
     order: OrderData,
     line_item: LineItemData,
 }
 
-/// An attempt to turn an order into a line item.
-///
-/// If the line item was in the order then the result is `InOrder`.
-/// If the line item was not in the order then the result is `NotInOrder`.
+/**
+An attempt to turn an order into a line item.
+
+If the line item was in the order then the result is `InOrder`.
+If the line item was not in the order then the result is `NotInOrder`.
+*/
 pub enum IntoLineItem {
     InOrder(OrderLineItem),
     NotInOrder(Order),
@@ -105,9 +118,9 @@ impl OrderLineItem {
         (self.order.id, &self.line_item)
     }
 
-    pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), OrderError>
+    pub fn set_quantity<TQuantity>(&mut self, quantity: TQuantity) -> Result<(), Error>
     where
-        TQuantity: TryInto<Quantity, Error = OrderError>,
+        TQuantity: TryInto<Quantity, Error = Error>,
     {
         self.line_item.quantity = quantity.try_into()?.0;
 
@@ -153,7 +166,7 @@ impl Order {
         }
     }
 
-    pub fn new<TId>(id_provider: TId, customer: &Customer) -> Result<Self, OrderError>
+    pub fn new<TId>(id_provider: TId, customer: &Customer) -> Result<Self, Error>
     where
         TId: IdProvider<OrderData>,
     {
@@ -178,10 +191,10 @@ impl Order {
             .any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId, TQuantity>(&mut self, id_provider: TId, product: &Product, quantity: TQuantity) -> Result<(), OrderError>
+    pub fn add_product<TId, TQuantity>(&mut self, id_provider: TId, product: &Product, quantity: TQuantity) -> Result<(), Error>
     where
         TId: IdProvider<LineItemData>,
-        TQuantity: TryInto<Quantity, Error = OrderError>,
+        TQuantity: TryInto<Quantity, Error = Error>,
     {
         let &ProductData {
             id: product_id,
@@ -213,14 +226,24 @@ impl Entity for Order {
     type Id = OrderId;
     type Version = OrderVersion;
     type Data = OrderData;
-    type Error = OrderError;
+    type Error = Error;
 }
 
 impl Entity for OrderLineItem {
     type Id = LineItemId;
     type Version = LineItemVersion;
     type Data = LineItemData;
-    type Error = OrderError;
+    type Error = Error;
+}
+
+impl Resolver {
+    pub fn order_id_provider(&self) -> impl IdProvider<OrderData> {
+        NextId::<OrderData>::new()
+    }
+
+    pub fn line_item_id_provider(&self) -> impl IdProvider<LineItemData> {
+        NextId::<LineItemData>::new()
+    }
 }
 
 #[cfg(test)]

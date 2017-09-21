@@ -1,16 +1,20 @@
+/*! Contains the `GetProductSummariesQuery` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
-use domain::products::{Product, ProductId, ProductStoreFilter};
+use domain::products::{ProductId, ProductStoreFilter};
 
-pub type GetProductSummariesQueryError = String;
-pub type GetProductSummariesQueryResult = Result<Product, GetProductSummariesQueryError>;
+pub type Error = String;
+pub type Result = ::std::result::Result<Vec<ProductSummary>, Error>;
 
+/** Input for a `GetProductSummariesQuery`. */
 #[derive(Deserialize)]
 pub struct GetProductSummaries {
     pub ids: Vec<ProductId>,
 }
 
+/** An individual product summary. */
 #[derive(Serialize)]
 pub struct ProductSummary {
     pub id: ProductId,
@@ -18,11 +22,13 @@ pub struct ProductSummary {
     pub price: f32,
 }
 
+/** Get a collection of product summaries. */
 #[auto_impl(Fn)]
 pub trait GetProductSummariesQuery {
-    fn get_product_summaries(&self, query: GetProductSummaries) -> Result<Vec<ProductSummary>, GetProductSummariesQueryError>;
+    fn get_product_summaries(&self, query: GetProductSummaries) -> Result;
 }
 
+/** Default implementation for a `GetProductSummariesQuery`. */
 pub fn get_product_summaries_query<TStore>(store: TStore) -> impl GetProductSummariesQuery
 where
     TStore: ProductStoreFilter,

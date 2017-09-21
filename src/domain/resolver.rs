@@ -1,38 +1,44 @@
-use domain::products::resolver::Resolver as ProductResolver;
-use domain::orders::resolver::Resolver as OrderResolver;
-use domain::customers::resolver::Resolver as CustomerResolver;
+/*! Contains the root `Resolver` type. */
 
-/// Resolver for the domain.
-///
-/// The `Resolver` type wraps resolvers from other modules.
-/// Private implementation details live on the wrapped resolvers.
-/// Commands and queries are resolved from this `Resolver`.
+use domain::products::resolver::ProductsResolver;
+use domain::orders::resolver::OrdersResolver;
+use domain::customers::resolver::CustomersResolver;
+
+/**
+Resolver for the domain.
+
+The goal of the resolver is to let consumers construct components without having to know what their dependencies are.
+
+The `Resolver` type wraps resolvers from other modules.
+Private implementation details live on the wrapped resolvers.
+Commands and queries are resolved from this `Resolver`.
+*/
 pub struct Resolver {
-    product_resolver: ProductResolver,
-    order_resolver: OrderResolver,
-    customer_resolver: CustomerResolver,
+    product_resolver: ProductsResolver,
+    order_resolver: OrdersResolver,
+    customer_resolver: CustomersResolver,
 }
 
 impl Default for Resolver {
     fn default() -> Self {
         Resolver {
-            product_resolver: ProductResolver::default(),
-            order_resolver: OrderResolver::default(),
-            customer_resolver: CustomerResolver::default(),
+            product_resolver: ProductsResolver::default(),
+            order_resolver: OrdersResolver::default(),
+            customer_resolver: CustomersResolver::default(),
         }
     }
 }
 
 impl Resolver {
-    pub fn products(&self) -> &ProductResolver {
+    pub(in domain) fn products(&self) -> &ProductsResolver {
         &self.product_resolver
     }
 
-    pub fn orders(&self) -> &OrderResolver {
+    pub(in domain) fn orders(&self) -> &OrdersResolver {
         &self.order_resolver
     }
 
-    pub fn customers(&self) -> &CustomerResolver {
+    pub(in domain) fn customers(&self) -> &CustomersResolver {
         &self.customer_resolver
     }
 }

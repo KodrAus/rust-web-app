@@ -1,3 +1,5 @@
+/*! Contains the `AddOrUpdateProductCommand` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
@@ -6,8 +8,10 @@ use domain::products::ProductId;
 use domain::products::queries::{GetProduct, GetProductQuery};
 use domain::orders::{IntoLineItem, LineItemData, LineItemId, OrderId, OrderStore};
 
-pub type AddOrUpdateProductError = String;
+pub type Error = String;
+pub type Result = ::std::result::Result<LineItemId, Error>;
 
+/** Input for an `AddOrUpdateProductCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct AddOrUpdateProduct {
     pub id: OrderId,
@@ -15,11 +19,13 @@ pub struct AddOrUpdateProduct {
     pub quantity: u32,
 }
 
+/** Add or update a product line item on an order. */
 #[auto_impl(FnMut)]
 pub trait AddOrUpdateProductCommand {
-    fn add_or_update_product(&mut self, command: AddOrUpdateProduct) -> Result<LineItemId, AddOrUpdateProductError>;
+    fn add_or_update_product(&mut self, command: AddOrUpdateProduct) -> Result;
 }
 
+/** Default implementation for an `AddOrUpdateProductCommand`. */
 pub fn add_or_update_product_command<TStore, TLineItemIdProvider, TGetProduct>(store: TStore, id_provider: TLineItemIdProvider, query: TGetProduct) -> impl AddOrUpdateProductCommand
 where
     TStore: OrderStore,
@@ -58,7 +64,7 @@ where
 impl Resolver {
     pub fn add_or_update_product_command(&self) -> impl AddOrUpdateProductCommand {
         let order_store = self.orders().order_store();
-        let id_provider = self.orders().line_item_id_provider();
+        let id_provider = self.line_item_id_provider();
 
         let get_product = self.get_product_query();
 
@@ -69,6 +75,7 @@ impl Resolver {
 #[cfg(test)]
 mod tests {
     use domain::products::*;
+    use domain::products::queries::get_product::Result as QueryResult;
     use domain::products::model::test_data::ProductBuilder;
     use domain::orders::*;
     use domain::orders::model::store::in_memory_store;
@@ -88,7 +95,7 @@ mod tests {
             .unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: GetProductQueryResult = Ok(ProductBuilder::new().id(product_id).build());
+            let product: QueryResult = Ok(ProductBuilder::new().id(product_id).build());
             product
         });
 
@@ -127,7 +134,7 @@ mod tests {
         store.set_order(order).unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: GetProductQueryResult = Ok(ProductBuilder::new().id(product_id).build());
+            let product: QueryResult = Ok(ProductBuilder::new().id(product_id).build());
             product
         });
 

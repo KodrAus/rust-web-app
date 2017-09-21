@@ -1,21 +1,26 @@
+/*! Contains the `GetCustomerQuery` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
 use domain::customers::{Customer, CustomerId, CustomerStore};
 
-pub type GetCustomerQueryError = String;
-pub type GetCustomerQueryResult = Result<Customer, GetCustomerQueryError>;
+pub type Error = String;
+pub type Result = ::std::result::Result<Customer, Error>;
 
+/** Input for a `GetCustomerQuery`. */
 #[derive(Deserialize)]
 pub struct GetCustomer {
     pub id: CustomerId,
 }
 
+/** Get a customer entity. */
 #[auto_impl(Fn)]
 pub trait GetCustomerQuery {
-    fn get_customer(&self, query: GetCustomer) -> Result<Customer, GetCustomerQueryError>;
+    fn get_customer(&self, query: GetCustomer) -> Result;
 }
 
+/** Default implementation for a `GetCustomerQuery`. */
 pub fn get_customer_query<TStore>(store: TStore) -> impl GetCustomerQuery
 where
     TStore: CustomerStore,

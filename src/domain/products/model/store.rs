@@ -1,3 +1,5 @@
+/*! Persistent storage for products. */
+
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
@@ -14,7 +16,7 @@ mod re_export {
     use domain::products::{Product, ProductData, ProductId};
     use super::Error;
 
-    /// A place to persist and fetch product entities.
+    /* A place to persist and fetch product entities. */
     #[auto_impl(Arc)]
     pub trait ProductStore {
         fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error>;
@@ -34,12 +36,14 @@ mod re_export {
         }
     }
 
-    /// An additional store for fetching multiple product records at a time.
-    /// 
-    /// This trait is an implementation detail that lets us fetch more than one product.
-    /// It will probably need to be refactored or just removed when we add a proper database.
-    /// The fact that it's internal to `domain::products` though means the scope of breakage is a bit smaller.
-    /// Commands and queries that depend on `ProductStoreFilter` won't need to break their public API.
+    /**
+    An additional store for fetching multiple product records at a time.
+    
+    This trait is an implementation detail that lets us fetch more than one product.
+    It will probably need to be refactored or just removed when we add a proper database.
+    The fact that it's internal to `domain::products` though means the scope of breakage is a bit smaller.
+    Commands and queries that depend on `ProductStoreFilter` won't need to break their public API.
+    */
     #[auto_impl(Arc)]
     pub trait ProductStoreFilter {
         fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
@@ -64,7 +68,7 @@ mod re_export {
 
 pub(in domain::products) use self::re_export::{Iter, ProductStore, ProductStoreFilter};
 
-/// A test in-memory product store.
+/** A test in-memory product store. */
 pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
 
 impl ProductStore for InMemoryStore {
@@ -124,6 +128,7 @@ pub(in domain::products) fn in_memory_store() -> InMemoryStore {
     RwLock::new(HashMap::new())
 }
 
+/** Default implementation for a `ProductStore`. */
 pub fn product_store() -> impl ProductStore {
     in_memory_store()
 }

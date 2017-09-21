@@ -1,10 +1,14 @@
+/*! Contains the `CreateProductCommand` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
 use domain::products::{Product, ProductId, ProductStore};
 
-pub type CreateProductError = String;
+pub type Error = String;
+pub type Result = ::std::result::Result<(), Error>;
 
+/** Input for a `CreateProductCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateProduct {
     pub id: ProductId,
@@ -12,11 +16,13 @@ pub struct CreateProduct {
     pub price: f32,
 }
 
+/** Create a new product. */
 #[auto_impl(FnMut)]
 pub trait CreateProductCommand {
-    fn create_product(&mut self, command: CreateProduct) -> Result<(), CreateProductError>;
+    fn create_product(&mut self, command: CreateProduct) -> Result;
 }
 
+/** Default implementation for a `CreateProductCommand`. */
 pub fn create_product_command<TStore>(store: TStore) -> impl CreateProductCommand
 where
     TStore: ProductStore,

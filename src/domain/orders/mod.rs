@@ -1,3 +1,5 @@
+/*! Domain module for orders. */
+
 pub mod resolver;
 pub mod model;
 pub mod queries;

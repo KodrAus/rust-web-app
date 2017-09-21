@@ -1,6 +1,4 @@
-/*!
-Entities for products.
-*/
+/*! Contains the `Product` entity. */
 
 use std::convert::{TryFrom, TryInto};
 
@@ -9,19 +7,26 @@ pub mod store;
 #[cfg(test)]
 pub mod test_data;
 
+use domain::Resolver;
 use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
+
+pub type Error = String;
 
 pub type ProductId = Id<ProductData>;
 pub type NextProductId = NextId<ProductData>;
 pub type ProductVersion = Version<ProductData>;
 
-/// A product title.
+/**
+A product title.
+
+The title must not be empty.
+*/
 pub struct Title(String);
 
 impl TryFrom<String> for Title {
-    type Error = ProductError;
+    type Error = Error;
 
     fn try_from(title: String) -> Result<Self, Self::Error> {
         if title.len() == 0 {
@@ -33,18 +38,22 @@ impl TryFrom<String> for Title {
 }
 
 impl<'a> TryFrom<&'a str> for Title {
-    type Error = ProductError;
+    type Error = Error;
 
     fn try_from(title: &'a str) -> Result<Self, Self::Error> {
         Self::try_from(title.to_owned())
     }
 }
 
-/// A produce price.
+/**
+A produce price.
+
+The price must be greater than zero.
+*/
 pub struct Price(f32);
 
 impl TryFrom<f32> for Price {
-    type Error = ProductError;
+    type Error = Error;
 
     fn try_from(price: f32) -> Result<Self, Self::Error> {
         if !price.is_normal() || !price.is_sign_positive() {
@@ -55,8 +64,7 @@ impl TryFrom<f32> for Price {
     }
 }
 
-pub type ProductError = String;
-
+/** Data for a product. */
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ProductData {
     pub id: ProductId,
@@ -66,7 +74,7 @@ pub struct ProductData {
     _private: (),
 }
 
-/// A product with metadata.
+/** A product with some simple metadata. */
 pub struct Product {
     data: ProductData,
 }
@@ -84,11 +92,11 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(id_provider: TId, title: TTitle, price: TPrice) -> Result<Self, ProductError>
+    pub fn new<TId, TTitle, TPrice>(id_provider: TId, title: TTitle, price: TPrice) -> Result<Self, Error>
     where
         TId: IdProvider<ProductData>,
-        TTitle: TryInto<Title, Error = ProductError>,
-        TPrice: TryInto<Price, Error = ProductError>,
+        TTitle: TryInto<Title, Error = Error>,
+        TPrice: TryInto<Price, Error = Error>,
     {
         let id = id_provider.id()?;
 
@@ -101,9 +109,9 @@ impl Product {
         }))
     }
 
-    pub fn set_title<TTitle>(&mut self, title: TTitle) -> Result<(), ProductError>
+    pub fn set_title<TTitle>(&mut self, title: TTitle) -> Result<(), Error>
     where
-        TTitle: TryInto<Title, Error = ProductError>,
+        TTitle: TryInto<Title, Error = Error>,
     {
         self.data.title = title.try_into()?.0;
 
@@ -115,7 +123,13 @@ impl Entity for Product {
     type Id = ProductId;
     type Version = ProductVersion;
     type Data = ProductData;
-    type Error = ProductError;
+    type Error = Error;
+}
+
+impl Resolver {
+    pub fn product_id_provider(&self) -> impl IdProvider<ProductData> {
+        NextId::<ProductData>::new()
+    }
 }
 
 #[cfg(test)]

@@ -1,3 +1,5 @@
+/*! Persistent order storage. */
+
 use std::collections::{HashMap, HashSet};
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
@@ -13,7 +15,7 @@ mod re_export {
     use domain::orders::{LineItemId, Order, OrderId, OrderLineItem};
     use super::Error;
 
-    /// A place to persist and fetch order entities.
+    /** A place to persist and fetch order entities. */
     #[auto_impl(Arc)]
     pub trait OrderStore {
         fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;
@@ -47,7 +49,7 @@ mod re_export {
 
 pub(in domain::orders) use self::re_export::OrderStore;
 
-/// A test in-memory order store.
+/** A test in-memory order store. */
 pub(in domain) struct InMemoryStore {
     orders: RwLock<HashMap<OrderId, (OrderData, HashSet<LineItemId>)>>,
     order_items: RwLock<HashMap<LineItemId, LineItemData>>,
@@ -171,6 +173,7 @@ pub(in domain) fn in_memory_store() -> InMemoryStore {
     }
 }
 
+/** Default implementation for an `OrderStore`. */
 pub fn order_store() -> impl OrderStore {
     in_memory_store()
 }
@@ -180,7 +183,6 @@ mod tests {
     use domain::orders::model::test_data::OrderBuilder;
     use domain::orders::*;
     use domain::products::model::test_data::default_product;
-    use domain::products::*;
     use super::*;
 
     #[test]

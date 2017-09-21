@@ -1,23 +1,28 @@
+/*! Contains the `GetOrderWithProductsQuery` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
 use domain::products::{GetProductSummaries, GetProductSummariesQuery, ProductId};
-use domain::orders::{LineItemId, Order, OrderId, OrderStore};
+use domain::orders::{LineItemId, OrderId, OrderStore};
 
-pub type GetOrderWithProductsQueryError = String;
-pub type GetOrderWithProductsQueryResult = Result<Order, GetOrderWithProductsQueryError>;
+pub type Error = String;
+pub type Result = ::std::result::Result<OrderWithProducts, Error>;
 
+/** Input for a `GetOrderWithProductsQuery`. */
 #[derive(Deserialize)]
 pub struct GetOrderWithProducts {
     pub id: OrderId,
 }
 
+/** An order with a product summary for each of its line items. */
 #[derive(Serialize)]
 pub struct OrderWithProducts {
     pub id: OrderId,
     pub line_items: Vec<ProductLineItem>,
 }
 
+/** An individual line item with a product summary. */
 #[derive(Serialize)]
 pub struct ProductLineItem {
     pub line_item_id: LineItemId,
@@ -27,11 +32,13 @@ pub struct ProductLineItem {
     pub quantity: u32,
 }
 
+/** Get an order along with a product summary for each line item. */
 #[auto_impl(Fn)]
 pub trait GetOrderWithProductsQuery {
-    fn get_order_with_products(&self, query: GetOrderWithProducts) -> Result<OrderWithProducts, GetOrderWithProductsQueryError>;
+    fn get_order_with_products(&self, query: GetOrderWithProducts) -> Result;
 }
 
+/** Default implementation for a `GetOrderWithProductsQuery`. */
 pub fn get_order_with_products_query<TStore, TQuery>(store: TStore, products_query: TQuery) -> impl GetOrderWithProductsQuery
 where
     TStore: OrderStore,

@@ -1,3 +1,5 @@
+/*! Contains the shared `Id` type. */
+
 use std::convert::TryFrom;
 use std::cmp::Ordering;
 use std::fmt::{self, Formatter, Result as FmtResult};
@@ -7,11 +9,14 @@ use serde::ser::{Serialize, Serializer};
 use serde::de::{Deserialize, Deserializer};
 use uuid::Uuid;
 
-pub type IdError = String;
+pub type Error = String;
 
-/// An id.
-///
-/// Ids have a phantom generic parameter so you can't compare an `Id<T>` to an `Id<U>`.
+/**
+An id.
+
+Ids have a phantom generic parameter so you can't compare an `Id<T>` to an `Id<U>`.
+It means you also can't use an `Id<T>` in place of an `Id<U>`.
+*/
 pub struct Id<T>(Uuid, PhantomData<T>);
 
 impl<T> fmt::Debug for Id<T> {
@@ -71,7 +76,7 @@ impl<T> Id<T> {
 }
 
 impl<'a, T> TryFrom<&'a str> for Id<T> {
-    type Error = IdError;
+    type Error = Error;
 
     fn try_from(id: &'a str) -> Result<Self, Self::Error> {
         Ok(Id(
@@ -100,17 +105,22 @@ impl<'de, T> Deserialize<'de> for Id<T> {
     }
 }
 
-/// A builder for a new id.
+/**
+A builder for a new id.
+
+Items that need to generate an id should depend on an `IdProvider` rather than taking an `Id` directly.
+*/
 pub trait IdProvider<T> {
-    fn id(&self) -> Result<Id<T>, IdError>;
+    fn id(&self) -> Result<Id<T>, Error>;
 }
 
 impl<T> IdProvider<T> for Id<T> {
-    fn id(&self) -> Result<Id<T>, IdError> {
+    fn id(&self) -> Result<Id<T>, Error> {
         Ok(*self)
     }
 }
 
+/** Generate a new `Id` randomly. */
 pub struct NextId<T>(PhantomData<T>);
 
 impl<T> NextId<T> {
@@ -124,7 +134,7 @@ impl<T> NextId<T> {
 }
 
 impl<T> IdProvider<T> for NextId<T> {
-    fn id(&self) -> Result<Id<T>, IdError> {
+    fn id(&self) -> Result<Id<T>, Error> {
         Ok(self.next())
     }
 }

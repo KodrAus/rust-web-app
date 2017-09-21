@@ -1,20 +1,26 @@
+/*! Contains the `CreateCustomerCommand` type. */
+
 use auto_impl::auto_impl;
 
 use domain::Resolver;
 use domain::customers::{Customer, CustomerId, CustomerStore};
 
-pub type CreateCustomerError = String;
+pub type Error = String;
+pub type Result = ::std::result::Result<(), Error>;
 
+/** Input for a `CreateCustomerCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateCustomer {
     pub id: CustomerId,
 }
 
+/** Create a customer. */
 #[auto_impl(FnMut)]
 pub trait CreateCustomerCommand {
-    fn create_customer(&mut self, command: CreateCustomer) -> Result<(), CreateCustomerError>;
+    fn create_customer(&mut self, command: CreateCustomer) -> Result;
 }
 
+/** Default implementation for a `CreateCustomerCommand`. */
 pub fn create_customer_command<TStore>(store: TStore) -> impl CreateCustomerCommand
 where
     TStore: CustomerStore,

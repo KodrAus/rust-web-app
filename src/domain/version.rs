@@ -1,3 +1,5 @@
+/*! Contains the shared `Version` type. */
+
 use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::fmt::{self, Formatter, Result as FmtResult};
@@ -6,10 +8,12 @@ use serde::ser::{Serialize, Serializer};
 use serde::de::{Deserialize, Deserializer};
 use uuid::Uuid;
 
-/// A version.
-///
-/// The version provides optimistic concurrency.
-/// Versions have a phantom generic type so you can't compare `Version<T>` to `Version<U>`.
+/**
+A version.
+
+The version provides optimistic concurrency.
+Versions have a phantom generic type so you can't compare `Version<T>` to `Version<U>`.
+*/
 pub struct Version<T>(Uuid, PhantomData<T>);
 
 impl<T> fmt::Debug for Version<T> {
