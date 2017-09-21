@@ -2,11 +2,11 @@
 
 # What's this all about?
 
-This repository contains a sample Rust application for an online store. The goal is to demonstrate some design patterns that leverage the Rust language to build scalable and maintainable applications.
+This repository contains a sample Rust application for an online store. The goal is to explore some design patterns that leverage the Rust language to build scalable and maintainable applications.
 
-It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue.
+It's a playground for different ideas, some of them might not pan out in practice. If you have any feedback on anything here please feel free to open up an issue!
 
-It's difficult to design software in a vacuum. When you don't have a real domain to drive what's important then design decisions can feel arbitrary. I've made an effort to document decisions and the reasons behind them, but questions like _should we split order items from orders?_ can't really be answered from a purely technical perspective. For anyone reading this code, I'd encourage you to scrutinise it based on those arbitrary design decisions, think of the constraints you face in your own environment and how those might inform your own decisions when building applications in Rust.
+It's difficult to design software in a vacuum. When you don't have a real domain to drive what's important then design decisions can feel arbitrary. I've made an effort to document decisions and the reasons behind them, but questions like _should we split order items from orders?_ or _should queries in orders be able to access database tables for products?_ can't really be answered from a purely technical standpoint. They require perspective on the goals of the project too. For anyone reading this code, I'd encourage you to scrutinise it based on those arbitrary design decisions, think of the constraints you face in your own environment and how those might inform your own decisions when building applications in Rust.
 
 # What's this not about?
 
@@ -14,56 +14,41 @@ It's not about specific Rust frameworks or libraries, or about solving problems 
 
 # How it works
 
-The following sections describe some of the pieces that make up the application and why they're put together the way they are.
+The following sections describe parts of the application and explain why they're put together the way they are.
 
-## Domain folders
+## Domain modules
 
-The project layout is focused mostly on privacy. By limiting the scope of certain items, you also limit the scope of potential breakage. In Rust, items that are private in a module _are visible to all of that module's children_. That might sound like a bad thing, but we leverage it to prevent domain APIs from leaking implementation details for the sake of outside concerns, like serialisation and storage.
+The project layout is focused on privacy. By limiting the scope of certain items you also limit the scope of potential breakage. By limiting the scope of certain items you also limit the scope of the burden of maintaining application state. In Rust, items that are private in a module _are visible to all of that module's children_. That might sound like a bad thing, but we leverage it to prevent domain APIs from leaking implementation details for the sake of outside concerns, like serialisation and storage.
 
-We split each core concept in the application into its own (mostly) self-contained folder, like `products` or `customers`. Each folder encapsulates everything there is to know about a particular set of entities:
+Each core business concept in the application is split into its own (mostly) self-contained folder, like `products` or `customers`. Each module encapsulates everything there is to know about a particular set of entities:
 
-- What data those entities manage
+- What data those entities encapsulate
 - How that data is stored (`/store`)
 - How that data can be queried (`/queries`)
 - How that data can be changed (`/commands`)
 
-Entities can depend on entities from another folder, like an `Order` depending on a `Product` when adding it. There's a privacy hierarchy in each domain folder:
+Entities can depend on entities from another module, like an `Order` depending on a `Product` when adding it. There's a privacy hierarchy in each domain module:
 
 - Entities are globally accessible, but have a private `from_data` method
-- The store is only accessible within the domain folder and depends on `from_data`
+- The store is only accessible within the domain module and depends on `from_data` to hydrate entities
 - Commands and queries are globally accessible and depend on the store as an implementation detail
 
-These folders are _sort of_ heavy-weight, but in a proper application adding new domain folders could be simplified using macros. I haven't used macros in this application so the code remains easy to follow.
+These modules are a bit heavy-weight, but in a proper application adding new domain modules could be simplified using macros. I haven't used macros in this application so the code remains easy to follow.
 
-One problem with a perfectly crafted module hierarchy is that it can all fall apart when you end up with a concept that simply doesn't fit in the current layout. The more frequently this happens, the more difficult it becomes to conform to the layout that existed before because nobody can tell what it should be.
+One problem with a perfectly crafted module hierarchy is that it can all fall apart when you end up with a concept that simply doesn't fit in the current layout. The more frequently this happens, the more difficult it becomes to conform to the layout that existed before because it becomes impossible to tell what it should be.
 
-We want these folders to manage their own destiny, but we don't want them to be self-contained to the point where they could be split into separate services. This is to keep things simple. If you did want to do this then I'd suggest using separate crates instead of just separate modules.
+We want these modules to manage their own destiny, but we don't want them to be self-contained to the point where they could be split into separate services. This is to keep things simple. If you did want to do this then I'd suggest using separate crates instead of just separate modules.
 
-## Dependency injection
+## Commands and queries
 
-This application doesn't use an _Inversion of Control_ container like you might be used to if you write .NET applications. This is mostly because there aren't really any for Rust. It's a hard problem.
+The application follows a simple command query responsibility segregation design. This is an approach that works nicely for data-driven application without a lot of complex logic. The commands capture some domain interaction and work directly on entities whereas queries are totally arbitrary. This application doesn't use any special infrastructure for realising CQRS, they're just simple traits implemented using a [dependency injection pattern](#dependency-injection). Essentially:
 
-Dependency injection does have benefits as a practice to lean on when designing applications though. It lets you separate the concerns of dependency resolution from app logic. It also gives you an obvious way to scale an application. This application adopts a simple pattern that gives us these benefits without a lot of infrastructure.
+- Commands return a `Result<()>`
+- Queries return a `Result<T>`
+- Commands require a `&mut self` receiver
+- Queries require a `&self` receiver
 
-### What you need to worry about when doing dependency injection
-
-- _Resolution:_ what dependencies do I need to build this thing?
-- _Injection:_ how do I get these dependencies into this thing?
-- _Storage:_ where do I store shared dependencies and remain abstract over it?
-
-### How it works
-
-Injectable components live in their own module. That module contains:
-
-- _Resolution:_ an impl block for a shared `Resolver` type that contains a method that returns the default implementation without requiring its dependencies.
-- _Injection:_ a function that provides a default implementation, requiring its dependencies as generics and returning an `impl Trait`. You never know what concrete type this default implementation uses.
-- _Storage:_ A trait that describes the component that is blanket implemented for a few smart pointers, like `Arc`, `Box`.
-
-The shared `Resolver` sounds a bit service-locator-y, and it is, but because the dependency resolution is wholly contained in impl blocks on the `Resolver` itself we avoid the issue of depending on magic global state in our app logic.
-
-To reduce boilerplate, for components with only a single method we also blanket implement them for `Fn` traits. This lets you avoid declaring a structure for them that's generic over all of their dependencies. The Rust compiler will take care of that for you.
-
-This pattern is difficult to describe in prose, you need to see it. Have a look at the `domain/products/commands/create_product` module, or the `domain/products/model/store` modules for examples of this dependency injection pattern at work.
+The difference in mutability means commands can call queries but queries can't call commands.
 
 ## Models
 
@@ -107,13 +92,28 @@ Each persistable entity has a `version` field. This field is a non-sequential id
 
 The version check works fine for the in-memory store because we have an exclusive lock on the data (only 1 caller can modify state at a time), but will need a different approach for a proper db. We can probably update where the id and version match, select the number of updated records and balk if it's 0 (means the version didn't match, or it doesn't exist).
 
-## Commands and queries
+## Dependency injection
 
-The application follows a command-query-responsibility-separation design. The commands capture some domain interaction and work directly on entities whereas queries are totally arbitrary. This application doesn't use any special infrastructure for realising CQRS, they're just simple traits implemented using the dependency injection pattern described earlier. Essentially:
+Dependency injection is beneficial as a practice to lean on when designing applications. It lets you separate the concerns of dependency resolution from app logic. It also gives you an obvious way to scale an application. This application adopts a simple pattern that gives us these benefits without a lot of infrastructure.
 
-- Commands return a `Result<()>`
-- Queries return a `Result<T>`
-- Commands require a `&mut self` receiver
-- Queries require a `&self` receiver
+This application doesn't use an inversion of control container like you might be used to if you write .NET applications. This is mostly because there aren't really any for Rust. It's a hard problem. It does utilise a simple dependency injection pattern for composing commands and queries though, even without a sophisticated container. 
 
-The difference in mutability means commands can call queries but queries can't call commands.
+### What you need to worry about when doing dependency injection
+
+- _Resolution:_ what dependencies do I need to build this thing?
+- _Injection:_ how do I get these dependencies into this thing?
+- _Storage:_ where do I store shared dependencies and remain abstract over it?
+
+### How it works
+
+Injectable components live in their own module. That module contains:
+
+- _Resolution:_ an impl block for a shared `Resolver` type that contains a method that returns the default implementation without requiring its dependencies.
+- _Injection:_ a function that provides a default implementation, requiring its dependencies as generics and returning an `impl Trait`. You never know what concrete type this default implementation uses.
+- _Storage:_ A trait that describes the component that is blanket implemented for a few smart pointers, like `Arc`, `Box`.
+
+The shared `Resolver` sounds a bit service-locator-y, and it is, but because the dependency resolution is wholly contained in impl blocks on the `Resolver` itself we avoid the issue of depending on magic global state in our app logic.
+
+To reduce boilerplate, for components with only a single method we also blanket implement them for `Fn` traits. This lets you avoid declaring a structure for them that's generic over all of their dependencies. The Rust compiler will take care of that for you.
+
+This pattern is difficult to describe in prose, you need to see it. Have a look at the `domain/products/commands/create_product` module, or the `domain/products/model/store` modules for examples of this dependency injection pattern at work.

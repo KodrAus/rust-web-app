@@ -3,8 +3,11 @@ An example Rust web application.
 
 The project is split into two main parts:
 
-- The rocket web application where the app is configured and hosted
-- The _domain_ where the app logic is defined
+- `app`: the rocket web application where the app is configured and hosted
+- `domain`: the business domain where the app logic is defined
+
+Most of the `domain` module is `pub(restricted)`, so these docs only show the items that can be consumed by the application.
+Refer to the source for a fuller picture of what's in there.
 */
 
 #![feature(plugin, proc_macro, conservative_impl_trait, try_from)]
