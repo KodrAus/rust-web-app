@@ -1,4 +1,6 @@
-# An Example Rust Application
+# An Example Rust Application [![Build Status](https://travis-ci.org/KodrAus/rust-web-app.svg?branch=master)](https://travis-ci.org/KodrAus/rust-web-app)
+
+[API docs](https://kodraus.github.io/rust-web-app/rocket_app/index.html)
 
 # What's this all about?
 
