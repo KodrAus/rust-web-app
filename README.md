@@ -1,6 +1,15 @@
 # An Example Rust Application [![Build Status](https://travis-ci.org/KodrAus/rust-web-app.svg?branch=master)](https://travis-ci.org/KodrAus/rust-web-app)
 
-[API docs](https://kodraus.github.io/rust-web-app/rocket_app/index.html)
+This application requires a `nightly` compiler to run.
+Call:
+
+```
+cargo run
+```
+
+from the repository root and you're ready to go.
+
+Also see the [API docs](https://kodraus.github.io/rust-web-app/rocket_app/index.html) for an easy way to explore the application.
 
 # What's this all about?
 
