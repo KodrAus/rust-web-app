@@ -5,6 +5,8 @@ Rocket app configuration.
 use rocket;
 use domain::Resolver;
 
+mod id;
+
 pub mod products;
 pub mod orders;
 pub mod customers;

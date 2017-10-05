@@ -1,7 +1,5 @@
 /*! `/customers` */
 
-use std::convert::TryFrom;
-
 use rocket::State;
 use rocket_contrib::Json;
 
@@ -13,10 +11,8 @@ pub type Error = String;
 
 /** `GET /customers/<id>` */
 #[get("/<id>")]
-pub fn get(id: String, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
+pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
     let query = resolver.get_customer_with_orders_query();
-
-    let id = CustomerId::try_from(&id)?;
 
     let order = query.get_customer_with_orders(GetCustomerWithOrders { id: id })?;
 

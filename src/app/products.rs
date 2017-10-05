@@ -1,7 +1,5 @@
 /*! `/products` */
 
-use std::convert::TryFrom;
-
 use rocket::State;
 use rocket_contrib::Json;
 
@@ -13,22 +11,20 @@ pub type Error = String;
 
 #[derive(Serialize)]
 pub struct Get {
-    pub id: String,
+    pub id: ProductId,
     pub title: String,
     pub price: f32,
 }
 
 /** `GET /products/<id>` */
 #[get("/<id>")]
-pub fn get(id: String, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
+pub fn get(id: ProductId, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
     let query = resolver.get_product_query();
-
-    let id = ProductId::try_from(&id)?;
 
     let product = query.get_product(GetProduct { id: id })?.into_data();
 
     Ok(Json(Get {
-        id: product.id.to_string(),
+        id: product.id,
         title: product.title,
         price: product.price,
     }))
@@ -59,10 +55,8 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
-fn set_title(id: String, title: String, resolver: State<Resolver>) -> Result<(), Error> {
+fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Result<(), Error> {
     let mut command = resolver.set_product_title_command();
-
-    let id = ProductId::try_from(&id)?;
 
     command.set_product_title(SetProductTitle {
         id: id,
