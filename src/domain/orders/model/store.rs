@@ -17,34 +17,13 @@ mod re_export {
     use super::Error;
 
     /** A place to persist and fetch order entities. */
-    #[auto_impl(Arc)]
+    #[auto_impl(&, Arc)]
     pub trait OrderStore {
         fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;
         fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error>;
 
         fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error>;
         fn set_order(&self, order: Order) -> Result<(), Error>;
-    }
-
-    impl<'a, T> OrderStore for &'a T
-    where
-        T: OrderStore,
-    {
-        fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
-            (*self).get_line_item(id, line_item_id)
-        }
-
-        fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
-            (*self).set_line_item(order)
-        }
-
-        fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error> {
-            (*self).get_order(id)
-        }
-
-        fn set_order(&self, order: Order) -> Result<(), Error> {
-            (*self).set_order(order)
-        }
     }
 
     /**
@@ -55,7 +34,7 @@ mod re_export {
     The fact that it's internal to `domain::orders` though means the scope of breakage is a bit smaller.
     Commands and queries that depend on `OrderStoreFilter` won't need to break their public API.
     */
-    #[auto_impl(Arc)]
+    #[auto_impl(&, Arc)]
     pub trait OrderStoreFilter {
         fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
         where
@@ -63,18 +42,6 @@ mod re_export {
     }
 
     pub type Iter = IntoIter<OrderData>;
-
-    impl<'a, T> OrderStoreFilter for &'a T
-    where
-        T: OrderStoreFilter,
-    {
-        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
-        where
-            F: Fn(&OrderData) -> bool,
-        {
-            (*self).filter(predicate)
-        }
-    }
 }
 
 pub(in domain::orders) use self::re_export::{Iter, OrderStore, OrderStoreFilter};

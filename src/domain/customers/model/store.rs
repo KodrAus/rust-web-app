@@ -16,23 +16,10 @@ mod re_export {
     use super::Error;
 
     /** A place to persist and fetch customers. */
-    #[auto_impl(Arc)]
+    #[auto_impl(&, Arc)]
     pub trait CustomerStore {
         fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;
         fn set_customer(&self, customer: Customer) -> Result<(), Error>;
-    }
-
-    impl<'a, T> CustomerStore for &'a T
-    where
-        T: CustomerStore,
-    {
-        fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error> {
-            (*self).get_customer(id)
-        }
-
-        fn set_customer(&self, customer: Customer) -> Result<(), Error> {
-            (*self).set_customer(customer)
-        }
     }
 }
 
