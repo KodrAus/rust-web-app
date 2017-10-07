@@ -17,23 +17,10 @@ mod re_export {
     use super::Error;
 
     /* A place to persist and fetch product entities. */
-    #[auto_impl(Arc)]
+    #[auto_impl(&, Arc)]
     pub trait ProductStore {
         fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error>;
         fn set_product(&self, product: Product) -> Result<(), Error>;
-    }
-
-    impl<'a, T> ProductStore for &'a T
-    where
-        T: ProductStore,
-    {
-        fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error> {
-            (*self).get_product(id)
-        }
-
-        fn set_product(&self, product: Product) -> Result<(), Error> {
-            (*self).set_product(product)
-        }
     }
 
     /**
@@ -44,7 +31,7 @@ mod re_export {
     The fact that it's internal to `domain::products` though means the scope of breakage is a bit smaller.
     Commands and queries that depend on `ProductStoreFilter` won't need to break their public API.
     */
-    #[auto_impl(Arc)]
+    #[auto_impl(&, Arc)]
     pub trait ProductStoreFilter {
         fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
         where
@@ -52,18 +39,6 @@ mod re_export {
     }
 
     pub type Iter = IntoIter<ProductData>;
-
-    impl<'a, T> ProductStoreFilter for &'a T
-    where
-        T: ProductStoreFilter,
-    {
-        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
-        where
-            F: Fn(&ProductData) -> bool,
-        {
-            (*self).filter(predicate)
-        }
-    }
 }
 
 pub(in domain::products) use self::re_export::{Iter, ProductStore, ProductStoreFilter};
