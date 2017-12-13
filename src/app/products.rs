@@ -3,11 +3,11 @@
 use rocket::State;
 use rocket_contrib::Json;
 
+use app::error::Error;
+
 use domain::Resolver;
 use domain::id::IdProvider;
 use domain::products::*;
-
-pub type Error = String;
 
 #[derive(Serialize)]
 pub struct Get {

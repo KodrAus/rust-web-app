@@ -3,12 +3,12 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::id::IdProvider;
 use domain::products::ProductId;
 use domain::products::queries::{GetProduct, GetProductQuery};
 use domain::orders::{IntoLineItem, LineItemData, LineItemId, OrderId, OrderStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<LineItemId, Error>;
 
 /** Input for an `AddOrUpdateProductCommand`. */
@@ -26,11 +26,10 @@ pub trait AddOrUpdateProductCommand {
 }
 
 /** Default implementation for an `AddOrUpdateProductCommand`. */
-pub fn add_or_update_product_command<TStore, TLineItemIdProvider, TGetProduct>(store: TStore, id_provider: TLineItemIdProvider, query: TGetProduct) -> impl AddOrUpdateProductCommand
-where
-    TStore: OrderStore,
-    TLineItemIdProvider: IdProvider<LineItemData>,
-    TGetProduct: GetProductQuery,
+pub fn add_or_update_product_command(
+    store: impl OrderStore,
+    id_provider: impl IdProvider<LineItemData>,
+    query: impl GetProductQuery) -> impl AddOrUpdateProductCommand 
 {
     move |command: AddOrUpdateProduct| if let Some(order) = store.get_order(command.id)? {
         let id = match order.into_line_item_for_product(command.product_id) {
@@ -57,7 +56,7 @@ where
 
         Ok(id)
     } else {
-        Err("not found")?
+        Err(err_msg("not found"))?
     }
 }
 

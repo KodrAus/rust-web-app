@@ -8,11 +8,10 @@ pub mod store;
 pub mod test_data;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
-
-pub type Error = String;
 
 pub type ProductId = Id<ProductData>;
 pub type NextProductId = NextId<ProductData>;
@@ -30,7 +29,7 @@ impl TryFrom<String> for Title {
 
     fn try_from(title: String) -> Result<Self, Self::Error> {
         if title.len() == 0 {
-            Err("title must not be empty")?
+            Err(err_msg("title must not be empty"))?
         }
 
         Ok(Title(title))
@@ -57,7 +56,7 @@ impl TryFrom<f32> for Price {
 
     fn try_from(price: f32) -> Result<Self, Self::Error> {
         if !price.is_normal() || !price.is_sign_positive() {
-            Err("price must be greater than 0")?
+            Err(err_msg("price must be greater than 0"))?
         }
 
         Ok(Price(price))

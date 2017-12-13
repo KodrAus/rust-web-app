@@ -3,10 +3,10 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::products::{GetProductSummaries, GetProductSummariesQuery, ProductId};
 use domain::orders::{LineItemId, OrderId, OrderStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<OrderWithProducts, Error>;
 
 /** Input for a `GetOrderWithProductsQuery`. */
@@ -39,13 +39,9 @@ pub trait GetOrderWithProductsQuery {
 }
 
 /** Default implementation for a `GetOrderWithProductsQuery`. */
-pub fn get_order_with_products_query<TStore, TQuery>(store: TStore, products_query: TQuery) -> impl GetOrderWithProductsQuery
-where
-    TStore: OrderStore,
-    TQuery: GetProductSummariesQuery,
-{
+pub fn get_order_with_products_query(store: impl OrderStore, products_query: impl GetProductSummariesQuery) -> impl GetOrderWithProductsQuery {
     move |query: GetOrderWithProducts| {
-        let (order, line_items) = store.get_order(query.id)?.ok_or("not found")?.into_data();
+        let (order, line_items) = store.get_order(query.id)?.ok_or(err_msg("not found"))?.into_data();
         let products = {
             let product_ids = line_items.iter().map(|l| l.product_id).collect();
             products_query.get_product_summaries(GetProductSummaries { ids: product_ids })

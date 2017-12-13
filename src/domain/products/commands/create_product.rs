@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::products::{Product, ProductId, ProductStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `CreateProductCommand`. */
@@ -23,14 +23,11 @@ pub trait CreateProductCommand {
 }
 
 /** Default implementation for a `CreateProductCommand`. */
-pub fn create_product_command<TStore>(store: TStore) -> impl CreateProductCommand
-where
-    TStore: ProductStore,
-{
+pub fn create_product_command(store: impl ProductStore) -> impl CreateProductCommand {
     move |command: CreateProduct| {
         let product = {
             if store.get_product(command.id)?.is_some() {
-                Err("already exists")?
+                Err(err_msg("already exists"))?
             } else {
                 Product::new(command.id, command.title, command.price)?
             }

@@ -3,10 +3,10 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::customers::{CustomerId, CustomerStore};
 use domain::orders::{GetOrderSummariesForCustomer, GetOrderSummariesForCustomerQuery, OrderId};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<CustomerWithOrders, Error>;
 
 /** Input for a `GetCustomerWithOrdersQuery`. */
@@ -35,15 +35,11 @@ pub trait GetCustomerWithOrdersQuery {
 }
 
 /** Default implementation for a `GetCustomerWithOrdersQuery`. */
-pub fn get_customer_with_orders_query<TStore, TQuery>(store: TStore, orders_query: TQuery) -> impl GetCustomerWithOrdersQuery
-where
-    TStore: CustomerStore,
-    TQuery: GetOrderSummariesForCustomerQuery,
-{
+pub fn get_customer_with_orders_query(store: impl CustomerStore, orders_query: impl GetOrderSummariesForCustomerQuery) -> impl GetCustomerWithOrdersQuery {
     move |query: GetCustomerWithOrders| {
         let customer = store
             .get_customer(query.id)?
-            .ok_or("not found")?
+            .ok_or(err_msg("not found"))?
             .into_data();
         let orders = orders_query.get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
 
