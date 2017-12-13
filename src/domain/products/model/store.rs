@@ -4,9 +4,8 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
 
+use domain::error::{err_msg, Error};
 use domain::products::{Product, ProductData, ProductId};
-
-pub type Error = String;
 
 // `syn` doesn't recognise `pub(restricted)`, so we re-export the store
 mod re_export {
@@ -48,7 +47,7 @@ pub(in domain::products) type InMemoryStore = RwLock<HashMap<ProductId, ProductD
 
 impl ProductStore for InMemoryStore {
     fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error> {
-        let products = self.read().map_err(|_| "not good!")?;
+        let products = self.read().map_err(|_| err_msg("not good!"))?;
 
         if let Some(data) = products.get(&id) {
             Ok(Some(Product::from_data(data.clone())))
@@ -61,7 +60,7 @@ impl ProductStore for InMemoryStore {
         let mut data = product.into_data();
         let id = data.id;
 
-        let mut products = self.write().map_err(|_| "not good!")?;
+        let mut products = self.write().map_err(|_| err_msg("not good!"))?;
 
         match products.entry(id) {
             Entry::Vacant(entry) => {
@@ -71,7 +70,7 @@ impl ProductStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err("optimistic concurrency fail")?
+                    Err(err_msg("optimistic concurrency fail"))?
                 }
 
                 data.version.next();
@@ -89,7 +88,7 @@ impl ProductStoreFilter for InMemoryStore {
         F: Fn(&ProductData) -> bool,
     {
         let products: Vec<_> = self.read()
-            .map_err(|_| "not good!")?
+            .map_err(|_| err_msg("not good!"))?
             .values()
             .filter(|p| predicate(*p))
             .cloned()

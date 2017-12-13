@@ -6,6 +6,7 @@ use rocket;
 use domain::Resolver;
 
 mod id;
+mod error;
 
 pub mod products;
 pub mod orders;

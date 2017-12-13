@@ -3,13 +3,13 @@
 use rocket::State;
 use rocket_contrib::Json;
 
+use app::error::Error;
+
 use domain::Resolver;
 use domain::id::IdProvider;
 use domain::orders::*;
 use domain::customers::*;
 use domain::products::*;
-
-pub type Error = String;
 
 /** `GET /orders/<id>` */
 #[get("/<id>")]

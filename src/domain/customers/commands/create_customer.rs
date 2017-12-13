@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::customers::{Customer, CustomerId, CustomerStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `CreateCustomerCommand`. */
@@ -21,14 +21,11 @@ pub trait CreateCustomerCommand {
 }
 
 /** Default implementation for a `CreateCustomerCommand`. */
-pub fn create_customer_command<TStore>(store: TStore) -> impl CreateCustomerCommand
-where
-    TStore: CustomerStore,
-{
+pub fn create_customer_command(store: impl CustomerStore) -> impl CreateCustomerCommand {
     move |command: CreateCustomer| {
         let customer = {
             if store.get_customer(command.id)?.is_some() {
-                Err("already exists")?
+                Err(err_msg("already exists"))?
             } else {
                 Customer::new(command.id)?
             }

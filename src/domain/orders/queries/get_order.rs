@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::orders::{Order, OrderId, OrderStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<Order, Error>;
 
 /** Input for a `GetOrderQuery`. */
@@ -21,12 +21,9 @@ pub trait GetOrderQuery {
 }
 
 /** Default implementation for a `GetOrderQuery`. */
-pub fn get_order_query<TStore>(store: TStore) -> impl GetOrderQuery
-where
-    TStore: OrderStore,
-{
+pub fn get_order_query(store: impl OrderStore) -> impl GetOrderQuery {
     move |query: GetOrder| {
-        let order = store.get_order(query.id)?.ok_or("not found")?;
+        let order = store.get_order(query.id)?.ok_or(err_msg("not found"))?;
 
         Ok(order)
     }

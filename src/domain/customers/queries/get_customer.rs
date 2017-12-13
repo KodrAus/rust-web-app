@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::customers::{Customer, CustomerId, CustomerStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<Customer, Error>;
 
 /** Input for a `GetCustomerQuery`. */
@@ -21,12 +21,9 @@ pub trait GetCustomerQuery {
 }
 
 /** Default implementation for a `GetCustomerQuery`. */
-pub fn get_customer_query<TStore>(store: TStore) -> impl GetCustomerQuery
-where
-    TStore: CustomerStore,
-{
+pub fn get_customer_query(store: impl CustomerStore) -> impl GetCustomerQuery {
     move |query: GetCustomer| {
-        let customer = store.get_customer(query.id)?.ok_or("not found")?;
+        let customer = store.get_customer(query.id)?.ok_or(err_msg("not found"))?;
 
         Ok(customer)
     }

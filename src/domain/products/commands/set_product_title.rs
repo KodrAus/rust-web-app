@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::products::{ProductId, ProductStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `SetProductTitleCommand`. */
@@ -22,10 +22,7 @@ pub trait SetProductTitleCommand {
 }
 
 /** Default implementation for a `SetProductTitleCommand`. */
-pub fn set_product_title_command<TStore>(store: TStore) -> impl SetProductTitleCommand
-where
-    TStore: ProductStore,
-{
+pub fn set_product_title_command(store: impl ProductStore) -> impl SetProductTitleCommand {
     move |command: SetProductTitle| {
         let product = {
             if let Some(mut product) = store.get_product(command.id)? {
@@ -33,7 +30,7 @@ where
 
                 product
             } else {
-                Err("not found")?
+                Err(err_msg("not found"))?
             }
         };
 

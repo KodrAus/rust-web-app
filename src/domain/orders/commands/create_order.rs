@@ -3,11 +3,11 @@
 use auto_impl::auto_impl;
 
 use domain::customers::CustomerId;
+use domain::error::{err_msg, Error};
 use domain::customers::queries::{GetCustomer, GetCustomerQuery};
 use domain::orders::{Order, OrderId, OrderStore};
 use domain::Resolver;
 
-pub type Error = String;
 pub type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `CreateOrderCommand`. */
@@ -24,15 +24,11 @@ pub trait CreateOrderCommand {
 }
 
 /** Default implementation for a `CreateOrderCommand`. */
-pub fn create_order_command<TStore, TGetCustomer>(store: TStore, query: TGetCustomer) -> impl CreateOrderCommand
-where
-    TStore: OrderStore,
-    TGetCustomer: GetCustomerQuery,
-{
+pub fn create_order_command(store: impl OrderStore, query: impl GetCustomerQuery) -> impl CreateOrderCommand {
     move |command: CreateOrder| {
         let order = {
             if store.get_order(command.id)?.is_some() {
-                Err("already exists")?
+                Err(err_msg("already exists"))?
             } else {
                 let customer = query.get_customer(GetCustomer {
                     id: command.customer_id,

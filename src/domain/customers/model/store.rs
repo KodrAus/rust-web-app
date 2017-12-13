@@ -4,9 +4,8 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::RwLock;
 
+use domain::error::{err_msg, Error};
 use domain::customers::{Customer, CustomerData, CustomerId};
-
-pub type Error = String;
 
 // `syn` doesn't recognise `pub(restricted)`, so we re-export the store
 mod re_export {
@@ -30,7 +29,7 @@ pub type InMemoryStore = RwLock<HashMap<CustomerId, CustomerData>>;
 
 impl CustomerStore for InMemoryStore {
     fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error> {
-        let customers = self.read().map_err(|_| "not good!")?;
+        let customers = self.read().map_err(|_| err_msg("not good!"))?;
 
         if let Some(data) = customers.get(&id) {
             Ok(Some(Customer::from_data(data.clone())))
@@ -43,7 +42,7 @@ impl CustomerStore for InMemoryStore {
         let mut data = customer.into_data();
         let id = data.id;
 
-        let mut customers = self.write().map_err(|_| "not good!")?;
+        let mut customers = self.write().map_err(|_| err_msg("not good!"))?;
 
         match customers.entry(id) {
             Entry::Vacant(entry) => {
@@ -53,7 +52,7 @@ impl CustomerStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err("optimistic concurrency fail")?
+                    Err(err_msg("optimistic concurrency fail"))?
                 }
 
                 data.version.next();

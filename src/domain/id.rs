@@ -9,7 +9,7 @@ use serde::ser::{Serialize, Serializer};
 use serde::de::{Deserialize, Deserializer};
 use uuid::Uuid;
 
-pub type Error = String;
+use domain::error::Error;
 
 /**
 An id.
@@ -80,7 +80,7 @@ impl<'a, T> TryFrom<&'a str> for Id<T> {
 
     fn try_from(id: &'a str) -> Result<Self, Self::Error> {
         Ok(Id(
-            Uuid::parse_str(id).map_err(|e| format!("{}", e))?,
+            Uuid::parse_str(id)?,
             PhantomData,
         ))
     }

@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::products::{Product, ProductId, ProductStore};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<Product, Error>;
 
 /** Input for a `GetProductQuery`. */
@@ -21,12 +21,9 @@ pub trait GetProductQuery {
 }
 
 /** Default implementation for a `GetProductQuery`. */
-pub fn get_product_query<TStore>(store: TStore) -> impl GetProductQuery
-where
-    TStore: ProductStore,
-{
+pub fn get_product_query(store: impl ProductStore) -> impl GetProductQuery {
     move |query: GetProduct| {
-        let product = store.get_product(query.id)?.ok_or("not found")?;
+        let product = store.get_product(query.id)?.ok_or(err_msg("not found"))?;
 
         Ok(product)
     }

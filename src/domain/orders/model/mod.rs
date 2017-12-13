@@ -17,13 +17,12 @@ pub mod store;
 pub mod test_data;
 
 use domain::Resolver;
+use domain::error::{err_msg, Error};
 use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
 use domain::products::{Product, ProductData, ProductId};
 use domain::customers::{Customer, CustomerData, CustomerId};
-
-pub type Error = String;
 
 pub type OrderId = Id<OrderData>;
 pub type NextOrderId = NextId<OrderData>;
@@ -44,7 +43,7 @@ impl TryFrom<u32> for Quantity {
 
     fn try_from(quantity: u32) -> Result<Self, Self::Error> {
         if quantity < 1 {
-            Err("quantity must be greater than 0")?
+            Err(err_msg("quantity must be greater than 0"))?
         }
 
         Ok(Quantity(quantity))
@@ -203,7 +202,7 @@ impl Order {
         } = product.to_data();
 
         if self.contains_product(product_id) {
-            Err("product is already in order")?
+            Err(err_msg("product is already in order"))?
         }
 
         let id = id_provider.id()?;

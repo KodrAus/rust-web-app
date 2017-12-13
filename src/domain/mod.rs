@@ -12,6 +12,7 @@ We shouldn't get too attached to the current structure, new information might me
 
 pub mod id;
 pub mod version;
+pub mod error;
 
 pub mod products;
 pub mod orders;

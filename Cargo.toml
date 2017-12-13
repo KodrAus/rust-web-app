@@ -15,4 +15,7 @@ serde_json = "*"
 
 uuid = { version = "*", features = ["serde", "v4"] }
 
+failure = "*"
+failure_derive = "*"
+
 auto_impl = "*"

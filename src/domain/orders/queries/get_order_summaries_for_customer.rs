@@ -3,10 +3,10 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::Error;
 use domain::customers::CustomerId;
 use domain::orders::{OrderId, OrderStoreFilter};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<Vec<OrderSummary>, Error>;
 
 /** Input for a `GetOrderSummariesForCustomerQuery`. */
@@ -28,10 +28,7 @@ pub trait GetOrderSummariesForCustomerQuery {
 }
 
 /** Default implementation for a `GetOrderSummariesForCustomerQuery`. */
-pub fn get_order_summaries_for_customer_query<TStore>(store: TStore) -> impl GetOrderSummariesForCustomerQuery
-where
-    TStore: OrderStoreFilter,
-{
+pub fn get_order_summaries_for_customer_query(store: impl OrderStoreFilter) -> impl GetOrderSummariesForCustomerQuery {
     move |query: GetOrderSummariesForCustomer| {
         let orders = store
             .filter(|o| o.customer_id == query.id)?

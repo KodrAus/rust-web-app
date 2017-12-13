@@ -3,9 +3,9 @@
 use auto_impl::auto_impl;
 
 use domain::Resolver;
+use domain::error::Error;
 use domain::products::{ProductId, ProductStoreFilter};
 
-pub type Error = String;
 pub type Result = ::std::result::Result<Vec<ProductSummary>, Error>;
 
 /** Input for a `GetProductSummariesQuery`. */
@@ -29,10 +29,7 @@ pub trait GetProductSummariesQuery {
 }
 
 /** Default implementation for a `GetProductSummariesQuery`. */
-pub fn get_product_summaries_query<TStore>(store: TStore) -> impl GetProductSummariesQuery
-where
-    TStore: ProductStoreFilter,
-{
+pub fn get_product_summaries_query(store: impl ProductStoreFilter) -> impl GetProductSummariesQuery {
     move |query: GetProductSummaries| {
         let products = store
             .filter(|p| query.ids.iter().any(|id| p.id == *id))?

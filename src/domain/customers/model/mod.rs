@@ -1,6 +1,7 @@
 /*! Contains the `Customer` entity. */
 
 use domain::Resolver;
+use domain::error::Error;
 use domain::entity::Entity;
 use domain::id::{Id, IdProvider, NextId};
 use domain::version::Version;
@@ -10,8 +11,6 @@ pub mod store;
 pub type CustomerId = Id<CustomerData>;
 pub type NextCustomerId = NextId<CustomerData>;
 pub type CustomerVersion = Version<CustomerData>;
-
-pub type Error = String;
 
 #[cfg(test)]
 pub mod test_data;
