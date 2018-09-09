@@ -3,13 +3,10 @@
 use rocket::State;
 use rocket_contrib::Json;
 
-use app::error::Error;
-
-use domain::Resolver;
-use domain::id::IdProvider;
-use domain::orders::*;
-use domain::customers::*;
-use domain::products::*;
+use crate::{
+    app::error::Error,
+    domain::{customers::*, id::IdProvider, orders::*, products::*, Resolver},
+};
 
 /** `GET /orders/<id>` */
 #[get("/<id>")]
@@ -48,8 +45,17 @@ pub struct ProductQuantity {
 }
 
 /** `POST /orders/<id>/products/<product_id>` */
-#[post("/<id>/products/<product_id>", format = "application/json", data = "<data>")]
-pub fn add_or_update_product(id: OrderId, product_id: ProductId, data: Json<ProductQuantity>, resolver: State<Resolver>) -> Result<Json<LineItemId>, Error> {
+#[post(
+    "/<id>/products/<product_id>",
+    format = "application/json",
+    data = "<data>"
+)]
+pub fn add_or_update_product(
+    id: OrderId,
+    product_id: ProductId,
+    data: Json<ProductQuantity>,
+    resolver: State<Resolver>,
+) -> Result<Json<LineItemId>, Error> {
     let mut command = resolver.add_or_update_product_command();
 
     let line_item_id = command.add_or_update_product(AddOrUpdateProduct {

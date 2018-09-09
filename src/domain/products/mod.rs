@@ -1,13 +1,11 @@
 /*! Domain module for products. */
 
-pub mod resolver;
-pub mod model;
 pub mod commands;
+pub mod model;
 pub mod queries;
+pub mod resolver;
 
-pub use self::resolver::*;
-pub use self::model::*;
 pub(self) use self::model::store::{ProductStore, ProductStoreFilter};
+pub use self::{model::*, resolver::*};
 
-pub use self::commands::*;
-pub use self::queries::*;
+pub use self::{commands::*, queries::*};

@@ -2,9 +2,11 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::customers::{Customer, CustomerId, CustomerStore};
+use crate::domain::{
+    customers::{Customer, CustomerId, CustomerStore},
+    error::{err_msg, Error},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<Customer, Error>;
 
@@ -21,7 +23,7 @@ pub trait GetCustomerQuery {
 }
 
 /** Default implementation for a `GetCustomerQuery`. */
-pub fn get_customer_query(store: impl CustomerStore) -> impl GetCustomerQuery {
+pub(in crate::domain) fn get_customer_query(store: impl CustomerStore) -> impl GetCustomerQuery {
     move |query: GetCustomer| {
         let customer = store.get_customer(query.id)?.ok_or(err_msg("not found"))?;
 

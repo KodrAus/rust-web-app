@@ -10,13 +10,13 @@ Cross-cutting concerns should either live in the most specific entity submodule,
 We shouldn't get too attached to the current structure, new information might mean moving things around.
 */
 
+pub mod error;
 pub mod id;
 pub mod version;
-pub mod error;
 
-pub mod products;
-pub mod orders;
 pub mod customers;
+pub mod orders;
+pub mod products;
 
 mod resolver;
 pub use self::resolver::*;

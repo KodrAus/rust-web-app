@@ -6,7 +6,7 @@ It's a checklist: the first thing to do when creating a new entity is to impleme
 Any changes to entities that should be consistent can be added here.
 */
 
-pub(in domain) trait Entity {
+pub(in crate::domain) trait Entity {
     /** Should be `Id<Self::Data>`. */
     type Id;
     /** Should be `Version<Self::Data>`. */

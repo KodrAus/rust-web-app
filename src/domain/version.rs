@@ -1,11 +1,15 @@
 /*! Contains the shared `Version` type. */
 
-use std::cmp::Ordering;
-use std::hash::{Hash, Hasher};
-use std::fmt::{self, Formatter, Result as FmtResult};
-use std::marker::PhantomData;
-use serde::ser::{Serialize, Serializer};
-use serde::de::{Deserialize, Deserializer};
+use serde::{
+    de::{Deserialize, Deserializer},
+    ser::{Serialize, Serializer},
+};
+use std::{
+    cmp::Ordering,
+    fmt::{self, Formatter, Result as FmtResult},
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+};
 use uuid::Uuid;
 
 /**

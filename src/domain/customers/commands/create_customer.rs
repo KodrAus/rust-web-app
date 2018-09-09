@@ -2,9 +2,11 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::customers::{Customer, CustomerId, CustomerStore};
+use crate::domain::{
+    customers::{Customer, CustomerId, CustomerStore},
+    error::{err_msg, Error},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<(), Error>;
 
@@ -21,7 +23,9 @@ pub trait CreateCustomerCommand {
 }
 
 /** Default implementation for a `CreateCustomerCommand`. */
-pub fn create_customer_command(store: impl CustomerStore) -> impl CreateCustomerCommand {
+pub(in crate::domain) fn create_customer_command(
+    store: impl CustomerStore,
+) -> impl CreateCustomerCommand {
     move |command: CreateCustomer| {
         let customer = {
             if store.get_customer(command.id)?.is_some() {
@@ -47,8 +51,8 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
-    use domain::customers::model::store::in_memory_store;
-    use domain::customers::*;
+    use crate::domain::customers::{model::store::in_memory_store, *};
+
     use super::*;
 
     #[test]

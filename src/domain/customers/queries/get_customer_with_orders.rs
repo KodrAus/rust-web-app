@@ -2,10 +2,12 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::customers::{CustomerId, CustomerStore};
-use domain::orders::{GetOrderSummariesForCustomer, GetOrderSummariesForCustomerQuery, OrderId};
+use crate::domain::{
+    customers::{CustomerId, CustomerStore},
+    error::{err_msg, Error},
+    orders::{GetOrderSummariesForCustomer, GetOrderSummariesForCustomerQuery, OrderId},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<CustomerWithOrders, Error>;
 
@@ -35,13 +37,17 @@ pub trait GetCustomerWithOrdersQuery {
 }
 
 /** Default implementation for a `GetCustomerWithOrdersQuery`. */
-pub fn get_customer_with_orders_query(store: impl CustomerStore, orders_query: impl GetOrderSummariesForCustomerQuery) -> impl GetCustomerWithOrdersQuery {
+pub(in crate::domain) fn get_customer_with_orders_query(
+    store: impl CustomerStore,
+    orders_query: impl GetOrderSummariesForCustomerQuery,
+) -> impl GetCustomerWithOrdersQuery {
     move |query: GetCustomerWithOrders| {
         let customer = store
             .get_customer(query.id)?
             .ok_or(err_msg("not found"))?
             .into_data();
-        let orders = orders_query.get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
+        let orders = orders_query
+            .get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
 
         Ok(CustomerWithOrders {
             id: customer.id,

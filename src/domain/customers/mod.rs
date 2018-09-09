@@ -1,13 +1,10 @@
 /*! Domain module for customers. */
 
-pub mod resolver;
+pub mod commands;
 pub mod model;
 pub mod queries;
-pub mod commands;
+pub mod resolver;
 
-pub use self::resolver::*;
-pub use self::model::*;
-pub use self::queries::*;
-pub use self::commands::*;
+pub use self::{commands::*, model::*, queries::*, resolver::*};
 
 pub(self) use self::model::store::CustomerStore;

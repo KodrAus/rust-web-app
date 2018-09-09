@@ -2,15 +2,15 @@
 Rocket app configuration.
 */
 
+use crate::domain::Resolver;
 use rocket;
-use domain::Resolver;
 
-mod id;
 mod error;
+mod id;
 
-pub mod products;
-pub mod orders;
 pub mod customers;
+pub mod orders;
+pub mod products;
 
 pub fn start() {
     rocket::ignite()
@@ -18,11 +18,9 @@ pub fn start() {
         .mount(
             "/products",
             routes![products::get, products::create, products::set_title],
-        )
-        .mount(
+        ).mount(
             "/orders",
             routes![orders::get, orders::create, orders::add_or_update_product],
-        )
-        .mount("/customers", routes![customers::get, customers::create])
+        ).mount("/customers", routes![customers::get, customers::create])
         .launch();
 }

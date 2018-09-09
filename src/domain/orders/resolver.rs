@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use domain::orders::model::store as order_store;
+use crate::domain::orders::model::store as order_store;
 
 /**
 Resolver for orders.
@@ -22,11 +22,13 @@ impl Default for OrdersResolver {
 }
 
 impl OrdersResolver {
-    pub(in domain::orders) fn order_store(&self) -> impl order_store::OrderStore {
+    pub(in crate::domain::orders) fn order_store(&self) -> impl order_store::OrderStore {
         self.order_store.clone()
     }
 
-    pub(in domain::orders) fn order_store_filter(&self) -> impl order_store::OrderStoreFilter {
+    pub(in crate::domain::orders) fn order_store_filter(
+        &self,
+    ) -> impl order_store::OrderStoreFilter {
         self.order_store.clone()
     }
 }

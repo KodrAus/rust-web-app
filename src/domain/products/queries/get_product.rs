@@ -2,9 +2,11 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::products::{Product, ProductId, ProductStore};
+use crate::domain::{
+    error::{err_msg, Error},
+    products::{Product, ProductId, ProductStore},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<Product, Error>;
 
@@ -21,7 +23,7 @@ pub trait GetProductQuery {
 }
 
 /** Default implementation for a `GetProductQuery`. */
-pub fn get_product_query(store: impl ProductStore) -> impl GetProductQuery {
+pub(in crate::domain) fn get_product_query(store: impl ProductStore) -> impl GetProductQuery {
     move |query: GetProduct| {
         let product = store.get_product(query.id)?.ok_or(err_msg("not found"))?;
 

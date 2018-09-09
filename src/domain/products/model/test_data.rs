@@ -1,4 +1,4 @@
-use domain::products::*;
+use crate::domain::products::*;
 
 pub fn default_title() -> String {
     "A test product".to_owned()

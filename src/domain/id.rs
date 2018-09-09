@@ -1,15 +1,19 @@
 /*! Contains the shared `Id` type. */
 
-use std::convert::TryFrom;
-use std::cmp::Ordering;
-use std::fmt::{self, Formatter, Result as FmtResult};
-use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
-use serde::ser::{Serialize, Serializer};
-use serde::de::{Deserialize, Deserializer};
+use serde::{
+    de::{Deserialize, Deserializer},
+    ser::{Serialize, Serializer},
+};
+use std::{
+    cmp::Ordering,
+    convert::TryFrom,
+    fmt::{self, Formatter, Result as FmtResult},
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+};
 use uuid::Uuid;
 
-use domain::error::Error;
+use crate::domain::error::Error;
 
 /**
 An id.
@@ -79,10 +83,7 @@ impl<'a, T> TryFrom<&'a str> for Id<T> {
     type Error = Error;
 
     fn try_from(id: &'a str) -> Result<Self, Self::Error> {
-        Ok(Id(
-            Uuid::parse_str(id)?,
-            PhantomData,
-        ))
+        Ok(Id(Uuid::parse_str(id)?, PhantomData))
     }
 }
 

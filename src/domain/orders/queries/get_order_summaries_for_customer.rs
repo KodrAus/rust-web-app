@@ -2,10 +2,12 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::Error;
-use domain::customers::CustomerId;
-use domain::orders::{OrderId, OrderStoreFilter};
+use crate::domain::{
+    customers::CustomerId,
+    error::Error,
+    orders::{OrderId, OrderStoreFilter},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<Vec<OrderSummary>, Error>;
 
@@ -28,7 +30,9 @@ pub trait GetOrderSummariesForCustomerQuery {
 }
 
 /** Default implementation for a `GetOrderSummariesForCustomerQuery`. */
-pub fn get_order_summaries_for_customer_query(store: impl OrderStoreFilter) -> impl GetOrderSummariesForCustomerQuery {
+pub(in crate::domain) fn get_order_summaries_for_customer_query(
+    store: impl OrderStoreFilter,
+) -> impl GetOrderSummariesForCustomerQuery {
     move |query: GetOrderSummariesForCustomer| {
         let orders = store
             .filter(|o| o.customer_id == query.id)?

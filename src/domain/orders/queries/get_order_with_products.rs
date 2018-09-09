@@ -2,10 +2,12 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::products::{GetProductSummaries, GetProductSummariesQuery, ProductId};
-use domain::orders::{LineItemId, OrderId, OrderStore};
+use crate::domain::{
+    error::{err_msg, Error},
+    orders::{LineItemId, OrderId, OrderStore},
+    products::{GetProductSummaries, GetProductSummariesQuery, ProductId},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<OrderWithProducts, Error>;
 
@@ -39,9 +41,15 @@ pub trait GetOrderWithProductsQuery {
 }
 
 /** Default implementation for a `GetOrderWithProductsQuery`. */
-pub fn get_order_with_products_query(store: impl OrderStore, products_query: impl GetProductSummariesQuery) -> impl GetOrderWithProductsQuery {
+pub(in crate::domain) fn get_order_with_products_query(
+    store: impl OrderStore,
+    products_query: impl GetProductSummariesQuery,
+) -> impl GetOrderWithProductsQuery {
     move |query: GetOrderWithProducts| {
-        let (order, line_items) = store.get_order(query.id)?.ok_or(err_msg("not found"))?.into_data();
+        let (order, line_items) = store
+            .get_order(query.id)?
+            .ok_or(err_msg("not found"))?
+            .into_data();
         let products = {
             let product_ids = line_items.iter().map(|l| l.product_id).collect();
             products_query.get_product_summaries(GetProductSummaries { ids: product_ids })
@@ -53,17 +61,14 @@ pub fn get_order_with_products_query(store: impl OrderStore, products_query: imp
                 products
                     .iter()
                     .find(|p| p.id == line_item.product_id)
-                    .map(|product| {
-                        ProductLineItem {
-                            line_item_id: line_item.id,
-                            product_id: product.id,
-                            title: product.title.to_owned(),
-                            price: product.price,
-                            quantity: line_item.quantity,
-                        }
+                    .map(|product| ProductLineItem {
+                        line_item_id: line_item.id,
+                        product_id: product.id,
+                        title: product.title.to_owned(),
+                        price: product.price,
+                        quantity: line_item.quantity,
                     })
-            })
-            .collect();
+            }).collect();
 
         Ok(OrderWithProducts {
             id: order.id,

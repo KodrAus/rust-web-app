@@ -2,11 +2,15 @@
 
 use auto_impl::auto_impl;
 
-use domain::customers::CustomerId;
-use domain::error::{err_msg, Error};
-use domain::customers::queries::{GetCustomer, GetCustomerQuery};
-use domain::orders::{Order, OrderId, OrderStore};
-use domain::Resolver;
+use crate::domain::{
+    customers::{
+        queries::{GetCustomer, GetCustomerQuery},
+        CustomerId,
+    },
+    error::{err_msg, Error},
+    orders::{Order, OrderId, OrderStore},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<(), Error>;
 
@@ -24,7 +28,10 @@ pub trait CreateOrderCommand {
 }
 
 /** Default implementation for a `CreateOrderCommand`. */
-pub fn create_order_command(store: impl OrderStore, query: impl GetCustomerQuery) -> impl CreateOrderCommand {
+pub(in crate::domain) fn create_order_command(
+    store: impl OrderStore,
+    query: impl GetCustomerQuery,
+) -> impl CreateOrderCommand {
     move |command: CreateOrder| {
         let order = {
             if store.get_order(command.id)?.is_some() {
@@ -54,12 +61,14 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
-    use domain::customers::*;
-    use domain::customers::queries::get_customer::Result as QueryResult;
-    use domain::customers::model::test_data::CustomerBuilder;
-    use domain::orders::model::store::in_memory_store;
-    use domain::orders::*;
     use super::*;
+
+    use crate::domain::{
+        customers::{
+            model::test_data::CustomerBuilder, queries::get_customer::Result as QueryResult,
+        },
+        orders::{model::store::in_memory_store, *},
+    };
 
     #[test]
     fn err_if_already_exists() {

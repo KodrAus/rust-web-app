@@ -1,31 +1,25 @@
 /*! Persistent customer storage. */
+use auto_impl::auto_impl;
 
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::sync::RwLock;
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    sync::RwLock,
+};
 
-use domain::error::{err_msg, Error};
-use domain::customers::{Customer, CustomerData, CustomerId};
+use crate::domain::{
+    customers::{Customer, CustomerData, CustomerId},
+    error::{err_msg, Error},
+};
 
-// `syn` doesn't recognise `pub(restricted)`, so we re-export the store
-mod re_export {
-    use auto_impl::auto_impl;
-
-    use domain::customers::{Customer, CustomerId};
-    use super::Error;
-
-    /** A place to persist and fetch customers. */
-    #[auto_impl(&, Arc)]
-    pub trait CustomerStore {
-        fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;
-        fn set_customer(&self, customer: Customer) -> Result<(), Error>;
-    }
+/** A place to persist and fetch customers. */
+#[auto_impl(&, Arc)]
+pub(in crate::domain) trait CustomerStore {
+    fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;
+    fn set_customer(&self, customer: Customer) -> Result<(), Error>;
 }
 
-pub(in domain::customers) use self::re_export::CustomerStore;
-
 /* A test in-memory customer store. */
-pub type InMemoryStore = RwLock<HashMap<CustomerId, CustomerData>>;
+pub(in crate::domain) type InMemoryStore = RwLock<HashMap<CustomerId, CustomerData>>;
 
 impl CustomerStore for InMemoryStore {
     fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error> {
@@ -64,20 +58,20 @@ impl CustomerStore for InMemoryStore {
     }
 }
 
-pub fn in_memory_store() -> InMemoryStore {
+pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
     RwLock::new(HashMap::new())
 }
 
 /** Default implementation for a `CustomerStore`. */
-pub fn customer_store() -> impl CustomerStore {
+pub(in crate::domain) fn customer_store() -> impl CustomerStore {
     in_memory_store()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::customers::*;
-    use domain::customers::model::test_data::CustomerBuilder;
+
+    use crate::domain::customers::{model::test_data::CustomerBuilder, *};
 
     #[test]
     fn test_in_memory_store() {
