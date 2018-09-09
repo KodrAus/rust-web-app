@@ -1,52 +1,51 @@
 /*! Persistent order storage. */
 
-use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::Entry;
-use std::sync::RwLock;
+use auto_impl::auto_impl;
 
-use domain::error::{err_msg, Error};
-use domain::orders::{LineItemData, LineItemId, Order, OrderData, OrderId, OrderLineItem};
+use std::{
+    collections::{hash_map::Entry, HashMap, HashSet},
+    sync::RwLock,
+    vec::IntoIter,
+};
 
-// `syn` doesn't recognise `pub(restricted)`, so we re-export the store
-mod re_export {
-    use std::vec::IntoIter;
-    use auto_impl::auto_impl;
+use crate::domain::{
+    error::{err_msg, Error},
+    orders::{LineItemData, LineItemId, Order, OrderData, OrderId, OrderLineItem},
+};
 
-    use domain::orders::{LineItemId, Order, OrderData, OrderId, OrderLineItem};
-    use super::Error;
+/** A place to persist and fetch order entities. */
+#[auto_impl(&, Arc)]
+pub(in crate::domain) trait OrderStore {
+    fn get_line_item(
+        &self,
+        id: OrderId,
+        line_item_id: LineItemId,
+    ) -> Result<Option<OrderLineItem>, Error>;
+    fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error>;
 
-    /** A place to persist and fetch order entities. */
-    #[auto_impl(&, Arc)]
-    pub trait OrderStore {
-        fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error>;
-        fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error>;
-
-        fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error>;
-        fn set_order(&self, order: Order) -> Result<(), Error>;
-    }
-
-    /**
-    An additional store for fetching multiple order records at a time.
-
-    This trait is an implementation detail that lets us fetch more than one order.
-    It will probably need to be refactored or just removed when we add a proper database.
-    The fact that it's internal to `domain::orders` though means the scope of breakage is a bit smaller.
-    Commands and queries that depend on `OrderStoreFilter` won't need to break their public API.
-    */
-    #[auto_impl(&, Arc)]
-    pub trait OrderStoreFilter {
-        fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
-        where
-            F: Fn(&OrderData) -> bool;
-    }
-
-    pub type Iter = IntoIter<OrderData>;
+    fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error>;
+    fn set_order(&self, order: Order) -> Result<(), Error>;
 }
 
-pub(in domain::orders) use self::re_export::{Iter, OrderStore, OrderStoreFilter};
+/**
+An additional store for fetching multiple order records at a time.
+
+This trait is an implementation detail that lets us fetch more than one order.
+It will probably need to be refactored or just removed when we add a proper database.
+The fact that it's internal to `domain::orders` though means the scope of breakage is a bit smaller.
+Commands and queries that depend on `OrderStoreFilter` won't need to break their public API.
+*/
+#[auto_impl(&, Arc)]
+pub(in crate::domain) trait OrderStoreFilter {
+    fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
+    where
+        F: Fn(&OrderData) -> bool;
+}
+
+pub(in crate::domain) type Iter = IntoIter<OrderData>;
 
 /** A test in-memory order store. */
-pub(in domain) struct InMemoryStore {
+pub(in crate::domain) struct InMemoryStore {
     data: RwLock<InMemoryStoreInner>,
 }
 
@@ -107,7 +106,11 @@ impl OrderStore for InMemoryStore {
         Ok(())
     }
 
-    fn get_line_item(&self, id: OrderId, line_item_id: LineItemId) -> Result<Option<OrderLineItem>, Error> {
+    fn get_line_item(
+        &self,
+        id: OrderId,
+        line_item_id: LineItemId,
+    ) -> Result<Option<OrderLineItem>, Error> {
         let store_data = &self.data.read().map_err(|_| err_msg("not good!"))?;
 
         if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
@@ -138,7 +141,10 @@ impl OrderStore for InMemoryStore {
 
         // Check that the line item is part of the order
         {
-            let &(_, ref item_ids) = store_data.orders.get(&order_id).ok_or(err_msg("order not found"))?;
+            let &(_, ref item_ids) = store_data
+                .orders
+                .get(&order_id)
+                .ok_or(err_msg("order not found"))?;
             if !item_ids.contains(&line_item_id) {
                 Err(err_msg("line item not found"))?
             }
@@ -182,7 +188,7 @@ impl OrderStoreFilter for InMemoryStore {
     }
 }
 
-pub(in domain) fn in_memory_store() -> InMemoryStore {
+pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
     InMemoryStore {
         data: RwLock::new(InMemoryStoreInner {
             orders: HashMap::new(),
@@ -198,10 +204,12 @@ pub fn order_store() -> impl OrderStore {
 
 #[cfg(test)]
 mod tests {
-    use domain::orders::model::test_data::OrderBuilder;
-    use domain::orders::*;
-    use domain::products::model::test_data::default_product;
     use super::*;
+
+    use crate::domain::{
+        orders::{model::test_data::OrderBuilder, *},
+        products::model::test_data::default_product,
+    };
 
     #[test]
     fn test_in_memory_store() {
@@ -266,11 +274,9 @@ mod tests {
         // Create an order in the store
         let order = OrderBuilder::new()
             .id(order_id)
-            .add_product(
-                default_product(),
-                move |line_item| line_item.id(line_item_id),
-            )
-            .build();
+            .add_product(default_product(), move |line_item| {
+                line_item.id(line_item_id)
+            }).build();
 
         store.set_order(order).unwrap();
 

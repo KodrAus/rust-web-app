@@ -3,11 +3,10 @@
 use rocket::State;
 use rocket_contrib::Json;
 
-use app::error::Error;
-
-use domain::Resolver;
-use domain::id::IdProvider;
-use domain::customers::*;
+use crate::{
+    app::error::Error,
+    domain::{customers::*, id::IdProvider, Resolver},
+};
 
 /** `GET /customers/<id>` */
 #[get("/<id>")]

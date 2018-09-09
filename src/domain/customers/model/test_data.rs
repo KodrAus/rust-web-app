@@ -1,4 +1,4 @@
-use domain::customers::*;
+use crate::domain::customers::*;
 
 pub fn default_customer() -> Customer {
     Customer::new(NextCustomerId::new()).unwrap()

@@ -7,11 +7,13 @@ pub mod store;
 #[cfg(test)]
 pub mod test_data;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::entity::Entity;
-use domain::id::{Id, IdProvider, NextId};
-use domain::version::Version;
+use crate::domain::{
+    entity::Entity,
+    error::{err_msg, Error},
+    id::{Id, IdProvider, NextId},
+    version::Version,
+    Resolver,
+};
 
 pub type ProductId = Id<ProductData>;
 pub type NextProductId = NextId<ProductData>;
@@ -91,7 +93,11 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(id_provider: TId, title: TTitle, price: TPrice) -> Result<Self, Error>
+    pub fn new<TId, TTitle, TPrice>(
+        id_provider: TId,
+        title: TTitle,
+        price: TPrice,
+    ) -> Result<Self, Error>
     where
         TId: IdProvider<ProductData>,
         TTitle: TryInto<Title, Error = Error>,

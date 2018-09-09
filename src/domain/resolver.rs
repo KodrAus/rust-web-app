@@ -1,8 +1,9 @@
 /*! Contains the root `Resolver` type. */
 
-use domain::products::resolver::ProductsResolver;
-use domain::orders::resolver::OrdersResolver;
-use domain::customers::resolver::CustomersResolver;
+use crate::domain::{
+    customers::resolver::CustomersResolver, orders::resolver::OrdersResolver,
+    products::resolver::ProductsResolver,
+};
 
 /**
 Resolver for the domain.
@@ -30,15 +31,15 @@ impl Default for Resolver {
 }
 
 impl Resolver {
-    pub(in domain) fn products(&self) -> &ProductsResolver {
+    pub(in crate::domain) fn products(&self) -> &ProductsResolver {
         &self.product_resolver
     }
 
-    pub(in domain) fn orders(&self) -> &OrdersResolver {
+    pub(in crate::domain) fn orders(&self) -> &OrdersResolver {
         &self.order_resolver
     }
 
-    pub(in domain) fn customers(&self) -> &CustomersResolver {
+    pub(in crate::domain) fn customers(&self) -> &CustomersResolver {
         &self.customer_resolver
     }
 }

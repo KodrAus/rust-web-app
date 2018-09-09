@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use domain::customers::model::store as customer_store;
+use crate::domain::customers::model::store as customer_store;
 
 /**
 Resolver for customers.
@@ -22,7 +22,9 @@ impl Default for CustomersResolver {
 }
 
 impl CustomersResolver {
-    pub(in domain::customers) fn customer_store(&self) -> impl customer_store::CustomerStore {
+    pub(in crate::domain::customers) fn customer_store(
+        &self,
+    ) -> impl customer_store::CustomerStore {
         self.customer_store.clone()
     }
 }

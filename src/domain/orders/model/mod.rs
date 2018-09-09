@@ -16,13 +16,15 @@ pub mod store;
 #[cfg(test)]
 pub mod test_data;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::entity::Entity;
-use domain::id::{Id, IdProvider, NextId};
-use domain::version::Version;
-use domain::products::{Product, ProductData, ProductId};
-use domain::customers::{Customer, CustomerData, CustomerId};
+use crate::domain::{
+    customers::{Customer, CustomerData, CustomerId},
+    entity::Entity,
+    error::{err_msg, Error},
+    id::{Id, IdProvider, NextId},
+    products::{Product, ProductData, ProductId},
+    version::Version,
+    Resolver,
+};
 
 pub type OrderId = Id<OrderData>;
 pub type NextOrderId = NextId<OrderData>;
@@ -190,7 +192,12 @@ impl Order {
             .any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId, TQuantity>(&mut self, id_provider: TId, product: &Product, quantity: TQuantity) -> Result<(), Error>
+    pub fn add_product<TId, TQuantity>(
+        &mut self,
+        id_provider: TId,
+        product: &Product,
+        quantity: TQuantity,
+    ) -> Result<(), Error>
     where
         TId: IdProvider<LineItemData>,
         TQuantity: TryInto<Quantity, Error = Error>,
@@ -248,9 +255,12 @@ impl Resolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use domain::orders::model::test_data::default_order;
-    use domain::products::model::test_data::{default_product, ProductBuilder};
-    use domain::customers::model::test_data::default_customer;
+
+    use crate::domain::{
+        customers::model::test_data::default_customer,
+        orders::model::test_data::default_order,
+        products::model::test_data::{default_product, ProductBuilder},
+    };
 
     #[test]
     fn add_item_to_order() {

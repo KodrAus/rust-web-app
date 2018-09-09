@@ -2,9 +2,11 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::Error;
-use domain::products::{ProductId, ProductStoreFilter};
+use crate::domain::{
+    error::Error,
+    products::{ProductId, ProductStoreFilter},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<Vec<ProductSummary>, Error>;
 
@@ -29,18 +31,17 @@ pub trait GetProductSummariesQuery {
 }
 
 /** Default implementation for a `GetProductSummariesQuery`. */
-pub fn get_product_summaries_query(store: impl ProductStoreFilter) -> impl GetProductSummariesQuery {
+pub(in crate::domain) fn get_product_summaries_query(
+    store: impl ProductStoreFilter,
+) -> impl GetProductSummariesQuery {
     move |query: GetProductSummaries| {
         let products = store
             .filter(|p| query.ids.iter().any(|id| p.id == *id))?
-            .map(|p| {
-                ProductSummary {
-                    id: p.id,
-                    title: p.title,
-                    price: p.price,
-                }
-            })
-            .collect();
+            .map(|p| ProductSummary {
+                id: p.id,
+                title: p.title,
+                price: p.price,
+            }).collect();
 
         Ok(products)
     }

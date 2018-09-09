@@ -3,11 +3,10 @@
 use rocket::State;
 use rocket_contrib::Json;
 
-use app::error::Error;
-
-use domain::Resolver;
-use domain::id::IdProvider;
-use domain::products::*;
+use crate::{
+    app::error::Error,
+    domain::{id::IdProvider, products::*, Resolver},
+};
 
 #[derive(Serialize)]
 pub struct Get {

@@ -1,10 +1,12 @@
 /*! Contains the `Customer` entity. */
 
-use domain::Resolver;
-use domain::error::Error;
-use domain::entity::Entity;
-use domain::id::{Id, IdProvider, NextId};
-use domain::version::Version;
+use crate::domain::{
+    entity::Entity,
+    error::Error,
+    id::{Id, IdProvider, NextId},
+    version::Version,
+    Resolver,
+};
 
 pub mod store;
 

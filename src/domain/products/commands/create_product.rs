@@ -2,9 +2,11 @@
 
 use auto_impl::auto_impl;
 
-use domain::Resolver;
-use domain::error::{err_msg, Error};
-use domain::products::{Product, ProductId, ProductStore};
+use crate::domain::{
+    error::{err_msg, Error},
+    products::{Product, ProductId, ProductStore},
+    Resolver,
+};
 
 pub type Result = ::std::result::Result<(), Error>;
 
@@ -23,7 +25,9 @@ pub trait CreateProductCommand {
 }
 
 /** Default implementation for a `CreateProductCommand`. */
-pub fn create_product_command(store: impl ProductStore) -> impl CreateProductCommand {
+pub(in crate::domain) fn create_product_command(
+    store: impl ProductStore,
+) -> impl CreateProductCommand {
     move |command: CreateProduct| {
         let product = {
             if store.get_product(command.id)?.is_some() {
@@ -49,9 +53,9 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
-    use domain::products::model::store::in_memory_store;
-    use domain::products::*;
     use super::*;
+
+    use crate::domain::products::{model::store::in_memory_store, *};
 
     #[test]
     fn err_if_already_exists() {
