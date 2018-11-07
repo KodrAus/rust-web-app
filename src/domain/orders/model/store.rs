@@ -252,11 +252,9 @@ mod tests {
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(
-            store
-                .set_order(OrderBuilder::new().id(order_id).build())
-                .is_err()
-        );
+        assert!(store
+            .set_order(OrderBuilder::new().id(order_id).build())
+            .is_err());
     }
 
     #[test]
@@ -271,7 +269,8 @@ mod tests {
             .id(order_id)
             .add_product(default_product(), move |line_item| {
                 line_item.id(line_item_id)
-            }).build();
+            })
+            .build();
 
         store.set_order(order).unwrap();
 

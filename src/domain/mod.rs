@@ -10,6 +10,7 @@ Cross-cutting concerns should either live in the most specific entity submodule,
 We shouldn't get too attached to the current structure, new information might mean moving things around.
 */
 
+#[macro_use]
 pub mod error;
 pub mod id;
 pub mod version;

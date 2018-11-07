@@ -131,10 +131,8 @@ mod tests {
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(
-            store
-                .set_product(test_data::ProductBuilder::new().id(id).build())
-                .is_err()
-        );
+        assert!(store
+            .set_product(test_data::ProductBuilder::new().id(id).build())
+            .is_err());
     }
 }

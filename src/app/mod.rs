@@ -13,14 +13,18 @@ pub mod orders;
 pub mod products;
 
 pub fn start() {
+    info!("starting up");
+
     rocket::ignite()
         .manage(Resolver::default())
         .mount(
             "/products",
             routes![products::get, products::create, products::set_title],
-        ).mount(
+        )
+        .mount(
             "/orders",
             routes![orders::get, orders::create, orders::add_or_update_product],
-        ).mount("/customers", routes![customers::get, customers::create])
+        )
+        .mount("/customers", routes![customers::get, customers::create])
         .launch();
 }

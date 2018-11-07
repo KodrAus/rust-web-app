@@ -27,15 +27,19 @@ pub(in crate::domain) fn create_customer_command(
     store: impl CustomerStore,
 ) -> impl CreateCustomerCommand {
     move |command: CreateCustomer| {
+        debug!("creating customer `{}`", command.id);
+
         let customer = {
             if store.get_customer(command.id)?.is_some() {
-                Err(err_msg("already exists"))?
+                err!("customer `{}` already exists", command.id)?
             } else {
                 Customer::new(command.id)?
             }
         };
 
         store.set_customer(customer)?;
+
+        info!("customer `{}` created", command.id);
 
         Ok(())
     }
