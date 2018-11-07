@@ -10,8 +10,10 @@ Most of the `domain` module is `pub(restricted)`, so these docs only show the it
 Refer to the source for a fuller picture of what's in there.
 */
 
-#![feature(plugin, try_from)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro, try_from)]
+
+#[macro_use]
+extern crate rocket;
 
 #[macro_use]
 extern crate serde_derive;
