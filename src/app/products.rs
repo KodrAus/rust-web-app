@@ -1,7 +1,7 @@
 /*! `/products` */
 
 use rocket::State;
-use rocket_contrib::Json;
+use rocket_contrib::json::Json;
 
 use crate::{
     app::error::Error,
@@ -54,7 +54,7 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
-fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Result<(), Error> {
+pub fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Result<(), Error> {
     let mut command = resolver.set_product_title_command();
 
     command.set_product_title(SetProductTitle {

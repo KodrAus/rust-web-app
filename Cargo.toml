@@ -6,9 +6,9 @@ publish = false
 edition = "2018"
 
 [dependencies]
-rocket = "~0.3.16"
-rocket_contrib = "~0.3.16"
-rocket_codegen = "~0.3.16"
+rocket = "~0.4.0-rc.1"
+rocket_contrib = "~0.4.0-rc.1"
+rocket_codegen = "~0.4.0-rc.1"
 
 serde = "~1"
 serde_derive = "~1"
@@ -19,4 +19,4 @@ uuid = { version = "~0.7", features = ["serde", "v4"] }
 failure = "~0.1"
 failure_derive = "~0.1"
 
-auto_impl = { version = "*", git = "https://github.com/auto-impl-rs/auto_impl.git", features = ["nightly"] }
+auto_impl = { version = "~0.3", features = ["nightly"] }

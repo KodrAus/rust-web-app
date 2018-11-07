@@ -197,11 +197,6 @@ pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
     }
 }
 
-/** Default implementation for an `OrderStore`. */
-pub fn order_store() -> impl OrderStore {
-    in_memory_store()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

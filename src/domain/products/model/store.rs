@@ -98,11 +98,6 @@ pub(in crate::domain::products) fn in_memory_store() -> InMemoryStore {
     RwLock::new(HashMap::new())
 }
 
-/** Default implementation for a `ProductStore`. */
-pub(in crate::domain) fn product_store() -> impl ProductStore {
-    in_memory_store()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
