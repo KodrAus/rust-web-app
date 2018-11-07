@@ -28,6 +28,11 @@ pub(in crate::domain) fn set_product_title_command(
     store: impl ProductStore,
 ) -> impl SetProductTitleCommand {
     move |command: SetProductTitle| {
+        debug!(
+            "updating product `{}` title to {:?}",
+            command.id, command.title
+        );
+
         let product = {
             if let Some(mut product) = store.get_product(command.id)? {
                 product.set_title(command.title)?;
@@ -38,7 +43,11 @@ pub(in crate::domain) fn set_product_title_command(
             }
         };
 
-        store.set_product(product)
+        store.set_product(product)?;
+
+        info!("updated product `{}` title", command.id);
+
+        Ok(())
     }
 }
 

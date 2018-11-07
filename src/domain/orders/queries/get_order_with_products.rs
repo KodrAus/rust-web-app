@@ -68,7 +68,8 @@ pub(in crate::domain) fn get_order_with_products_query(
                         price: product.price,
                         quantity: line_item.quantity,
                     })
-            }).collect();
+            })
+            .collect();
 
         Ok(OrderWithProducts {
             id: order.id,

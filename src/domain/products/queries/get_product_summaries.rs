@@ -41,7 +41,8 @@ pub(in crate::domain) fn get_product_summaries_query(
                 id: p.id,
                 title: p.title,
                 price: p.price,
-            }).collect();
+            })
+            .collect();
 
         Ok(products)
     }

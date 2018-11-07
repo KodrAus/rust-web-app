@@ -36,9 +36,19 @@ pub(in crate::domain) fn add_or_update_product_command(
     query: impl GetProductQuery,
 ) -> impl AddOrUpdateProductCommand {
     move |command: AddOrUpdateProduct| {
+        debug!(
+            "updating product `{}` in order `{}`",
+            command.product_id, command.id
+        );
+
         if let Some(order) = store.get_order(command.id)? {
             let id = match order.into_line_item_for_product(command.product_id) {
                 IntoLineItem::InOrder(mut line_item) => {
+                    debug!(
+                        "updating existing product `{}` in order `{}`",
+                        command.product_id, command.id
+                    );
+
                     let (_, &LineItemData { id, .. }) = line_item.to_data();
 
                     line_item.set_quantity(command.quantity)?;
@@ -47,6 +57,11 @@ pub(in crate::domain) fn add_or_update_product_command(
                     id
                 }
                 IntoLineItem::NotInOrder(mut order) => {
+                    debug!(
+                        "adding new product `{}` to order `{}`",
+                        command.product_id, command.id
+                    );
+
                     let id = id_provider.id()?;
                     let product = query.get_product(GetProduct {
                         id: command.product_id,
@@ -58,6 +73,11 @@ pub(in crate::domain) fn add_or_update_product_command(
                     id
                 }
             };
+
+            info!(
+                "updated product `{}` in order `{}`",
+                command.product_id, command.id
+            );
 
             Ok(id)
         } else {
@@ -113,7 +133,8 @@ mod tests {
                 id: order_id,
                 product_id: product_id,
                 quantity: quantity,
-            }).unwrap();
+            })
+            .unwrap();
 
         let (_, line_item) = store
             .get_line_item(order_id, line_item_id)
@@ -138,7 +159,8 @@ mod tests {
             .add_product(
                 ProductBuilder::new().id(product_id).build(),
                 move |line_item| line_item.id(line_item_id),
-            ).build();
+            )
+            .build();
 
         store.set_order(order).unwrap();
 
@@ -152,7 +174,8 @@ mod tests {
                 id: order_id,
                 product_id: product_id,
                 quantity: quantity,
-            }).unwrap();
+            })
+            .unwrap();
 
         let (_, line_item) = store
             .get_line_item(order_id, line_item_id)

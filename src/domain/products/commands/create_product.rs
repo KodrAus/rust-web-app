@@ -29,15 +29,19 @@ pub(in crate::domain) fn create_product_command(
     store: impl ProductStore,
 ) -> impl CreateProductCommand {
     move |command: CreateProduct| {
+        debug!("creating product `{}`", command.id);
+
         let product = {
             if store.get_product(command.id)?.is_some() {
-                Err(err_msg("already exists"))?
+                err!("product `{}` already exists", command.id)?
             } else {
                 Product::new(command.id, command.title, command.price)?
             }
         };
 
         store.set_product(product)?;
+
+        info!("created product `{}`", command.id);
 
         Ok(())
     }

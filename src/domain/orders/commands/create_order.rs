@@ -33,18 +33,23 @@ pub(in crate::domain) fn create_order_command(
     query: impl GetCustomerQuery,
 ) -> impl CreateOrderCommand {
     move |command: CreateOrder| {
+        debug!("creating order `{}`", command.id);
+
         let order = {
             if store.get_order(command.id)?.is_some() {
-                Err(err_msg("already exists"))?
+                err!("order `{}` already exists", command.id)?
             } else {
                 let customer = query.get_customer(GetCustomer {
                     id: command.customer_id,
                 })?;
+
                 Order::new(command.id, &customer)?
             }
         };
 
         store.set_order(order)?;
+
+        info!("created order `{}`", command.id);
 
         Ok(())
     }
