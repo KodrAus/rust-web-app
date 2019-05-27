@@ -3,14 +3,24 @@
 use auto_impl::auto_impl;
 
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{
+        hash_map::Entry,
+        HashMap,
+    },
     sync::RwLock,
     vec::IntoIter,
 };
 
 use crate::domain::{
-    error::{err_msg, Error},
-    products::{Product, ProductData, ProductId},
+    error::{
+        err_msg,
+        Error,
+    },
+    products::{
+        Product,
+        ProductData,
+        ProductId,
+    },
 };
 
 /* A place to persist and fetch product entities. */
@@ -102,7 +112,10 @@ pub(in crate::domain::products) fn in_memory_store() -> InMemoryStore {
 mod tests {
     use super::*;
 
-    use crate::domain::products::{model::test_data, *};
+    use crate::domain::products::{
+        model::test_data,
+        *,
+    };
 
     #[test]
     fn test_in_memory_store() {

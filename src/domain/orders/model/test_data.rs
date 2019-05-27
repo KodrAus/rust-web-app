@@ -1,4 +1,8 @@
-use crate::domain::{customers::model::test_data::default_customer, orders::*, products::*};
+use crate::domain::{
+    customers::model::test_data::default_customer,
+    orders::*,
+    products::*,
+};
 
 pub fn default_order() -> Order {
     Order::new(NextOrderId::new(), &default_customer()).unwrap()

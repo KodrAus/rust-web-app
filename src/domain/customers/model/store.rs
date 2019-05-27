@@ -2,13 +2,23 @@
 use auto_impl::auto_impl;
 
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{
+        hash_map::Entry,
+        HashMap,
+    },
     sync::RwLock,
 };
 
 use crate::domain::{
-    customers::{Customer, CustomerData, CustomerId},
-    error::{err_msg, Error},
+    customers::{
+        Customer,
+        CustomerData,
+        CustomerId,
+    },
+    error::{
+        err_msg,
+        Error,
+    },
 };
 
 /** A place to persist and fetch customers. */
@@ -66,7 +76,10 @@ pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
 mod tests {
     use super::*;
 
-    use crate::domain::customers::{model::test_data::CustomerBuilder, *};
+    use crate::domain::customers::{
+        model::test_data::CustomerBuilder,
+        *,
+    };
 
     #[test]
     fn test_in_memory_store() {

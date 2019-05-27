@@ -3,14 +3,28 @@
 use auto_impl::auto_impl;
 
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{
+        hash_map::Entry,
+        HashMap,
+        HashSet,
+    },
     sync::RwLock,
     vec::IntoIter,
 };
 
 use crate::domain::{
-    error::{err_msg, Error},
-    orders::{LineItemData, LineItemId, Order, OrderData, OrderId, OrderLineItem},
+    error::{
+        err_msg,
+        Error,
+    },
+    orders::{
+        LineItemData,
+        LineItemId,
+        Order,
+        OrderData,
+        OrderId,
+        OrderLineItem,
+    },
 };
 
 /** A place to persist and fetch order entities. */
@@ -202,7 +216,10 @@ mod tests {
     use super::*;
 
     use crate::domain::{
-        orders::{model::test_data::OrderBuilder, *},
+        orders::{
+            model::test_data::OrderBuilder,
+            *,
+        },
         products::model::test_data::default_product,
     };
 

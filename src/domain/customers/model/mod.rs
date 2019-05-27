@@ -3,7 +3,11 @@
 use crate::domain::{
     entity::Entity,
     error::Error,
-    id::{Id, IdProvider, NextId},
+    id::{
+        Id,
+        IdProvider,
+        NextId,
+    },
     version::Version,
     Resolver,
 };

@@ -3,8 +3,15 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    customers::{Customer, CustomerId, CustomerStore},
-    error::{err_msg, Error},
+    customers::{
+        Customer,
+        CustomerId,
+        CustomerStore,
+    },
+    error::{
+        err_msg,
+        Error,
+    },
     Resolver,
 };
 
@@ -55,7 +62,10 @@ impl Resolver {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::customers::{model::store::in_memory_store, *};
+    use crate::domain::customers::{
+        model::store::in_memory_store,
+        *,
+    };
 
     use super::*;
 

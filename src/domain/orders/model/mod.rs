@@ -9,7 +9,10 @@ This kind of suggests it shouldn't have an id of its own, and instead should be 
 We'll probably need to come back here one day to work this out properly.
 */
 
-use std::convert::{TryFrom, TryInto};
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 
 pub mod store;
 
@@ -17,11 +20,26 @@ pub mod store;
 pub mod test_data;
 
 use crate::domain::{
-    customers::{Customer, CustomerData, CustomerId},
+    customers::{
+        Customer,
+        CustomerData,
+        CustomerId,
+    },
     entity::Entity,
-    error::{err_msg, Error},
-    id::{Id, IdProvider, NextId},
-    products::{Product, ProductData, ProductId},
+    error::{
+        err_msg,
+        Error,
+    },
+    id::{
+        Id,
+        IdProvider,
+        NextId,
+    },
+    products::{
+        Product,
+        ProductData,
+        ProductId,
+    },
     version::Version,
     Resolver,
 };
@@ -259,7 +277,10 @@ mod tests {
     use crate::domain::{
         customers::model::test_data::default_customer,
         orders::model::test_data::default_order,
-        products::model::test_data::{default_product, ProductBuilder},
+        products::model::test_data::{
+            default_product,
+            ProductBuilder,
+        },
     };
 
     #[test]

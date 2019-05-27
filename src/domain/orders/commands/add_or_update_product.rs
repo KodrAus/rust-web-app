@@ -3,11 +3,23 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{err_msg, Error},
+    error::{
+        err_msg,
+        Error,
+    },
     id::IdProvider,
-    orders::{IntoLineItem, LineItemData, LineItemId, OrderId, OrderStore},
+    orders::{
+        IntoLineItem,
+        LineItemData,
+        LineItemId,
+        OrderId,
+        OrderStore,
+    },
     products::{
-        queries::{GetProduct, GetProductQuery},
+        queries::{
+            GetProduct,
+            GetProductQuery,
+        },
         ProductId,
     },
     Resolver,
@@ -103,11 +115,16 @@ mod tests {
 
     use crate::domain::{
         orders::{
-            model::{store::in_memory_store, test_data::OrderBuilder},
+            model::{
+                store::in_memory_store,
+                test_data::OrderBuilder,
+            },
             *,
         },
         products::{
-            model::test_data::ProductBuilder, queries::get_product::Result as QueryResult, *,
+            model::test_data::ProductBuilder,
+            queries::get_product::Result as QueryResult,
+            *,
         },
     };
 

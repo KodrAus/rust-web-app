@@ -1,6 +1,9 @@
 /*! Contains the `Product` entity. */
 
-use std::convert::{TryFrom, TryInto};
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 
 pub mod store;
 
@@ -9,8 +12,15 @@ pub mod test_data;
 
 use crate::domain::{
     entity::Entity,
-    error::{err_msg, Error},
-    id::{Id, IdProvider, NextId},
+    error::{
+        err_msg,
+        Error,
+    },
+    id::{
+        Id,
+        IdProvider,
+        NextId,
+    },
     version::Version,
     Resolver,
 };

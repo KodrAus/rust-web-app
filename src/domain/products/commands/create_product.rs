@@ -3,8 +3,15 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{err_msg, Error},
-    products::{Product, ProductId, ProductStore},
+    error::{
+        err_msg,
+        Error,
+    },
+    products::{
+        Product,
+        ProductId,
+        ProductStore,
+    },
     Resolver,
 };
 
@@ -59,7 +66,10 @@ impl Resolver {
 mod tests {
     use super::*;
 
-    use crate::domain::products::{model::store::in_memory_store, *};
+    use crate::domain::products::{
+        model::store::in_memory_store,
+        *,
+    };
 
     #[test]
     fn err_if_already_exists() {

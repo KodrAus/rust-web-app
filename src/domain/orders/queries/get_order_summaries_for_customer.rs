@@ -5,7 +5,10 @@ use auto_impl::auto_impl;
 use crate::domain::{
     customers::CustomerId,
     error::Error,
-    orders::{OrderId, OrderStoreFilter},
+    orders::{
+        OrderId,
+        OrderStoreFilter,
+    },
     Resolver,
 };
 
