@@ -1,10 +1,17 @@
-use std::{fmt::Arguments, io::Write};
+use std::{
+    fmt::Arguments,
+    io::Write,
+};
 
 use serde::ser::Serializer;
 
 use log::Level;
 
-use env_logger::{fmt::Timestamp, Builder, Env};
+use env_logger::{
+    fmt::Timestamp,
+    Builder,
+    Env,
+};
 
 pub const LOG_LEVEL_ENV: &'static str = "LOG_LEVEL";
 pub const LOG_STYLE_ENV: &'static str = "LOG_STYLE";

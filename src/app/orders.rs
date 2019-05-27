@@ -5,7 +5,13 @@ use rocket_contrib::json::Json;
 
 use crate::{
     app::error::Error,
-    domain::{customers::*, id::IdProvider, orders::*, products::*, Resolver},
+    domain::{
+        customers::*,
+        id::IdProvider,
+        orders::*,
+        products::*,
+        Resolver,
+    },
 };
 
 /** `GET /orders/<id>` */

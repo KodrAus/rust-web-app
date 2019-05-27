@@ -3,9 +3,20 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{err_msg, Error},
-    orders::{LineItemId, OrderId, OrderStore},
-    products::{GetProductSummaries, GetProductSummariesQuery, ProductId},
+    error::{
+        err_msg,
+        Error,
+    },
+    orders::{
+        LineItemId,
+        OrderId,
+        OrderStore,
+    },
+    products::{
+        GetProductSummaries,
+        GetProductSummariesQuery,
+        ProductId,
+    },
     Resolver,
 };
 

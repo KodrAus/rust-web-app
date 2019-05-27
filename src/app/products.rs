@@ -5,7 +5,11 @@ use rocket_contrib::json::Json;
 
 use crate::{
     app::error::Error,
-    domain::{id::IdProvider, products::*, Resolver},
+    domain::{
+        id::IdProvider,
+        products::*,
+        Resolver,
+    },
 };
 
 #[derive(Serialize)]

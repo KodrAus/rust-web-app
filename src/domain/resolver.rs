@@ -1,7 +1,8 @@
 /*! Contains the root `Resolver` type. */
 
 use crate::domain::{
-    customers::resolver::CustomersResolver, orders::resolver::OrdersResolver,
+    customers::resolver::CustomersResolver,
+    orders::resolver::OrdersResolver,
     products::resolver::ProductsResolver,
 };
 

@@ -4,11 +4,21 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     customers::{
-        queries::{GetCustomer, GetCustomerQuery},
+        queries::{
+            GetCustomer,
+            GetCustomerQuery,
+        },
         CustomerId,
     },
-    error::{err_msg, Error},
-    orders::{Order, OrderId, OrderStore},
+    error::{
+        err_msg,
+        Error,
+    },
+    orders::{
+        Order,
+        OrderId,
+        OrderStore,
+    },
     Resolver,
 };
 
@@ -70,9 +80,13 @@ mod tests {
 
     use crate::domain::{
         customers::{
-            model::test_data::CustomerBuilder, queries::get_customer::Result as QueryResult,
+            model::test_data::CustomerBuilder,
+            queries::get_customer::Result as QueryResult,
         },
-        orders::{model::store::in_memory_store, *},
+        orders::{
+            model::store::in_memory_store,
+            *,
+        },
     };
 
     #[test]

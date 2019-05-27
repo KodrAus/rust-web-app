@@ -1,7 +1,13 @@
-use rocket::{http::RawStr, request::FromParam};
+use rocket::{
+    http::RawStr,
+    request::FromParam,
+};
 use std::convert::TryFrom;
 
-use crate::domain::{error::Error, id::Id};
+use crate::domain::{
+    error::Error,
+    id::Id,
+};
 
 impl<'r, T> FromParam<'r> for Id<T> {
     type Error = Error;

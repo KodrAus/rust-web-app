@@ -3,8 +3,15 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{err_msg, Error},
-    orders::{Order, OrderId, OrderStore},
+    error::{
+        err_msg,
+        Error,
+    },
+    orders::{
+        Order,
+        OrderId,
+        OrderStore,
+    },
     Resolver,
 };
 
