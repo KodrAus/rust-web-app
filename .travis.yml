@@ -4,7 +4,6 @@ language: rust
 matrix:
   include:
     - rust: nightly
-    - rust: nightly-2019-03-11
   allow_failures:
     - rust: nightly
 
