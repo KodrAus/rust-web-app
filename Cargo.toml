@@ -5,21 +5,41 @@ authors = ["Ashley Mannix <ashleymannix@live.com.au>"]
 publish = false
 edition = "2018"
 
-[dependencies]
-rocket = "~0.4"
-rocket_contrib = "~0.4"
-rocket_codegen = "~0.4"
+[dependencies.rocket]
+version = "~0.4"
 
-serde = "~1"
-serde_derive = "~1"
-serde_json = "~1"
+[dependencies.rocket_contrib]
+version = "~0.4"
 
-uuid = { version = "~0.7", features = ["serde", "v4"] }
+[dependencies.rocket_codegen]
+version = "~0.4"
 
-log = { version = "~0.4", features = ["serde"] }
-env_logger = "~0.6"
+[dependencies.serde]
+version = "~1"
 
-failure = "~0.1"
-failure_derive = "~0.1"
+[dependencies.serde_derive]
+version = "~1"
 
-auto_impl = { version = "~0.3", features = ["nightly"] }
+[dependencies.serde_json]
+version = "~1"
+
+[dependencies.uuid]
+version = "~0.7"
+features = ["serde", "v4"]
+
+[dependencies.log]
+version = "~0.4"
+features = ["serde"]
+
+[dependencies.env_logger]
+version = "~0.6"
+
+[dependencies.failure]
+version = "~0.1"
+
+[dependencies.failure_derive]
+version = "~0.1"
+
+[dependencies.auto_impl]
+version = "~0.3"
+features = ["nightly"]
