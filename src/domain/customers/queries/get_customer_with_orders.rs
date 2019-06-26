@@ -7,10 +7,7 @@ use crate::domain::{
         CustomerId,
         CustomerStore,
     },
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     orders::{
         GetOrderSummariesForCustomer,
         GetOrderSummariesForCustomerQuery,
@@ -19,7 +16,7 @@ use crate::domain::{
     Resolver,
 };
 
-pub type Result = ::std::result::Result<CustomerWithOrders, Error>;
+pub type Result = ::std::result::Result<Option<CustomerWithOrders>, Error>;
 
 /** Input for a `GetCustomerWithOrdersQuery`. */
 #[derive(Deserialize)]
@@ -52,20 +49,21 @@ pub(in crate::domain) fn get_customer_with_orders_query(
     orders_query: impl GetOrderSummariesForCustomerQuery,
 ) -> impl GetCustomerWithOrdersQuery {
     move |query: GetCustomerWithOrders| {
-        let customer = store
-            .get_customer(query.id)?
-            .ok_or(err_msg("not found"))?
-            .into_data();
+        let customer = match store.get_customer(query.id)? {
+            Some(customer) => customer.into_data(),
+            None => return Ok(None),
+        };
+
         let orders = orders_query
             .get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
 
-        Ok(CustomerWithOrders {
+        Ok(Some(CustomerWithOrders {
             id: customer.id,
             orders: orders
                 .into_iter()
                 .map(|order| CustomerOrder { id: order.id })
                 .collect(),
-        })
+        }))
     }
 }
 

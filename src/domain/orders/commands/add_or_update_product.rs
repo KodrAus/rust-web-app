@@ -4,7 +4,7 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     error::{
-        err_msg,
+        bad_input,
         Error,
     },
     id::IdProvider,
@@ -75,9 +75,11 @@ pub(in crate::domain) fn add_or_update_product_command(
                     );
 
                     let id = id_provider.id()?;
-                    let product = query.get_product(GetProduct {
-                        id: command.product_id,
-                    })?;
+                    let product = query
+                        .get_product(GetProduct {
+                            id: command.product_id,
+                        })?
+                        .ok_or(bad_input("product not found"))?;
 
                     order.add_product(id, &product, command.quantity)?;
                     store.set_order(order)?;
@@ -93,7 +95,7 @@ pub(in crate::domain) fn add_or_update_product_command(
 
             Ok(id)
         } else {
-            Err(err_msg("not found"))?
+            Err(bad_input("not found"))?
         }
     }
 }
@@ -141,7 +143,7 @@ mod tests {
             .unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: QueryResult = Ok(ProductBuilder::new().id(product_id).build());
+            let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
             product
         });
 
@@ -182,7 +184,7 @@ mod tests {
         store.set_order(order).unwrap();
 
         let mut cmd = add_or_update_product_command(&store, NextLineItemId::new(), |_| {
-            let product: QueryResult = Ok(ProductBuilder::new().id(product_id).build());
+            let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
             product
         });
 

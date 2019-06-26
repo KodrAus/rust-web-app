@@ -4,7 +4,7 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     error::{
-        err_msg,
+        bad_input,
         Error,
     },
     orders::{
@@ -20,7 +20,7 @@ use crate::domain::{
     Resolver,
 };
 
-pub type Result = ::std::result::Result<OrderWithProducts, Error>;
+pub type Result = ::std::result::Result<Option<OrderWithProducts>, Error>;
 
 /** Input for a `GetOrderWithProductsQuery`. */
 #[derive(Deserialize)]
@@ -57,10 +57,11 @@ pub(in crate::domain) fn get_order_with_products_query(
     products_query: impl GetProductSummariesQuery,
 ) -> impl GetOrderWithProductsQuery {
     move |query: GetOrderWithProducts| {
-        let (order, line_items) = store
-            .get_order(query.id)?
-            .ok_or(err_msg("not found"))?
-            .into_data();
+        let (order, line_items) = match store.get_order(query.id)? {
+            Some(order) => order.into_data(),
+            None => return Ok(None),
+        };
+
         let products = {
             let product_ids = line_items.iter().map(|l| l.product_id).collect();
             products_query.get_product_summaries(GetProductSummaries { ids: product_ids })
@@ -68,7 +69,7 @@ pub(in crate::domain) fn get_order_with_products_query(
 
         let line_items = line_items
             .into_iter()
-            .filter_map(|line_item| {
+            .map(|line_item| {
                 products
                     .iter()
                     .find(|p| p.id == line_item.product_id)
@@ -79,13 +80,14 @@ pub(in crate::domain) fn get_order_with_products_query(
                         price: product.price,
                         quantity: line_item.quantity,
                     })
+                    .ok_or(bad_input("missing product for line item"))
             })
-            .collect();
+            .collect::<std::result::Result<Vec<_>, _>>()?;
 
-        Ok(OrderWithProducts {
+        Ok(Some(OrderWithProducts {
             id: order.id,
-            line_items: line_items,
-        })
+            line_items,
+        }))
     }
 }
 

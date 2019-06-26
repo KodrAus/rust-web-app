@@ -3,10 +3,7 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     orders::{
         Order,
         OrderId,
@@ -15,7 +12,7 @@ use crate::domain::{
     Resolver,
 };
 
-pub type Result = ::std::result::Result<Order, Error>;
+pub type Result = ::std::result::Result<Option<Order>, Error>;
 
 /** Input for a `GetOrderQuery`. */
 #[derive(Deserialize)]
@@ -32,7 +29,7 @@ pub trait GetOrderQuery {
 /** Default implementation for a `GetOrderQuery`. */
 pub(in crate::domain) fn get_order_query(store: impl OrderStore) -> impl GetOrderQuery {
     move |query: GetOrder| {
-        let order = store.get_order(query.id)?.ok_or(err_msg("not found"))?;
+        let order = store.get_order(query.id)?;
 
         Ok(order)
     }

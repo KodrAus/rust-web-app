@@ -4,7 +4,10 @@ use rocket::State;
 use rocket_contrib::json::Json;
 
 use crate::{
-    app::error::Error,
+    app::error::{
+        err_msg,
+        Error,
+    },
     domain::{
         customers::*,
         id::IdProvider,
@@ -17,9 +20,10 @@ use crate::{
 pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
     let query = resolver.get_customer_with_orders_query();
 
-    let order = query.get_customer_with_orders(GetCustomerWithOrders { id: id })?;
-
-    Ok(Json(order))
+    match query.get_customer_with_orders(GetCustomerWithOrders { id: id })? {
+        Some(customer) => Ok(Json(customer)),
+        None => Err(Error::NotFound(err_msg("customer not found"))),
+    }
 }
 
 /** `PUT /customers` */
