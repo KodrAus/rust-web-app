@@ -8,14 +8,11 @@ use crate::domain::{
         CustomerId,
         CustomerStore,
     },
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     Resolver,
 };
 
-pub type Result = ::std::result::Result<Customer, Error>;
+pub type Result = ::std::result::Result<Option<Customer>, Error>;
 
 /** Input for a `GetCustomerQuery`. */
 #[derive(Deserialize)]
@@ -32,7 +29,7 @@ pub trait GetCustomerQuery {
 /** Default implementation for a `GetCustomerQuery`. */
 pub(in crate::domain) fn get_customer_query(store: impl CustomerStore) -> impl GetCustomerQuery {
     move |query: GetCustomer| {
-        let customer = store.get_customer(query.id)?.ok_or(err_msg("not found"))?;
+        let customer = store.get_customer(query.id)?;
 
         Ok(customer)
     }

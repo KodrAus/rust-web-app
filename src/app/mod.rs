@@ -26,5 +26,6 @@ pub fn start() {
             routes![orders::get, orders::create, orders::add_or_update_product],
         )
         .mount("/customers", routes![customers::get, customers::create])
+        .register(catchers![error::not_found, error::internal_error])
         .launch();
 }

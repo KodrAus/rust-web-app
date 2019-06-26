@@ -3,10 +3,7 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     products::{
         Product,
         ProductId,
@@ -15,7 +12,7 @@ use crate::domain::{
     Resolver,
 };
 
-pub type Result = ::std::result::Result<Product, Error>;
+pub type Result = ::std::result::Result<Option<Product>, Error>;
 
 /** Input for a `GetProductQuery`. */
 #[derive(Deserialize)]
@@ -32,7 +29,7 @@ pub trait GetProductQuery {
 /** Default implementation for a `GetProductQuery`. */
 pub(in crate::domain) fn get_product_query(store: impl ProductStore) -> impl GetProductQuery {
     move |query: GetProduct| {
-        let product = store.get_product(query.id)?.ok_or(err_msg("not found"))?;
+        let product = store.get_product(query.id)?;
 
         Ok(product)
     }

@@ -11,6 +11,7 @@ use crate::domain::{
         CustomerId,
     },
     error::{
+        bad_input,
         err_msg,
         Error,
     },
@@ -49,9 +50,11 @@ pub(in crate::domain) fn create_order_command(
             if store.get_order(command.id)?.is_some() {
                 err!("order `{}` already exists", command.id)?
             } else {
-                let customer = query.get_customer(GetCustomer {
-                    id: command.customer_id,
-                })?;
+                let customer = query
+                    .get_customer(GetCustomer {
+                        id: command.customer_id,
+                    })?
+                    .ok_or(bad_input("customer not found"))?;
 
                 Order::new(command.id, &customer)?
             }
@@ -101,7 +104,7 @@ mod tests {
         };
 
         let mut cmd = create_order_command(&store, move |_| {
-            let customer: QueryResult = Ok(CustomerBuilder::new().id(customer_id).build());
+            let customer: QueryResult = Ok(Some(CustomerBuilder::new().id(customer_id).build()));
             customer
         });
 
