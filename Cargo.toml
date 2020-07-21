@@ -41,5 +41,4 @@ version = "~0.1"
 version = "~0.1"
 
 [dependencies.auto_impl]
-version = "~0.3"
-features = ["nightly"]
+version = "~0.4"
