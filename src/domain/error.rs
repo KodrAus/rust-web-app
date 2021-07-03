@@ -1,16 +1,17 @@
-use std::error;
+use std::{fmt, error};
 
-use failure;
-
-use failure_derive::*;
 
 /** The main error type */
-#[derive(Fail, Debug)]
-#[fail(display = "application error ({:?})", kind)]
+#[derive(Debug)]
 pub struct Error {
     kind: Kind,
-    #[cause]
-    inner: failure::Error,
+    inner: Box<dyn error::Error + Send + Sync>,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.inner, f)
+    }
 }
 
 #[derive(Debug)]
@@ -19,29 +20,29 @@ pub enum Kind {
     Other,
 }
 
-pub fn err_msg(msg: impl Into<String>) -> Error {
+pub fn msg(err: impl fmt::Display) -> Error {
     Error {
         kind: Kind::Other,
-        inner: failure::err_msg(msg.into()),
+        inner: err.to_string().into(),
     }
 }
 
-pub fn bad_input(msg: impl Into<String>) -> Error {
+pub fn bad_input(msg: impl fmt::Display) -> Error {
     Error {
         kind: Kind::BadInput,
-        inner: failure::err_msg(msg.into()),
+        inner: msg.to_string().into(),
     }
 }
 
 impl Error {
-    pub(crate) fn split(self) -> (Kind, failure::Error) {
+    pub(crate) fn split(self) -> (Kind, Box<dyn error::Error + Send + Sync>) {
         (self.kind, self.inner)
     }
 }
 
 impl<E> From<E> for Error
 where
-    E: error::Error + Send + Sync + 'static,
+    E: Into<Box<dyn error::Error + Send + Sync>>,
 {
     fn from(err: E) -> Error {
         Error {
@@ -54,6 +55,6 @@ where
 macro_rules! err {
     ($($err:tt)*) => {{
         error!($($err)*);
-        Err(err_msg(format!($($err)*)))
+        Err(crate::domain::error::msg(format!($($err)*)))
     }};
 }

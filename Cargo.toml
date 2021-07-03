@@ -24,7 +24,7 @@ version = "~1"
 version = "~1"
 
 [dependencies.uuid]
-version = "~0.7"
+version = "~0.8"
 features = ["serde", "v4"]
 
 [dependencies.log]
@@ -32,13 +32,10 @@ version = "~0.4"
 features = ["serde"]
 
 [dependencies.env_logger]
-version = "~0.6"
+version = "~0.8"
 
-[dependencies.failure]
-version = "~0.1"
-
-[dependencies.failure_derive]
-version = "~0.1"
+[dependencies.thiserror]
+version = "~1"
 
 [dependencies.auto_impl]
 version = "~0.4"

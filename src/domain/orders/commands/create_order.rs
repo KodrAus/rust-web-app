@@ -11,8 +11,7 @@ use crate::domain::{
         CustomerId,
     },
     error::{
-        bad_input,
-        err_msg,
+        self,
         Error,
     },
     orders::{
@@ -54,7 +53,7 @@ pub(in crate::domain) fn create_order_command(
                     .get_customer(GetCustomer {
                         id: command.customer_id,
                     })?
-                    .ok_or(bad_input("customer not found"))?;
+                    .ok_or_else(|| error::bad_input("customer not found"))?;
 
                 Order::new(command.id, &customer)?
             }

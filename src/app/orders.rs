@@ -5,7 +5,7 @@ use rocket_contrib::json::Json;
 
 use crate::{
     app::error::{
-        err_msg,
+        self,
         Error,
     },
     domain::{
@@ -24,7 +24,7 @@ pub fn get(id: OrderId, resolver: State<Resolver>) -> Result<Json<OrderWithProdu
 
     match query.get_order_with_products(GetOrderWithProducts { id: id })? {
         Some(order) => Ok(Json(order)),
-        None => Err(Error::NotFound(err_msg("order not found"))),
+        None => Err(Error::NotFound(error::msg("order not found"))),
     }
 }
 

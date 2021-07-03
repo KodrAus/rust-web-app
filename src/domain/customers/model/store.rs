@@ -16,7 +16,7 @@ use crate::domain::{
         CustomerId,
     },
     error::{
-        err_msg,
+        self,
         Error,
     },
 };
@@ -33,7 +33,7 @@ pub(in crate::domain) type InMemoryStore = RwLock<HashMap<CustomerId, CustomerDa
 
 impl CustomerStore for InMemoryStore {
     fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error> {
-        let customers = self.read().map_err(|_| err_msg("not good!"))?;
+        let customers = self.read().map_err(|_| error::msg("not good!"))?;
 
         if let Some(data) = customers.get(&id) {
             Ok(Some(Customer::from_data(data.clone())))
@@ -46,7 +46,7 @@ impl CustomerStore for InMemoryStore {
         let mut data = customer.into_data();
         let id = data.id;
 
-        let mut customers = self.write().map_err(|_| err_msg("not good!"))?;
+        let mut customers = self.write().map_err(|_| error::msg("not good!"))?;
 
         match customers.entry(id) {
             Entry::Vacant(entry) => {
@@ -56,7 +56,7 @@ impl CustomerStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err(err_msg("optimistic concurrency fail"))?
+                    Err(error::msg("optimistic concurrency fail"))?
                 }
 
                 data.version.next();

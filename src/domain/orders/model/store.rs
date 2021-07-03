@@ -14,7 +14,7 @@ use std::{
 
 use crate::domain::{
     error::{
-        err_msg,
+        self,
         Error,
     },
     orders::{
@@ -70,7 +70,7 @@ struct InMemoryStoreInner {
 
 impl OrderStore for InMemoryStore {
     fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error> {
-        let store_data = self.data.read().map_err(|_| err_msg("not good!"))?;
+        let store_data = self.data.read().map_err(|_| error::msg("not good!"))?;
 
         if let Some(&(ref order_data, ref item_ids)) = store_data.orders.get(&id) {
             let items_data = store_data
@@ -86,7 +86,7 @@ impl OrderStore for InMemoryStore {
     }
 
     fn set_order(&self, order: Order) -> Result<(), Error> {
-        let mut store_data = self.data.write().map_err(|_| err_msg("not good!"))?;
+        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (mut order_data, line_items_data) = order.into_data();
         let id = order_data.id;
@@ -101,7 +101,7 @@ impl OrderStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.0.version != order_data.version {
-                    Err(err_msg("optimistic concurrency fail"))?
+                    Err(error::msg("optimistic concurrency fail"))?
                 }
 
                 order_data.version.next();
@@ -125,12 +125,12 @@ impl OrderStore for InMemoryStore {
         id: OrderId,
         line_item_id: LineItemId,
     ) -> Result<Option<OrderLineItem>, Error> {
-        let store_data = &self.data.read().map_err(|_| err_msg("not good!"))?;
+        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
 
         if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
             // Check that the line item is part of the order
             if !item_ids.contains(&line_item_id) {
-                Err(err_msg("line item not found"))?
+                Err(error::msg("line item not found"))?
             }
 
             // Find the line item
@@ -139,7 +139,7 @@ impl OrderStore for InMemoryStore {
                 .values()
                 .find(|item_data| item_data.id == line_item_id)
                 .cloned()
-                .ok_or(err_msg("line item not found"))?;
+                .ok_or(error::msg("line item not found"))?;
 
             Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
         } else {
@@ -148,7 +148,7 @@ impl OrderStore for InMemoryStore {
     }
 
     fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
-        let mut store_data = self.data.write().map_err(|_| err_msg("not good!"))?;
+        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (order_id, mut order_item_data) = order.into_data();
         let line_item_id = order_item_data.id;
@@ -158,9 +158,9 @@ impl OrderStore for InMemoryStore {
             let &(_, ref item_ids) = store_data
                 .orders
                 .get(&order_id)
-                .ok_or(err_msg("order not found"))?;
+                .ok_or(error::msg("order not found"))?;
             if !item_ids.contains(&line_item_id) {
-                Err(err_msg("line item not found"))?
+                Err(error::msg("line item not found"))?
             }
         }
 
@@ -172,7 +172,7 @@ impl OrderStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != order_item_data.version {
-                    Err(err_msg("optimistic concurrency fail"))?
+                    Err(error::msg("optimistic concurrency fail"))?
                 }
 
                 order_item_data.version.next();
@@ -189,7 +189,7 @@ impl OrderStoreFilter for InMemoryStore {
     where
         F: Fn(&OrderData) -> bool,
     {
-        let store_data = &self.data.read().map_err(|_| err_msg("not good!"))?;
+        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
 
         let orders: Vec<_> = store_data
             .orders

@@ -8,10 +8,7 @@ use crate::domain::{
         CustomerId,
         CustomerStore,
     },
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     Resolver,
 };
 

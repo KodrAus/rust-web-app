@@ -27,7 +27,7 @@ use crate::domain::{
     },
     entity::Entity,
     error::{
-        err_msg,
+        self,
         Error,
     },
     id::{
@@ -63,7 +63,7 @@ impl TryFrom<u32> for Quantity {
 
     fn try_from(quantity: u32) -> Result<Self, Self::Error> {
         if quantity < 1 {
-            Err(err_msg("quantity must be greater than 0"))?
+            Err(error::msg("quantity must be greater than 0"))?
         }
 
         Ok(Quantity(quantity))
@@ -227,7 +227,7 @@ impl Order {
         } = product.to_data();
 
         if self.contains_product(product_id) {
-            Err(err_msg("product is already in order"))?
+            Err(error::msg("product is already in order"))?
         }
 
         let id = id_provider.id()?;

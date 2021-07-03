@@ -4,7 +4,7 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     error::{
-        err_msg,
+        self,
         Error,
     },
     products::{
@@ -45,7 +45,7 @@ pub(in crate::domain) fn set_product_title_command(
 
                 product
             } else {
-                Err(err_msg("not found"))?
+                Err(error::msg("not found"))?
             }
         };
 

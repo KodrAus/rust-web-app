@@ -19,6 +19,9 @@ extern crate rocket;
 extern crate serde_derive;
 
 #[macro_use]
+extern crate thiserror;
+
+#[macro_use]
 extern crate log;
 
 pub mod app;

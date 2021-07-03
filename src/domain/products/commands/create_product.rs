@@ -3,10 +3,7 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        err_msg,
-        Error,
-    },
+    error::Error,
     products::{
         Product,
         ProductId,

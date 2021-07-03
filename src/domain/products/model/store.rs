@@ -13,7 +13,7 @@ use std::{
 
 use crate::domain::{
     error::{
-        err_msg,
+        self,
         Error,
     },
     products::{
@@ -52,7 +52,7 @@ pub(in crate::domain) type InMemoryStore = RwLock<HashMap<ProductId, ProductData
 
 impl ProductStore for InMemoryStore {
     fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error> {
-        let products = self.read().map_err(|_| err_msg("not good!"))?;
+        let products = self.read().map_err(|_| error::msg("not good!"))?;
 
         if let Some(data) = products.get(&id) {
             Ok(Some(Product::from_data(data.clone())))
@@ -65,7 +65,7 @@ impl ProductStore for InMemoryStore {
         let mut data = product.into_data();
         let id = data.id;
 
-        let mut products = self.write().map_err(|_| err_msg("not good!"))?;
+        let mut products = self.write().map_err(|_| error::msg("not good!"))?;
 
         match products.entry(id) {
             Entry::Vacant(entry) => {
@@ -75,7 +75,7 @@ impl ProductStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err(err_msg("optimistic concurrency fail"))?
+                    Err(error::msg("optimistic concurrency fail"))?
                 }
 
                 data.version.next();
@@ -94,7 +94,7 @@ impl ProductStoreFilter for InMemoryStore {
     {
         let products: Vec<_> = self
             .read()
-            .map_err(|_| err_msg("not good!"))?
+            .map_err(|_| error::msg("not good!"))?
             .values()
             .filter(|p| predicate(*p))
             .cloned()

@@ -5,7 +5,7 @@ use rocket_contrib::json::Json;
 
 use crate::{
     app::error::{
-        err_msg,
+        self,
         Error,
     },
     domain::{
@@ -37,7 +37,7 @@ pub fn get(id: ProductId, resolver: State<Resolver>) -> Result<Json<Get>, Error>
                 price: product.price,
             }))
         }
-        None => Err(Error::NotFound(err_msg("product not found"))),
+        None => Err(Error::NotFound(error::msg("product not found"))),
     }
 }
 

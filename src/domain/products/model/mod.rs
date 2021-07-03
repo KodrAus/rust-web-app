@@ -13,7 +13,7 @@ pub mod test_data;
 use crate::domain::{
     entity::Entity,
     error::{
-        err_msg,
+        self,
         Error,
     },
     id::{
@@ -41,7 +41,7 @@ impl TryFrom<String> for Title {
 
     fn try_from(title: String) -> Result<Self, Self::Error> {
         if title.len() == 0 {
-            Err(err_msg("title must not be empty"))?
+            Err(error::msg("title must not be empty"))?
         }
 
         Ok(Title(title))
@@ -68,7 +68,7 @@ impl TryFrom<f32> for Price {
 
     fn try_from(price: f32) -> Result<Self, Self::Error> {
         if !price.is_normal() || !price.is_sign_positive() {
-            Err(err_msg("price must be greater than 0"))?
+            Err(error::msg("price must be greater than 0"))?
         }
 
         Ok(Price(price))

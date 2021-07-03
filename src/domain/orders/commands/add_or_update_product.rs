@@ -4,7 +4,7 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     error::{
-        bad_input,
+        self,
         Error,
     },
     id::IdProvider,
@@ -79,7 +79,7 @@ pub(in crate::domain) fn add_or_update_product_command(
                         .get_product(GetProduct {
                             id: command.product_id,
                         })?
-                        .ok_or(bad_input("product not found"))?;
+                        .ok_or_else(|| error::bad_input("product not found"))?;
 
                     order.add_product(id, &product, command.quantity)?;
                     store.set_order(order)?;
@@ -95,7 +95,7 @@ pub(in crate::domain) fn add_or_update_product_command(
 
             Ok(id)
         } else {
-            Err(bad_input("not found"))?
+            Err(error::bad_input("not found"))?
         }
     }
 }
