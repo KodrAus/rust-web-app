@@ -45,7 +45,7 @@ pub(in crate::domain) fn set_product_title_command(
 
                 product
             } else {
-                Err(error::msg("not found"))?
+                return Err(error::msg("not found"));
             }
         };
 

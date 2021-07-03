@@ -75,7 +75,7 @@ impl ProductStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err(error::msg("optimistic concurrency fail"))?
+                    return Err(error::msg("optimistic concurrency fail"));
                 }
 
                 data.version.next();
@@ -88,6 +88,7 @@ impl ProductStore for InMemoryStore {
 }
 
 impl ProductStoreFilter for InMemoryStore {
+    #[allow(clippy::needless_collect)]
     fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
     where
         F: Fn(&ProductData) -> bool,

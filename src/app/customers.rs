@@ -20,7 +20,7 @@ use crate::{
 pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
     let query = resolver.get_customer_with_orders_query();
 
-    match query.get_customer_with_orders(GetCustomerWithOrders { id: id })? {
+    match query.get_customer_with_orders(GetCustomerWithOrders { id })? {
         Some(customer) => Ok(Json(customer)),
         None => Err(Error::NotFound(error::msg("customer not found"))),
     }
@@ -34,7 +34,7 @@ pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
 
     let id = id_provider.id()?;
 
-    command.create_customer(CreateCustomer { id: id })?;
+    command.create_customer(CreateCustomer { id })?;
 
     Ok(Json(id))
 }

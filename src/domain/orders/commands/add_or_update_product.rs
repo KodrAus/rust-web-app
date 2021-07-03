@@ -95,7 +95,7 @@ pub(in crate::domain) fn add_or_update_product_command(
 
             Ok(id)
         } else {
-            Err(error::bad_input("not found"))?
+            Err(error::bad_input("not found"))
         }
     }
 }
@@ -150,8 +150,8 @@ mod tests {
         let line_item_id = cmd
             .add_or_update_product(AddOrUpdateProduct {
                 id: order_id,
-                product_id: product_id,
-                quantity: quantity,
+                product_id,
+                quantity,
             })
             .unwrap();
 
@@ -191,8 +191,8 @@ mod tests {
         let updated_line_item_id = cmd
             .add_or_update_product(AddOrUpdateProduct {
                 id: order_id,
-                product_id: product_id,
-                quantity: quantity,
+                product_id,
+                quantity,
             })
             .unwrap();
 

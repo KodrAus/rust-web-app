@@ -50,7 +50,7 @@ impl<T> fmt::Display for Id<T> {
 
 impl<T> Clone for Id<T> {
     fn clone(&self) -> Self {
-        Id(self.0.clone(), PhantomData)
+        Id(self.0, PhantomData)
     }
 }
 
@@ -59,10 +59,6 @@ impl<T> Copy for Id<T> {}
 impl<T> PartialEq for Id<T> {
     fn eq(&self, other: &Self) -> bool {
         self.0.eq(&other.0)
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        self.0.ne(&other.0)
     }
 }
 
@@ -87,6 +83,7 @@ impl<T> Hash for Id<T> {
 }
 
 impl<T> Id<T> {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Id(Uuid::new_v4(), PhantomData)
     }
@@ -136,6 +133,12 @@ impl<T> IdProvider<T> for Id<T> {
 
 /** Generate a new `Id` randomly. */
 pub struct NextId<T>(PhantomData<T>);
+
+impl<T> Default for NextId<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl<T> NextId<T> {
     pub fn new() -> Self {

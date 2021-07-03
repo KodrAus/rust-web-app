@@ -34,7 +34,7 @@ pub struct CreateOrder {
 /** Create a new order. */
 #[auto_impl(FnMut)]
 pub trait CreateOrderCommand {
-    fn create_order<'a>(&mut self, command: CreateOrder) -> Result;
+    fn create_order(&mut self, command: CreateOrder) -> Result;
 }
 
 /** Default implementation for a `CreateOrderCommand`. */
@@ -99,7 +99,7 @@ mod tests {
 
         let create = CreateOrder {
             id: OrderId::new(),
-            customer_id: customer_id,
+            customer_id,
         };
 
         let mut cmd = create_order_command(&store, move |_| {

@@ -11,6 +11,7 @@ Refer to the source for a fuller picture of what's in there.
 */
 
 #![feature(proc_macro_hygiene, decl_macro)]
+#![allow(clippy::manual_non_exhaustive, clippy::type_complexity)]
 
 #[macro_use]
 extern crate rocket;

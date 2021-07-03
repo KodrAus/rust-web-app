@@ -95,7 +95,7 @@ where
 }
 
 #[catch(500)]
-pub(super) fn internal_error<'r>(_: &Request) -> content::Json<Vec<u8>> {
+pub(super) fn internal_error(_: &Request) -> content::Json<Vec<u8>> {
     let err = serde_json::to_vec(&SerializeError {
         msg: &"an internal error occurred",
     })
@@ -105,7 +105,7 @@ pub(super) fn internal_error<'r>(_: &Request) -> content::Json<Vec<u8>> {
 }
 
 #[catch(404)]
-pub(super) fn not_found<'r>(_: &Request) -> content::Json<Vec<u8>> {
+pub(super) fn not_found(_: &Request) -> content::Json<Vec<u8>> {
     let err = serde_json::to_vec(&SerializeError {
         msg: &"an internal error occurred",
     })

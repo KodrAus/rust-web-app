@@ -4,7 +4,7 @@ use auto_impl::auto_impl;
 
 use crate::domain::{
     error::{
-        bad_input,
+        self,
         Error,
     },
     orders::{
@@ -80,7 +80,7 @@ pub(in crate::domain) fn get_order_with_products_query(
                         price: product.price,
                         quantity: line_item.quantity,
                     })
-                    .ok_or(bad_input("missing product for line item"))
+                    .ok_or_else(|| error::bad_input("missing product for line item"))
             })
             .collect::<std::result::Result<Vec<_>, _>>()?;
 

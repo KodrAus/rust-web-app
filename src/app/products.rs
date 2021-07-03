@@ -27,7 +27,7 @@ pub struct Get {
 pub fn get(id: ProductId, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
     let query = resolver.get_product_query();
 
-    match query.get_product(GetProduct { id: id })? {
+    match query.get_product(GetProduct { id })? {
         Some(product) => {
             let product = product.into_data();
 
@@ -56,7 +56,7 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
     let id = id_provider.id()?;
 
     command.create_product(CreateProduct {
-        id: id,
+        id,
         title: data.0.title,
         price: data.0.price,
     })?;
@@ -70,8 +70,8 @@ pub fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Res
     let mut command = resolver.set_product_title_command();
 
     command.set_product_title(SetProductTitle {
-        id: id,
-        title: title,
+        id,
+        title,
     })?;
 
     Ok(())

@@ -63,7 +63,7 @@ impl TryFrom<u32> for Quantity {
 
     fn try_from(quantity: u32) -> Result<Self, Self::Error> {
         if quantity < 1 {
-            Err(error::msg("quantity must be greater than 0"))?
+            return Err(error::msg("quantity must be greater than 0"));
         }
 
         Ok(Quantity(quantity))
@@ -124,8 +124,8 @@ pub enum IntoLineItem {
 impl OrderLineItem {
     pub(self) fn from_data(order: OrderData, line_item: LineItemData) -> Self {
         OrderLineItem {
-            order: order,
-            line_item: line_item,
+            order,
+            line_item,
         }
     }
 
@@ -155,8 +155,8 @@ impl Order {
         let line_items = line_items.into_iter().collect();
 
         Order {
-            order: order,
-            line_items: line_items,
+            order,
+            line_items,
         }
     }
 
@@ -195,9 +195,9 @@ impl Order {
         } = customer.to_data();
 
         let order_data = OrderData {
-            id: id,
+            id,
             version: OrderVersion::default(),
-            customer_id: customer_id,
+            customer_id,
             _private: (),
         };
 
@@ -227,15 +227,15 @@ impl Order {
         } = product.to_data();
 
         if self.contains_product(product_id) {
-            Err(error::msg("product is already in order"))?
+            return Err(error::msg("product is already in order"));
         }
 
         let id = id_provider.id()?;
         let line_item = LineItemData {
-            id: id,
+            id,
             version: LineItemVersion::default(),
-            product_id: product_id,
-            price: price,
+            product_id,
+            price,
             quantity: quantity.try_into()?.0,
             _private: (),
         };

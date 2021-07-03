@@ -69,6 +69,69 @@ struct InMemoryStoreInner {
 }
 
 impl OrderStore for InMemoryStore {
+    fn get_line_item(
+        &self,
+        id: OrderId,
+        line_item_id: LineItemId,
+    ) -> Result<Option<OrderLineItem>, Error> {
+        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
+
+        if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
+            // Check that the line item is part of the order
+            if !item_ids.contains(&line_item_id) {
+                return Err(error::msg("line item not found"));
+            }
+
+            // Find the line item
+            let item_data = store_data
+                .line_items
+                .values()
+                .find(|item_data| item_data.id == line_item_id)
+                .cloned()
+                .ok_or_else(|| error::msg("line item not found"))?;
+
+            Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
+        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
+
+        let (order_id, mut order_item_data) = order.into_data();
+        let line_item_id = order_item_data.id;
+
+        // Check that the line item is part of the order
+        {
+            let &(_, ref item_ids) = store_data
+                .orders
+                .get(&order_id)
+                .ok_or_else(|| error::msg("order not found"))?;
+            if !item_ids.contains(&line_item_id) {
+                return Err(error::msg("line item not found"));
+            }
+        }
+
+        match store_data.line_items.entry(line_item_id) {
+            Entry::Vacant(entry) => {
+                order_item_data.version.next();
+                entry.insert(order_item_data);
+            }
+            Entry::Occupied(mut entry) => {
+                let entry = entry.get_mut();
+                if entry.version != order_item_data.version {
+                    return Err(error::msg("optimistic concurrency fail"));
+                }
+
+                order_item_data.version.next();
+                *entry = order_item_data;
+            }
+        }
+
+        Ok(())
+    }
+
     fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error> {
         let store_data = self.data.read().map_err(|_| error::msg("not good!"))?;
 
@@ -101,7 +164,7 @@ impl OrderStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.0.version != order_data.version {
-                    Err(error::msg("optimistic concurrency fail"))?
+                    return Err(error::msg("optimistic concurrency fail"));
                 }
 
                 order_data.version.next();
@@ -119,72 +182,10 @@ impl OrderStore for InMemoryStore {
 
         Ok(())
     }
-
-    fn get_line_item(
-        &self,
-        id: OrderId,
-        line_item_id: LineItemId,
-    ) -> Result<Option<OrderLineItem>, Error> {
-        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
-
-        if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
-            // Check that the line item is part of the order
-            if !item_ids.contains(&line_item_id) {
-                Err(error::msg("line item not found"))?
-            }
-
-            // Find the line item
-            let item_data = store_data
-                .line_items
-                .values()
-                .find(|item_data| item_data.id == line_item_id)
-                .cloned()
-                .ok_or(error::msg("line item not found"))?;
-
-            Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
-        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
-
-        let (order_id, mut order_item_data) = order.into_data();
-        let line_item_id = order_item_data.id;
-
-        // Check that the line item is part of the order
-        {
-            let &(_, ref item_ids) = store_data
-                .orders
-                .get(&order_id)
-                .ok_or(error::msg("order not found"))?;
-            if !item_ids.contains(&line_item_id) {
-                Err(error::msg("line item not found"))?
-            }
-        }
-
-        match store_data.line_items.entry(line_item_id) {
-            Entry::Vacant(entry) => {
-                order_item_data.version.next();
-                entry.insert(order_item_data);
-            }
-            Entry::Occupied(mut entry) => {
-                let entry = entry.get_mut();
-                if entry.version != order_item_data.version {
-                    Err(error::msg("optimistic concurrency fail"))?
-                }
-
-                order_item_data.version.next();
-                *entry = order_item_data;
-            }
-        }
-
-        Ok(())
-    }
 }
 
 impl OrderStoreFilter for InMemoryStore {
+    #[allow(clippy::needless_collect)]
     fn filter<F>(&self, predicate: F) -> Result<Iter, Error>
     where
         F: Fn(&OrderData) -> bool,

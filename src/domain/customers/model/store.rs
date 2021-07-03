@@ -56,7 +56,7 @@ impl CustomerStore for InMemoryStore {
             Entry::Occupied(mut entry) => {
                 let entry = entry.get_mut();
                 if entry.version != data.version {
-                    Err(error::msg("optimistic concurrency fail"))?
+                    return Err(error::msg("optimistic concurrency fail"));
                 }
 
                 data.version.next();

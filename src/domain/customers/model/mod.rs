@@ -36,7 +36,7 @@ pub struct Customer {
 
 impl Customer {
     pub(self) fn from_data(data: CustomerData) -> Self {
-        Customer { data: data }
+        Customer { data }
     }
 
     pub fn to_data(&self) -> &CustomerData {
@@ -54,7 +54,7 @@ impl Customer {
         let id = id_provider.id()?;
 
         Ok(Customer::from_data(CustomerData {
-            id: id,
+            id,
             version: CustomerVersion::default(),
             _private: (),
         }))

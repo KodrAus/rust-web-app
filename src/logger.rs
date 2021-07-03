@@ -13,8 +13,8 @@ use env_logger::{
     Env,
 };
 
-pub const LOG_LEVEL_ENV: &'static str = "LOG_LEVEL";
-pub const LOG_STYLE_ENV: &'static str = "LOG_STYLE";
+pub const LOG_LEVEL_ENV: &str = "LOG_LEVEL";
+pub const LOG_STYLE_ENV: &str = "LOG_STYLE";
 
 pub(crate) fn init() {
     let env = Env::default()

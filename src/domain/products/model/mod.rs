@@ -40,8 +40,8 @@ impl TryFrom<String> for Title {
     type Error = Error;
 
     fn try_from(title: String) -> Result<Self, Self::Error> {
-        if title.len() == 0 {
-            Err(error::msg("title must not be empty"))?
+        if title.is_empty() {
+            return Err(error::msg("title must not be empty"));
         }
 
         Ok(Title(title))
@@ -68,7 +68,7 @@ impl TryFrom<f32> for Price {
 
     fn try_from(price: f32) -> Result<Self, Self::Error> {
         if !price.is_normal() || !price.is_sign_positive() {
-            Err(error::msg("price must be greater than 0"))?
+            return Err(error::msg("price must be greater than 0"));
         }
 
         Ok(Price(price))
@@ -92,7 +92,7 @@ pub struct Product {
 
 impl Product {
     pub(self) fn from_data(data: ProductData) -> Self {
-        Product { data: data }
+        Product { data }
     }
 
     pub fn into_data(self) -> ProductData {
@@ -116,7 +116,7 @@ impl Product {
         let id = id_provider.id()?;
 
         Ok(Product::from_data(ProductData {
-            id: id,
+            id,
             version: ProductVersion::default(),
             title: title.try_into()?.0,
             price: price.try_into()?.0,

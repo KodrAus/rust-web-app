@@ -22,7 +22,7 @@ use crate::{
 pub fn get(id: OrderId, resolver: State<Resolver>) -> Result<Json<OrderWithProducts>, Error> {
     let query = resolver.get_order_with_products_query();
 
-    match query.get_order_with_products(GetOrderWithProducts { id: id })? {
+    match query.get_order_with_products(GetOrderWithProducts { id })? {
         Some(order) => Ok(Json(order)),
         None => Err(Error::NotFound(error::msg("order not found"))),
     }
@@ -42,7 +42,7 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Orde
     let id = id_provider.id()?;
 
     command.create_order(CreateOrder {
-        id: id,
+        id,
         customer_id: data.customer,
     })?;
 
@@ -69,8 +69,8 @@ pub fn add_or_update_product(
     let mut command = resolver.add_or_update_product_command();
 
     let line_item_id = command.add_or_update_product(AddOrUpdateProduct {
-        id: id,
-        product_id: product_id,
+        id,
+        product_id,
         quantity: data.0.quantity,
     })?;
 
