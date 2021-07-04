@@ -32,7 +32,7 @@ pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
 
     let mut command = resolver.create_customer_command();
 
-    let id = id.id()?;
+    let id = id.get()?;
 
     command.create_customer(CreateCustomer { id })?;
 

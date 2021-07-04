@@ -44,7 +44,7 @@ impl Customer {
     where
         TId: IdProvider<CustomerData>,
     {
-        let id = id.id()?;
+        let id = id.get()?;
 
         Ok(Customer::from_data(CustomerData {
             id,

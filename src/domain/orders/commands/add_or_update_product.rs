@@ -60,7 +60,7 @@ pub(in crate::domain) fn add_or_update_product_command(
                         command.product_id, command.id
                     );
 
-                    let id = id.id()?;
+                    let id = id.get()?;
                     let product = query
                         .get_product(GetProduct {
                             id: command.product_id,

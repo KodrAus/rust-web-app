@@ -101,7 +101,7 @@ impl Product {
         TTitle: TryInto<Title, Error = Error>,
         TPrice: TryInto<Price, Error = Error>,
     {
-        let id = id.id()?;
+        let id = id.get()?;
 
         Ok(Product::from_data(ProductData {
             id,

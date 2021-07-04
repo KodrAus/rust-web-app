@@ -38,7 +38,7 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Orde
     let id = resolver.order_id();
     let mut command = resolver.create_order_command();
 
-    let id = id.id()?;
+    let id = id.get()?;
 
     command.create_order(CreateOrder {
         id,

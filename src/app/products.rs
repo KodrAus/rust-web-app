@@ -52,7 +52,7 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
     let id = resolver.product_id();
     let mut command = resolver.create_product_command();
 
-    let id = id.id()?;
+    let id = id.get()?;
 
     command.create_product(CreateProduct {
         id,

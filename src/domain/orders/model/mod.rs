@@ -166,7 +166,7 @@ impl Order {
     where
         TId: IdProvider<OrderData>,
     {
-        let id = id.id()?;
+        let id = id.get()?;
         let &CustomerData {
             id: customer_id, ..
         } = customer.to_data();
@@ -207,7 +207,7 @@ impl Order {
             return Err(error::msg("product is already in order"));
         }
 
-        let id = id.id()?;
+        let id = id.get()?;
         let line_item = LineItemData {
             id,
             version: LineItemVersion::default(),

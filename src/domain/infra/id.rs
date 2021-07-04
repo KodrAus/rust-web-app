@@ -123,11 +123,11 @@ Items that need to generate an id should depend on an `IdProvider` rather than t
 */
 #[auto_impl(&, Arc)]
 pub trait IdProvider<T> {
-    fn id(&self) -> Result<Id<T>, Error>;
+    fn get(&self) -> Result<Id<T>, Error>;
 }
 
 impl<T> IdProvider<T> for Id<T> {
-    fn id(&self) -> Result<Id<T>, Error> {
+    fn get(&self) -> Result<Id<T>, Error> {
         Ok(*self)
     }
 }
@@ -152,7 +152,7 @@ impl<T> NextId<T> {
 }
 
 impl<T> IdProvider<T> for NextId<T> {
-    fn id(&self) -> Result<Id<T>, Error> {
+    fn get(&self) -> Result<Id<T>, Error> {
         Ok(self.next())
     }
 }
