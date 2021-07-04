@@ -11,6 +11,7 @@ use crate::{
     domain::{
         customers::*,
         id::IdProvider,
+        transaction::ActiveTransactionProvider,
         Resolver,
     },
 };
@@ -29,12 +30,16 @@ pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWit
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
 pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
+    let transaction = resolver.active_transaction_provider().active();
     let id_provider = resolver.customer_id_provider();
-    let mut command = resolver.create_customer_command();
+
+    let mut command = resolver.create_customer_command(&transaction);
 
     let id = id_provider.id()?;
 
     command.create_customer(CreateCustomer { id })?;
+
+    transaction.commit()?;
 
     Ok(Json(id))
 }

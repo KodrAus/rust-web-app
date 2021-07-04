@@ -9,15 +9,22 @@ use std::{
     sync::RwLock,
 };
 
-use crate::domain::{
-    customers::{
-        Customer,
-        CustomerData,
-        CustomerId,
+use crate::{
+    domain::{
+        customers::{
+            Customer,
+            CustomerData,
+            CustomerId,
+        },
+        error::{
+            self,
+            Error,
+        },
     },
-    error::{
-        self,
-        Error,
+    store::{
+        Transaction,
+        TransactionStore,
+        TransactionValueStore,
     },
 };
 
@@ -25,7 +32,7 @@ use crate::domain::{
 #[auto_impl(&, Arc)]
 pub(in crate::domain) trait CustomerStore {
     fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error>;
-    fn set_customer(&self, customer: Customer) -> Result<(), Error>;
+    fn set_customer(&self, transaction: &Transaction, customer: Customer) -> Result<(), Error>;
 }
 
 /* A test in-memory customer store. */
@@ -42,7 +49,7 @@ impl CustomerStore for InMemoryStore {
         }
     }
 
-    fn set_customer(&self, customer: Customer) -> Result<(), Error> {
+    fn set_customer(&self, transaction: &Transaction, customer: Customer) -> Result<(), Error> {
         let mut data = customer.into_data();
         let id = data.id;
 
@@ -89,7 +96,7 @@ mod tests {
 
         // Create a customer in the store
         store
-            .set_customer(CustomerBuilder::new().id(id).build())
+            .set_customer(&Transaction::none(), CustomerBuilder::new().id(id).build())
             .unwrap();
 
         // Get the customer from the store
@@ -105,12 +112,12 @@ mod tests {
 
         // Create a customer in the store
         store
-            .set_customer(CustomerBuilder::new().id(id).build())
+            .set_customer(&Transaction::none(), CustomerBuilder::new().id(id).build())
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(store
-            .set_customer(CustomerBuilder::new().id(id).build())
+            .set_customer(&Transaction::none(), CustomerBuilder::new().id(id).build())
             .is_err());
     }
 }

@@ -11,6 +11,10 @@ use crate::domain::{
         ProductId,
         ProductStore,
     },
+    transaction::{
+        ActiveTransaction,
+        ActiveTransactionProvider,
+    },
     Resolver,
 };
 
@@ -31,6 +35,7 @@ pub trait SetProductTitleCommand {
 
 /** Default implementation for a `SetProductTitleCommand`. */
 pub(in crate::domain) fn set_product_title_command(
+    transaction: impl ActiveTransactionProvider,
     store: impl ProductStore,
 ) -> impl SetProductTitleCommand {
     move |command: SetProductTitle| {
@@ -38,6 +43,8 @@ pub(in crate::domain) fn set_product_title_command(
             "updating product `{}` title to {:?}",
             command.id, command.title
         );
+
+        let transaction = transaction.active();
 
         let product = {
             if let Some(mut product) = store.get_product(command.id)? {
@@ -49,7 +56,7 @@ pub(in crate::domain) fn set_product_title_command(
             }
         };
 
-        store.set_product(product)?;
+        store.set_product(transaction.get(), product)?;
 
         info!("updated product `{}` title", command.id);
 
@@ -58,9 +65,12 @@ pub(in crate::domain) fn set_product_title_command(
 }
 
 impl Resolver {
-    pub fn set_product_title_command(&self) -> impl SetProductTitleCommand {
+    pub fn set_product_title_command(
+        &self,
+        transaction: &ActiveTransaction,
+    ) -> impl SetProductTitleCommand {
         let store = self.products().product_store();
 
-        set_product_title_command(store)
+        set_product_title_command(transaction.clone(), store)
     }
 }

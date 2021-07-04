@@ -9,6 +9,10 @@ use crate::domain::{
         CustomerStore,
     },
     error::Error,
+    transaction::{
+        ActiveTransaction,
+        ActiveTransactionProvider,
+    },
     Resolver,
 };
 
@@ -28,10 +32,13 @@ pub trait CreateCustomerCommand {
 
 /** Default implementation for a `CreateCustomerCommand`. */
 pub(in crate::domain) fn create_customer_command(
+    transaction: impl ActiveTransactionProvider,
     store: impl CustomerStore,
 ) -> impl CreateCustomerCommand {
     move |command: CreateCustomer| {
         debug!("creating customer `{}`", command.id);
+
+        let transaction = transaction.active();
 
         let customer = {
             if store.get_customer(command.id)?.is_some() {
@@ -41,7 +48,7 @@ pub(in crate::domain) fn create_customer_command(
             }
         };
 
-        store.set_customer(customer)?;
+        store.set_customer(transaction.get(), customer)?;
 
         info!("customer `{}` created", command.id);
 
@@ -50,18 +57,24 @@ pub(in crate::domain) fn create_customer_command(
 }
 
 impl Resolver {
-    pub fn create_customer_command(&self) -> impl CreateCustomerCommand {
+    pub fn create_customer_command(
+        &self,
+        transaction: &ActiveTransaction,
+    ) -> impl CreateCustomerCommand {
         let store = self.customers().customer_store();
 
-        create_customer_command(store)
+        create_customer_command(transaction.clone(), store)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::customers::{
-        model::store::in_memory_store,
-        *,
+    use crate::domain::{
+        customers::{
+            model::store::in_memory_store,
+            *,
+        },
+        transaction::NoTransaction,
     };
 
     use super::*;
@@ -74,7 +87,7 @@ mod tests {
             id: CustomerId::new(),
         };
 
-        let mut cmd = create_customer_command(&store);
+        let mut cmd = create_customer_command(NoTransaction, &store);
 
         cmd.create_customer(create.clone()).unwrap();
 

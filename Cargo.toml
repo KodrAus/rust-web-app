@@ -42,3 +42,6 @@ version = "~1"
 
 [dependencies.auto_impl]
 version = "~0.4"
+
+[dependencies.once_cell]
+version = "~1"

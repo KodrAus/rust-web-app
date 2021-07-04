@@ -12,18 +12,25 @@ use std::{
     vec::IntoIter,
 };
 
-use crate::domain::{
-    error::{
-        self,
-        Error,
+use crate::{
+    domain::{
+        error::{
+            self,
+            Error,
+        },
+        orders::{
+            LineItemData,
+            LineItemId,
+            Order,
+            OrderData,
+            OrderId,
+            OrderLineItem,
+        },
     },
-    orders::{
-        LineItemData,
-        LineItemId,
-        Order,
-        OrderData,
-        OrderId,
-        OrderLineItem,
+    store::{
+        Transaction,
+        TransactionStore,
+        TransactionValueStore,
     },
 };
 
@@ -35,10 +42,10 @@ pub(in crate::domain) trait OrderStore {
         id: OrderId,
         line_item_id: LineItemId,
     ) -> Result<Option<OrderLineItem>, Error>;
-    fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error>;
+    fn set_line_item(&self, transaction: &Transaction, order: OrderLineItem) -> Result<(), Error>;
 
     fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error>;
-    fn set_order(&self, order: Order) -> Result<(), Error>;
+    fn set_order(&self, transaction: &Transaction, order: Order) -> Result<(), Error>;
 }
 
 /**
@@ -96,7 +103,7 @@ impl OrderStore for InMemoryStore {
         }
     }
 
-    fn set_line_item(&self, order: OrderLineItem) -> Result<(), Error> {
+    fn set_line_item(&self, transaction: &Transaction, order: OrderLineItem) -> Result<(), Error> {
         let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (order_id, mut order_item_data) = order.into_data();
@@ -148,7 +155,7 @@ impl OrderStore for InMemoryStore {
         }
     }
 
-    fn set_order(&self, order: Order) -> Result<(), Error> {
+    fn set_order(&self, transaction: &Transaction, order: Order) -> Result<(), Error> {
         let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (mut order_data, line_items_data) = order.into_data();
@@ -233,7 +240,10 @@ mod tests {
 
         // Create an order in the store
         store
-            .set_order(OrderBuilder::new().id(order_id).build())
+            .set_order(
+                &Transaction::none(),
+                OrderBuilder::new().id(order_id).build(),
+            )
             .unwrap();
 
         // Add a product to the order
@@ -241,7 +251,7 @@ mod tests {
         order
             .add_product(line_item_id, &default_product(), 1)
             .unwrap();
-        store.set_order(order).unwrap();
+        store.set_order(&Transaction::none(), order).unwrap();
 
         // Update the product in the order
         let mut line_item = store
@@ -249,7 +259,9 @@ mod tests {
             .unwrap()
             .unwrap();
         line_item.set_quantity(5).unwrap();
-        store.set_line_item(line_item).unwrap();
+        store
+            .set_line_item(&Transaction::none(), line_item)
+            .unwrap();
 
         // Get the product with the order
         let (_, line_items) = store.get_order(order_id).unwrap().unwrap().into_data();
@@ -266,12 +278,18 @@ mod tests {
 
         // Create an order in the store
         store
-            .set_order(OrderBuilder::new().id(order_id).build())
+            .set_order(
+                &Transaction::none(),
+                OrderBuilder::new().id(order_id).build(),
+            )
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(store
-            .set_order(OrderBuilder::new().id(order_id).build())
+            .set_order(
+                &Transaction::none(),
+                OrderBuilder::new().id(order_id).build()
+            )
             .is_err());
     }
 
@@ -290,7 +308,7 @@ mod tests {
             })
             .build();
 
-        store.set_order(order).unwrap();
+        store.set_order(&Transaction::none(), order).unwrap();
 
         // Attempting to update a line item twice fails optimistic concurrency check
         let get_item = || {
@@ -305,8 +323,12 @@ mod tests {
         line_item_a.set_quantity(3).unwrap();
         line_item_b.set_quantity(2).unwrap();
 
-        store.set_line_item(line_item_a).unwrap();
+        store
+            .set_line_item(&Transaction::none(), line_item_a)
+            .unwrap();
 
-        assert!(store.set_line_item(line_item_b).is_err());
+        assert!(store
+            .set_line_item(&Transaction::none(), line_item_b)
+            .is_err());
     }
 }

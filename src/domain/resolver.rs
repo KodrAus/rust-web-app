@@ -1,9 +1,12 @@
 /*! Contains the root `Resolver` type. */
 
-use crate::domain::{
-    customers::resolver::CustomersResolver,
-    orders::resolver::OrdersResolver,
-    products::resolver::ProductsResolver,
+use crate::{
+    domain::{
+        customers::resolver::CustomersResolver,
+        orders::resolver::OrdersResolver,
+        products::resolver::ProductsResolver,
+    },
+    store::resolver::StoreResolver,
 };
 
 /**
@@ -16,6 +19,7 @@ Private implementation details live on the wrapped resolvers.
 Commands and queries are resolved from this `Resolver`.
 */
 pub struct Resolver {
+    store_resolver: StoreResolver,
     product_resolver: ProductsResolver,
     order_resolver: OrdersResolver,
     customer_resolver: CustomersResolver,
@@ -23,15 +27,24 @@ pub struct Resolver {
 
 impl Default for Resolver {
     fn default() -> Self {
+        let store_resolver = StoreResolver::default();
+
         Resolver {
-            product_resolver: ProductsResolver::default(),
-            order_resolver: OrdersResolver::default(),
-            customer_resolver: CustomersResolver::default(),
+            product_resolver: ProductsResolver::new(&store_resolver),
+            order_resolver: OrdersResolver::new(&store_resolver),
+            customer_resolver: CustomersResolver::new(&store_resolver),
+            store_resolver,
         }
     }
 }
 
+// TODO: Come up with a scoped resolver that lets us specify an `ActiveTransactionProvider`
+
 impl Resolver {
+    pub(in crate::domain) fn store_resolver(&self) -> &StoreResolver {
+        &self.store_resolver
+    }
+
     pub(in crate::domain) fn products(&self) -> &ProductsResolver {
         &self.product_resolver
     }

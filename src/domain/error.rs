@@ -1,5 +1,7 @@
-use std::{fmt, error};
-
+use std::{
+    error,
+    fmt,
+};
 
 /** The main error type */
 #[derive(Debug)]

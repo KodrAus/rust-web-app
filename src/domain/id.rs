@@ -121,6 +121,7 @@ A builder for a new id.
 
 Items that need to generate an id should depend on an `IdProvider` rather than taking an `Id` directly.
 */
+#[auto_impl(&, Arc)]
 pub trait IdProvider<T> {
     fn id(&self) -> Result<Id<T>, Error>;
 }

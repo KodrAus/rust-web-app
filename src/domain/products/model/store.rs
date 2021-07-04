@@ -11,15 +11,22 @@ use std::{
     vec::IntoIter,
 };
 
-use crate::domain::{
-    error::{
-        self,
-        Error,
+use crate::{
+    domain::{
+        error::{
+            self,
+            Error,
+        },
+        products::{
+            Product,
+            ProductData,
+            ProductId,
+        },
     },
-    products::{
-        Product,
-        ProductData,
-        ProductId,
+    store::{
+        Transaction,
+        TransactionStore,
+        TransactionValueStore,
     },
 };
 
@@ -27,7 +34,7 @@ use crate::domain::{
 #[auto_impl(&, Arc)]
 pub(in crate::domain) trait ProductStore {
     fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error>;
-    fn set_product(&self, product: Product) -> Result<(), Error>;
+    fn set_product(&self, transaction: &Transaction, product: Product) -> Result<(), Error>;
 }
 
 /**
@@ -61,7 +68,7 @@ impl ProductStore for InMemoryStore {
         }
     }
 
-    fn set_product(&self, product: Product) -> Result<(), Error> {
+    fn set_product(&self, transaction: &Transaction, product: Product) -> Result<(), Error> {
         let mut data = product.into_data();
         let id = data.id;
 
@@ -126,7 +133,7 @@ mod tests {
 
         // Create a product in the store
         let product = test_data::ProductBuilder::new().id(id).build();
-        store.set_product(product).unwrap();
+        store.set_product(&Transaction::none(), product).unwrap();
 
         // Get the product from the store
         let found = store.get_product(id).unwrap().unwrap();
@@ -141,12 +148,18 @@ mod tests {
 
         // Create a product in the store
         store
-            .set_product(test_data::ProductBuilder::new().id(id).build())
+            .set_product(
+                &Transaction::none(),
+                test_data::ProductBuilder::new().id(id).build(),
+            )
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
         assert!(store
-            .set_product(test_data::ProductBuilder::new().id(id).build())
+            .set_product(
+                &Transaction::none(),
+                test_data::ProductBuilder::new().id(id).build()
+            )
             .is_err());
     }
 }

@@ -13,6 +13,7 @@ use crate::{
         id::IdProvider,
         orders::*,
         products::*,
+        transaction::ActiveTransactionProvider,
         Resolver,
     },
 };
@@ -36,8 +37,10 @@ pub struct Create {
 /** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, Error> {
+    let transaction = resolver.active_transaction_provider().active();
+
     let id_provider = resolver.order_id_provider();
-    let mut command = resolver.create_order_command();
+    let mut command = resolver.create_order_command(&transaction);
 
     let id = id_provider.id()?;
 
@@ -45,6 +48,8 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Orde
         id,
         customer_id: data.customer,
     })?;
+
+    transaction.commit()?;
 
     Ok(Json(id))
 }
@@ -66,13 +71,17 @@ pub fn add_or_update_product(
     data: Json<ProductQuantity>,
     resolver: State<Resolver>,
 ) -> Result<Json<LineItemId>, Error> {
-    let mut command = resolver.add_or_update_product_command();
+    let transaction = resolver.active_transaction_provider().active();
+
+    let mut command = resolver.add_or_update_product_command(&transaction);
 
     let line_item_id = command.add_or_update_product(AddOrUpdateProduct {
         id,
         product_id,
         quantity: data.0.quantity,
     })?;
+
+    transaction.commit()?;
 
     Ok(Json(line_item_id))
 }

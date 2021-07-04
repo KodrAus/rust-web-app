@@ -9,6 +9,10 @@ use crate::domain::{
         ProductId,
         ProductStore,
     },
+    transaction::{
+        ActiveTransaction,
+        ActiveTransactionProvider,
+    },
     Resolver,
 };
 
@@ -30,10 +34,13 @@ pub trait CreateProductCommand {
 
 /** Default implementation for a `CreateProductCommand`. */
 pub(in crate::domain) fn create_product_command(
+    transaction: impl ActiveTransactionProvider,
     store: impl ProductStore,
 ) -> impl CreateProductCommand {
     move |command: CreateProduct| {
         debug!("creating product `{}`", command.id);
+
+        let transaction = transaction.active();
 
         let product = {
             if store.get_product(command.id)?.is_some() {
@@ -43,7 +50,7 @@ pub(in crate::domain) fn create_product_command(
             }
         };
 
-        store.set_product(product)?;
+        store.set_product(transaction.get(), product)?;
 
         info!("created product `{}`", command.id);
 
@@ -52,10 +59,13 @@ pub(in crate::domain) fn create_product_command(
 }
 
 impl Resolver {
-    pub fn create_product_command(&self) -> impl CreateProductCommand {
+    pub fn create_product_command(
+        &self,
+        transaction: &ActiveTransaction,
+    ) -> impl CreateProductCommand {
         let store = self.products().product_store();
 
-        create_product_command(store)
+        create_product_command(transaction.clone(), store)
     }
 }
 
@@ -63,9 +73,12 @@ impl Resolver {
 mod tests {
     use super::*;
 
-    use crate::domain::products::{
-        model::store::in_memory_store,
-        *,
+    use crate::domain::{
+        products::{
+            model::store::in_memory_store,
+            *,
+        },
+        transaction::NoTransaction,
     };
 
     #[test]
@@ -78,7 +91,7 @@ mod tests {
             price: 1f32,
         };
 
-        let mut cmd = create_product_command(&store);
+        let mut cmd = create_product_command(NoTransaction, &store);
 
         cmd.create_product(create.clone()).unwrap();
 

@@ -19,6 +19,10 @@ use crate::domain::{
         OrderId,
         OrderStore,
     },
+    transaction::{
+        ActiveTransaction,
+        ActiveTransactionProvider,
+    },
     Resolver,
 };
 
@@ -39,11 +43,14 @@ pub trait CreateOrderCommand {
 
 /** Default implementation for a `CreateOrderCommand`. */
 pub(in crate::domain) fn create_order_command(
+    transaction: impl ActiveTransactionProvider,
     store: impl OrderStore,
     query: impl GetCustomerQuery,
 ) -> impl CreateOrderCommand {
     move |command: CreateOrder| {
         debug!("creating order `{}`", command.id);
+
+        let transaction = transaction.active();
 
         let order = {
             if store.get_order(command.id)?.is_some() {
@@ -59,7 +66,7 @@ pub(in crate::domain) fn create_order_command(
             }
         };
 
-        store.set_order(order)?;
+        store.set_order(transaction.get(), order)?;
 
         info!("created order `{}`", command.id);
 
@@ -68,11 +75,11 @@ pub(in crate::domain) fn create_order_command(
 }
 
 impl Resolver {
-    pub fn create_order_command(&self) -> impl CreateOrderCommand {
+    pub fn create_order_command(&self, transaction: &ActiveTransaction) -> impl CreateOrderCommand {
         let store = self.orders().order_store();
         let query = self.get_customer_query();
 
-        create_order_command(store, query)
+        create_order_command(transaction.clone(), store, query)
     }
 }
 
@@ -89,6 +96,7 @@ mod tests {
             model::store::in_memory_store,
             *,
         },
+        transaction::NoTransaction,
     };
 
     #[test]
@@ -102,7 +110,7 @@ mod tests {
             customer_id,
         };
 
-        let mut cmd = create_order_command(&store, move |_| {
+        let mut cmd = create_order_command(NoTransaction, &store, move |_| {
             let customer: QueryResult = Ok(Some(CustomerBuilder::new().id(customer_id).build()));
             customer
         });

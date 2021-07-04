@@ -7,12 +7,18 @@ observable (such as being written to disk or some external database) before the 
 itself is committed. The `TransactionStore` keeps track of whether or not the data associated
 with a given transaction should be surfaced to callers or not.
 */
-
 use std::{
+    collections::{
+        hash_map,
+        HashMap,
+    },
     error,
-    collections::{hash_map, HashMap},
     ops::Drop,
-    sync::{Arc, Mutex, RwLock},
+    sync::{
+        Arc,
+        Mutex,
+        RwLock,
+    },
 };
 
 pub type Error = Box<dyn error::Error + Send + Sync>;
@@ -40,6 +46,16 @@ An active transaction.
 pub struct Transaction {
     id: TransactionId,
     complete_guard: Option<Box<dyn FnOnce()>>,
+}
+
+impl Transaction {
+    #[cfg(test)]
+    pub(crate) fn none() -> Self {
+        Transaction {
+            id: TransactionId(Uuid::default()),
+            complete_guard: None,
+        }
+    }
 }
 
 impl Drop for Transaction {
@@ -95,7 +111,12 @@ impl TransactionStore {
 
         let id = Uuid::new_v4();
 
-        transactions.insert(TransactionId(id), TransactionEntry { status: TransactionStatus::Active });
+        transactions.insert(
+            TransactionId(id),
+            TransactionEntry {
+                status: TransactionStatus::Active,
+            },
+        );
 
         Transaction {
             id: TransactionId(id),
@@ -110,7 +131,7 @@ impl TransactionStore {
                         transaction.status = TransactionStatus::Cancelled;
                     }
                 }))
-            }
+            },
         }
     }
 
@@ -158,7 +179,10 @@ impl TransactionStore {
     pub fn is_cancelled(&self, id: TransactionId) -> bool {
         let transactions = self.active.lock().unwrap();
 
-        transactions.get(&id).map(|transaction| matches!(transaction.status, TransactionStatus::Cancelled)).unwrap_or(false)
+        transactions
+            .get(&id)
+            .map(|transaction| matches!(transaction.status, TransactionStatus::Cancelled))
+            .unwrap_or(false)
     }
 }
 
@@ -231,7 +255,9 @@ where
         let data = self.data.read().unwrap();
 
         if let Some(existing) = data.get(&id) {
-            if let Some((existing_transaction, existing_version, ref existing_value)) = existing.current {
+            if let Some((existing_transaction, existing_version, ref existing_value)) =
+                existing.current
+            {
                 if self.transactions.is_committed(existing_transaction) {
                     return Some((existing_version, existing_value.clone()));
                 }
@@ -254,7 +280,14 @@ where
     is committed. If another transaction attempts to set this same value in the meantime it will
     fail with a version mismatch.
     */
-    pub fn set(&self, transaction: &Transaction, id: Id, old_version: Option<Version>, new_version: Version, new_value: T) -> Result<(), Error> {
+    pub fn set(
+        &self,
+        transaction: &Transaction,
+        id: Id,
+        old_version: Option<Version>,
+        new_version: Version,
+        new_value: T,
+    ) -> Result<(), Error> {
         let mut data = self.data.write().unwrap();
 
         match data.entry(id) {
@@ -265,12 +298,18 @@ where
                     Some((existing_transaction, existing_version, existing_value)) => {
                         // If the transaction for the current value was cancelled then look at the version
                         // of the prior value instead
-                        let version_matches = if self.transactions.is_cancelled(*existing_transaction) {
-                            old_version == existing.prior.as_ref().map(|(prior_transaction, prior_version, _)| {
-                                assert!(self.transactions.is_committed(*prior_transaction));
+                        let version_matches = if self
+                            .transactions
+                            .is_cancelled(*existing_transaction)
+                        {
+                            old_version
+                                == existing.prior.as_ref().map(
+                                    |(prior_transaction, prior_version, _)| {
+                                        assert!(self.transactions.is_committed(*prior_transaction));
 
-                                *prior_version
-                            })
+                                        *prior_version
+                                    },
+                                )
                         }
                         // If the transaction for the current value is active or committed then use it
                         // Checking the version of an active (uncommitted) transaction guarantees only
@@ -285,13 +324,14 @@ where
 
                         // Set the new value to the prior one
                         // Consumers won't see this value unless the transaction is committed
-                        let old_transaction = std::mem::replace(existing_transaction, transaction.id());
+                        let old_transaction =
+                            std::mem::replace(existing_transaction, transaction.id());
                         let old_version = std::mem::replace(existing_version, new_version);
                         let old_value = std::mem::replace(existing_value, new_value);
 
                         existing.prior = Some((old_transaction, old_version, old_value));
                     }
-                    None => existing.current = Some((transaction.id(), new_version, new_value))
+                    None => existing.current = Some((transaction.id(), new_version, new_value)),
                 }
             }
             hash_map::Entry::Vacant(vacant) => {
@@ -387,7 +427,9 @@ mod tests {
         let version = Version::new();
 
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, None, version, String::from("1")).unwrap();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
         store.transactions.commit(transaction);
 
         let (current_version, current_value) = store.get(id).unwrap();
@@ -404,7 +446,9 @@ mod tests {
         let version = Version::new();
 
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, None, version, String::from("1")).unwrap();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
 
         assert!(store.get(id).is_none());
     }
@@ -417,7 +461,9 @@ mod tests {
         let version = Version::new();
 
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, None, version, String::from("1")).unwrap();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
         store.transactions.cancel(transaction);
 
         assert!(store.get(id).is_none());
@@ -432,7 +478,9 @@ mod tests {
 
         // Set an initial value
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, None, version, String::from("1")).unwrap();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
         store.transactions.commit(transaction);
 
         let old_version = version;
@@ -440,7 +488,15 @@ mod tests {
 
         // Try set a new value, but cancel instead of commit
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, Some(old_version), version, String::from("2")).unwrap();
+        store
+            .set(
+                &transaction,
+                id,
+                Some(old_version),
+                version,
+                String::from("2"),
+            )
+            .unwrap();
         store.transactions.cancel(transaction);
 
         let (current_version, current_value) = store.get(id).unwrap();
@@ -452,7 +508,15 @@ mod tests {
 
         // Try set a new value again, but this time succeed
         let transaction = store.transactions.begin();
-        store.set(&transaction, id, Some(old_version), version, String::from("3")).unwrap();
+        store
+            .set(
+                &transaction,
+                id,
+                Some(old_version),
+                version,
+                String::from("3"),
+            )
+            .unwrap();
         store.transactions.commit(transaction);
 
         let (current_version, current_value) = store.get(id).unwrap();
@@ -476,8 +540,12 @@ mod tests {
         let version2 = Version::new();
 
         // Transactions apply across stores
-        store1.set(&transaction, id1, None, version1, String::from("a1")).unwrap();
-        store2.set(&transaction, id2, None, version2, String::from("a2")).unwrap();
+        store1
+            .set(&transaction, id1, None, version1, String::from("a1"))
+            .unwrap();
+        store2
+            .set(&transaction, id2, None, version2, String::from("a2"))
+            .unwrap();
 
         assert!(store1.get(id1).is_none());
         assert!(store2.get(id2).is_none());

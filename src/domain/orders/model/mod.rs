@@ -123,10 +123,7 @@ pub enum IntoLineItem {
 
 impl OrderLineItem {
     pub(self) fn from_data(order: OrderData, line_item: LineItemData) -> Self {
-        OrderLineItem {
-            order,
-            line_item,
-        }
+        OrderLineItem { order, line_item }
     }
 
     pub fn into_data(self) -> (OrderId, LineItemData) {
@@ -154,10 +151,7 @@ impl Order {
     {
         let line_items = line_items.into_iter().collect();
 
-        Order {
-            order,
-            line_items,
-        }
+        Order { order, line_items }
     }
 
     pub fn into_data(self) -> (OrderData, Vec<LineItemData>) {

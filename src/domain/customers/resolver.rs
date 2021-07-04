@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use crate::domain::customers::model::store as customer_store;
+use crate::{
+    domain::customers::model::store as customer_store,
+    store::StoreResolver,
+};
 
 /**
 Resolver for customers.
@@ -13,8 +16,8 @@ pub struct CustomersResolver {
     customer_store: Arc<customer_store::InMemoryStore>,
 }
 
-impl Default for CustomersResolver {
-    fn default() -> Self {
+impl CustomersResolver {
+    pub(in crate::domain) fn new(store_resolver: &StoreResolver) -> Self {
         CustomersResolver {
             customer_store: Arc::new(customer_store::in_memory_store()),
         }

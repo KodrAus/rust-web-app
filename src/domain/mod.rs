@@ -13,6 +13,7 @@ We shouldn't get too attached to the current structure, new information might me
 #[macro_use]
 pub mod error;
 pub mod id;
+pub mod transaction;
 pub mod version;
 
 mod future;

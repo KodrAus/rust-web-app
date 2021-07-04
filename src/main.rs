@@ -25,10 +25,13 @@ extern crate thiserror;
 #[macro_use]
 extern crate log;
 
+#[macro_use]
+extern crate auto_impl;
+
 pub mod app;
-pub mod storage;
 pub mod domain;
 pub mod logger;
+pub mod store;
 
 fn main() {
     logger::init();
