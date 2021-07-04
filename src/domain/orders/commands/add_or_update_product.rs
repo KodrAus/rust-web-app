@@ -3,30 +3,11 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        self,
-        Error,
-    },
-    id::IdProvider,
-    orders::{
-        IntoLineItem,
-        LineItemData,
-        LineItemId,
-        OrderId,
-        OrderStore,
-    },
-    products::{
-        queries::{
-            GetProduct,
-            GetProductQuery,
-        },
-        ProductId,
-    },
-    transaction::{
-        ActiveTransaction,
-        ActiveTransactionProvider,
-    },
-    Resolver,
+    error,
+    infra::*,
+    orders::*,
+    products::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<LineItemId, Error>;
@@ -47,9 +28,9 @@ pub trait AddOrUpdateProductCommand {
 
 /** Default implementation for an `AddOrUpdateProductCommand`. */
 pub(in crate::domain) fn add_or_update_product_command(
-    transaction: impl ActiveTransactionProvider,
+    transaction: ActiveTransaction,
     store: impl OrderStore,
-    id_provider: impl IdProvider<LineItemData>,
+    id: impl IdProvider<LineItemData>,
     query: impl GetProductQuery,
 ) -> impl AddOrUpdateProductCommand {
     move |command: AddOrUpdateProduct| {
@@ -57,8 +38,6 @@ pub(in crate::domain) fn add_or_update_product_command(
             "updating product `{}` in order `{}`",
             command.product_id, command.id
         );
-
-        let transaction = transaction.active();
 
         if let Some(order) = store.get_order(command.id)? {
             let id = match order.into_line_item_for_product(command.product_id) {
@@ -81,7 +60,7 @@ pub(in crate::domain) fn add_or_update_product_command(
                         command.product_id, command.id
                     );
 
-                    let id = id_provider.id()?;
+                    let id = id.id()?;
                     let product = query
                         .get_product(GetProduct {
                             id: command.product_id,
@@ -108,17 +87,15 @@ pub(in crate::domain) fn add_or_update_product_command(
 }
 
 impl Resolver {
-    pub fn add_or_update_product_command(
-        &self,
-    ) -> impl AddOrUpdateProductCommand {
-        let order_store = self.orders().order_store();
-        let active_transaction_provider = self.active_transaction_provider();
+    pub fn add_or_update_product_command(&self) -> impl AddOrUpdateProductCommand {
+        let order_store = self.order_store();
+        let active_transaction = self.active_transaction();
 
-        let id_provider = self.line_item_id_provider();
+        let id = self.line_item_id();
 
         let get_product = self.get_product_query();
 
-        add_or_update_product_command(active_transaction_provider, order_store, id_provider, get_product)
+        add_or_update_product_command(active_transaction, order_store, id, get_product)
     }
 }
 
@@ -127,19 +104,14 @@ mod tests {
     use super::*;
 
     use crate::domain::{
-        orders::{
-            model::{
-                store::in_memory_store,
-                test_data::OrderBuilder,
-            },
-            *,
+        orders::model::{
+            store::in_memory_store,
+            test_data::OrderBuilder,
         },
         products::{
             model::test_data::ProductBuilder,
             queries::get_product::Result as QueryResult,
-            *,
         },
-        transaction::NoTransaction,
     };
 
     #[test]
@@ -152,16 +124,20 @@ mod tests {
 
         store
             .set_order(
-                NoTransaction.active().get(),
+                ActiveTransaction::none().get(),
                 OrderBuilder::new().id(order_id).build(),
             )
             .unwrap();
 
-        let mut cmd =
-            add_or_update_product_command(NoTransaction, &store, NextLineItemId::new(), |_| {
+        let mut cmd = add_or_update_product_command(
+            ActiveTransaction::none(),
+            &store,
+            NextLineItemId::new(),
+            |_| {
                 let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
                 product
-            });
+            },
+        );
 
         let line_item_id = cmd
             .add_or_update_product(AddOrUpdateProduct {
@@ -198,14 +174,18 @@ mod tests {
             .build();
 
         store
-            .set_order(NoTransaction.active().get(), order)
+            .set_order(ActiveTransaction::none().get(), order)
             .unwrap();
 
-        let mut cmd =
-            add_or_update_product_command(NoTransaction, &store, NextLineItemId::new(), |_| {
+        let mut cmd = add_or_update_product_command(
+            ActiveTransaction::none(),
+            &store,
+            NextLineItemId::new(),
+            |_| {
                 let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
                 product
-            });
+            },
+        );
 
         let updated_line_item_id = cmd
             .add_or_update_product(AddOrUpdateProduct {

@@ -11,7 +11,11 @@ Refer to the source for a fuller picture of what's in there.
 */
 
 #![feature(decl_macro)]
-#![allow(clippy::manual_non_exhaustive, clippy::type_complexity)]
+#![allow(
+    clippy::manual_non_exhaustive,
+    clippy::type_complexity,
+    clippy::nonstandard_macro_braces
+)]
 
 #[macro_use]
 extern crate rocket;

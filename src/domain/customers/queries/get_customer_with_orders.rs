@@ -3,17 +3,10 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    customers::{
-        CustomerId,
-        CustomerStore,
-    },
-    error::Error,
-    orders::{
-        GetOrderSummariesForCustomer,
-        GetOrderSummariesForCustomerQuery,
-        OrderId,
-    },
-    Resolver,
+    customers::*,
+    infra::*,
+    orders::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<Option<CustomerWithOrders>, Error>;
@@ -69,7 +62,7 @@ pub(in crate::domain) fn get_customer_with_orders_query(
 
 impl Resolver {
     pub fn get_customer_with_orders_query(&self) -> impl GetCustomerWithOrdersQuery {
-        let store = self.customers().customer_store();
+        let store = self.customer_store();
         let query = self.get_order_summaries_for_customer_query();
 
         get_customer_with_orders_query(store, query)

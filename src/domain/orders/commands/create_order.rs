@@ -3,27 +3,11 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    customers::{
-        queries::{
-            GetCustomer,
-            GetCustomerQuery,
-        },
-        CustomerId,
-    },
-    error::{
-        self,
-        Error,
-    },
-    orders::{
-        Order,
-        OrderId,
-        OrderStore,
-    },
-    transaction::{
-        ActiveTransaction,
-        ActiveTransactionProvider,
-    },
-    Resolver,
+    customers::*,
+    error,
+    infra::*,
+    orders::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<(), Error>;
@@ -43,14 +27,12 @@ pub trait CreateOrderCommand {
 
 /** Default implementation for a `CreateOrderCommand`. */
 pub(in crate::domain) fn create_order_command(
-    transaction: impl ActiveTransactionProvider,
+    transaction: ActiveTransaction,
     store: impl OrderStore,
     query: impl GetCustomerQuery,
 ) -> impl CreateOrderCommand {
     move |command: CreateOrder| {
         debug!("creating order `{}`", command.id);
-
-        let transaction = transaction.active();
 
         let order = {
             if store.get_order(command.id)?.is_some() {
@@ -76,12 +58,12 @@ pub(in crate::domain) fn create_order_command(
 
 impl Resolver {
     pub fn create_order_command(&self) -> impl CreateOrderCommand {
-        let store = self.orders().order_store();
-        let active_transaction_provider = self.active_transaction_provider();
+        let store = self.order_store();
+        let active_transaction = self.active_transaction();
 
         let query = self.get_customer_query();
 
-        create_order_command(active_transaction_provider, store, query)
+        create_order_command(active_transaction, store, query)
     }
 }
 
@@ -94,11 +76,7 @@ mod tests {
             model::test_data::CustomerBuilder,
             queries::get_customer::Result as QueryResult,
         },
-        orders::{
-            model::store::in_memory_store,
-            *,
-        },
-        transaction::NoTransaction,
+        orders::model::store::in_memory_store,
     };
 
     #[test]
@@ -112,7 +90,7 @@ mod tests {
             customer_id,
         };
 
-        let mut cmd = create_order_command(NoTransaction, &store, move |_| {
+        let mut cmd = create_order_command(ActiveTransaction::none(), &store, move |_| {
             let customer: QueryResult = Ok(Some(CustomerBuilder::new().id(customer_id).build()));
             customer
         });

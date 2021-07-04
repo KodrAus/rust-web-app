@@ -1,15 +1,8 @@
 /*! Contains the `Customer` entity. */
 
 use crate::domain::{
-    entity::Entity,
-    error::Error,
-    id::{
-        Id,
-        IdProvider,
-        NextId,
-    },
-    version::Version,
-    Resolver,
+    infra::*,
+    Error,
 };
 
 pub mod store;
@@ -47,11 +40,11 @@ impl Customer {
         self.data
     }
 
-    pub fn new<TId>(id_provider: TId) -> Result<Self, Error>
+    pub fn new<TId>(id: TId) -> Result<Self, Error>
     where
         TId: IdProvider<CustomerData>,
     {
-        let id = id_provider.id()?;
+        let id = id.id()?;
 
         Ok(Customer::from_data(CustomerData {
             id,
@@ -69,7 +62,7 @@ impl Entity for Customer {
 }
 
 impl Resolver {
-    pub fn customer_id_provider(&self) -> impl IdProvider<CustomerData> {
+    pub fn customer_id(&self) -> impl IdProvider<CustomerData> {
         NextId::<CustomerData>::new()
     }
 }

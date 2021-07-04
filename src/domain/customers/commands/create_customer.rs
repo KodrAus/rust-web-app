@@ -3,17 +3,9 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    customers::{
-        Customer,
-        CustomerId,
-        CustomerStore,
-    },
-    error::Error,
-    transaction::{
-        ActiveTransaction,
-        ActiveTransactionProvider,
-    },
-    Resolver,
+    customers::*,
+    infra::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<(), Error>;
@@ -32,13 +24,11 @@ pub trait CreateCustomerCommand {
 
 /** Default implementation for a `CreateCustomerCommand`. */
 pub(in crate::domain) fn create_customer_command(
-    transaction: impl ActiveTransactionProvider,
+    transaction: ActiveTransaction,
     store: impl CustomerStore,
 ) -> impl CreateCustomerCommand {
     move |command: CreateCustomer| {
         debug!("creating customer `{}`", command.id);
-
-        let transaction = transaction.active();
 
         let customer = {
             if store.get_customer(command.id)?.is_some() {
@@ -57,25 +47,17 @@ pub(in crate::domain) fn create_customer_command(
 }
 
 impl Resolver {
-    pub fn create_customer_command(
-        &self,
-    ) -> impl CreateCustomerCommand {
-        let store = self.customers().customer_store();
-        let active_transaction_provider = self.active_transaction_provider();
+    pub fn create_customer_command(&self) -> impl CreateCustomerCommand {
+        let store = self.customer_store();
+        let active_transaction = self.active_transaction();
 
-        create_customer_command(active_transaction_provider, store)
+        create_customer_command(active_transaction, store)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{
-        customers::{
-            model::store::in_memory_store,
-            *,
-        },
-        transaction::NoTransaction,
-    };
+    use crate::domain::customers::model::store::in_memory_store;
 
     use super::*;
 
@@ -87,7 +69,7 @@ mod tests {
             id: CustomerId::new(),
         };
 
-        let mut cmd = create_customer_command(NoTransaction, &store);
+        let mut cmd = create_customer_command(ActiveTransaction::none(), &store);
 
         cmd.create_customer(create.clone()).unwrap();
 

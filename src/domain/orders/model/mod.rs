@@ -20,28 +20,11 @@ pub mod store;
 pub mod test_data;
 
 use crate::domain::{
-    customers::{
-        Customer,
-        CustomerData,
-        CustomerId,
-    },
-    entity::Entity,
-    error::{
-        self,
-        Error,
-    },
-    id::{
-        Id,
-        IdProvider,
-        NextId,
-    },
-    products::{
-        Product,
-        ProductData,
-        ProductId,
-    },
-    version::Version,
-    Resolver,
+    customers::*,
+    error,
+    infra::*,
+    products::*,
+    Error,
 };
 
 pub type OrderId = Id<OrderData>;
@@ -179,11 +162,11 @@ impl Order {
         }
     }
 
-    pub fn new<TId>(id_provider: TId, customer: &Customer) -> Result<Self, Error>
+    pub fn new<TId>(id: TId, customer: &Customer) -> Result<Self, Error>
     where
         TId: IdProvider<OrderData>,
     {
-        let id = id_provider.id()?;
+        let id = id.id()?;
         let &CustomerData {
             id: customer_id, ..
         } = customer.to_data();
@@ -206,7 +189,7 @@ impl Order {
 
     pub fn add_product<TId, TQuantity>(
         &mut self,
-        id_provider: TId,
+        id: TId,
         product: &Product,
         quantity: TQuantity,
     ) -> Result<(), Error>
@@ -224,7 +207,7 @@ impl Order {
             return Err(error::msg("product is already in order"));
         }
 
-        let id = id_provider.id()?;
+        let id = id.id()?;
         let line_item = LineItemData {
             id,
             version: LineItemVersion::default(),
@@ -255,11 +238,11 @@ impl Entity for OrderLineItem {
 }
 
 impl Resolver {
-    pub fn order_id_provider(&self) -> impl IdProvider<OrderData> {
+    pub fn order_id(&self) -> impl IdProvider<OrderData> {
         NextId::<OrderData>::new()
     }
 
-    pub fn line_item_id_provider(&self) -> impl IdProvider<LineItemData> {
+    pub fn line_item_id(&self) -> impl IdProvider<LineItemData> {
         NextId::<LineItemData>::new()
     }
 }

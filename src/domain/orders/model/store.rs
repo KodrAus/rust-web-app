@@ -14,24 +14,11 @@ use std::{
 
 use crate::{
     domain::{
-        error::{
-            self,
-            Error,
-        },
-        orders::{
-            LineItemData,
-            LineItemId,
-            Order,
-            OrderData,
-            OrderId,
-            OrderLineItem,
-        },
+        error,
+        orders::*,
+        Error,
     },
-    store::{
-        Transaction,
-        TransactionStore,
-        TransactionValueStore,
-    },
+    store::*,
 };
 
 /** A place to persist and fetch order entities. */
@@ -103,7 +90,7 @@ impl OrderStore for InMemoryStore {
         }
     }
 
-    fn set_line_item(&self, transaction: &Transaction, order: OrderLineItem) -> Result<(), Error> {
+    fn set_line_item(&self, _: &Transaction, order: OrderLineItem) -> Result<(), Error> {
         let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (order_id, mut order_item_data) = order.into_data();
@@ -155,7 +142,7 @@ impl OrderStore for InMemoryStore {
         }
     }
 
-    fn set_order(&self, transaction: &Transaction, order: Order) -> Result<(), Error> {
+    fn set_order(&self, _c: &Transaction, order: Order) -> Result<(), Error> {
         let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
 
         let (mut order_data, line_items_data) = order.into_data();
@@ -224,10 +211,7 @@ mod tests {
     use super::*;
 
     use crate::domain::{
-        orders::{
-            model::test_data::OrderBuilder,
-            *,
-        },
+        orders::model::test_data::OrderBuilder,
         products::model::test_data::default_product,
     };
 

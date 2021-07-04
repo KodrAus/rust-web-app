@@ -9,12 +9,9 @@ pub(self) use self::model::store::{
     OrderStore,
     OrderStoreFilter,
 };
-pub use self::{
-    model::*,
-    resolver::*,
-};
 
 pub use self::{
     commands::*,
+    model::*,
     queries::*,
 };

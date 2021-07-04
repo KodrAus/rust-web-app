@@ -10,10 +10,9 @@ use crate::{
     },
     domain::{
         customers::*,
-        id::IdProvider,
+        infra::*,
         orders::*,
         products::*,
-        Resolver,
     },
 };
 
@@ -36,10 +35,10 @@ pub struct Create {
 /** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<OrderId>, Error> {
-    let id_provider = resolver.order_id_provider();
+    let id = resolver.order_id();
     let mut command = resolver.create_order_command();
 
-    let id = id_provider.id()?;
+    let id = id.id()?;
 
     command.create_order(CreateOrder {
         id,

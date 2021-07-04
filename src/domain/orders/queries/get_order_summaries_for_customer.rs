@@ -3,13 +3,10 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    customers::CustomerId,
-    error::Error,
-    orders::{
-        OrderId,
-        OrderStoreFilter,
-    },
-    Resolver,
+    customers::*,
+    infra::*,
+    orders::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<Vec<OrderSummary>, Error>;
@@ -48,7 +45,7 @@ pub(in crate::domain) fn get_order_summaries_for_customer_query(
 
 impl Resolver {
     pub fn get_order_summaries_for_customer_query(&self) -> impl GetOrderSummariesForCustomerQuery {
-        let store = self.orders().order_store_filter();
+        let store = self.order_store_filter();
 
         get_order_summaries_for_customer_query(store)
     }

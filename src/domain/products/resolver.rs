@@ -2,9 +2,14 @@
 
 use std::sync::Arc;
 
-use crate::{
-    domain::products::model::store as product_store,
-    store::StoreResolver,
+use crate::domain::{
+    infra::*,
+    products::model::store::{
+        self,
+        InMemoryStore,
+        ProductStore,
+        ProductStoreFilter,
+    },
 };
 
 /**
@@ -12,26 +17,24 @@ Resolver for products.
 
 The `ProductsResolver` type wraps private implementation details and exposes them as traits within the `products` module.
 */
-pub struct ProductsResolver {
-    product_store: Arc<product_store::InMemoryStore>,
+pub(in crate::domain) struct ProductsResolver {
+    product_store: Register<Arc<InMemoryStore>>,
 }
 
-impl ProductsResolver {
-    pub(in crate::domain) fn new(store_resolver: &StoreResolver) -> Self {
+impl Default for ProductsResolver {
+    fn default() -> Self {
         ProductsResolver {
-            product_store: Arc::new(product_store::in_memory_store()),
+            product_store: Register::once(|_| Arc::new(store::in_memory_store())),
         }
     }
 }
 
-impl ProductsResolver {
-    pub(in crate::domain::products) fn product_store(&self) -> impl product_store::ProductStore {
-        self.product_store.clone()
+impl Resolver {
+    pub(in crate::domain::products) fn product_store(&self) -> impl ProductStore {
+        self.resolve(&self.products_resolver.product_store)
     }
 
-    pub(in crate::domain::products) fn product_store_filter(
-        &self,
-    ) -> impl product_store::ProductStoreFilter {
-        self.product_store.clone()
+    pub(in crate::domain::products) fn product_store_filter(&self) -> impl ProductStoreFilter {
+        self.resolve(&self.products_resolver.product_store)
     }
 }

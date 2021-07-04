@@ -11,18 +11,17 @@ We shouldn't get too attached to the current structure, new information might me
 */
 
 #[macro_use]
-pub mod error;
-pub mod id;
-pub mod transaction;
-pub mod version;
-
-mod future;
+mod error;
+pub mod infra;
 
 pub mod customers;
 pub mod orders;
 pub mod products;
 
-mod resolver;
-pub use self::resolver::*;
-
-pub mod entity;
+pub use self::{
+    error::{
+        Error,
+        ErrorKind,
+    },
+    infra::Resolver,
+};

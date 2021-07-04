@@ -3,19 +3,10 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        self,
-        Error,
-    },
-    products::{
-        ProductId,
-        ProductStore,
-    },
-    transaction::{
-        ActiveTransaction,
-        ActiveTransactionProvider,
-    },
-    Resolver,
+    error,
+    infra::*,
+    products::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<(), Error>;
@@ -35,7 +26,7 @@ pub trait SetProductTitleCommand {
 
 /** Default implementation for a `SetProductTitleCommand`. */
 pub(in crate::domain) fn set_product_title_command(
-    transaction: impl ActiveTransactionProvider,
+    transaction: ActiveTransaction,
     store: impl ProductStore,
 ) -> impl SetProductTitleCommand {
     move |command: SetProductTitle| {
@@ -43,8 +34,6 @@ pub(in crate::domain) fn set_product_title_command(
             "updating product `{}` title to {:?}",
             command.id, command.title
         );
-
-        let transaction = transaction.active();
 
         let product = {
             if let Some(mut product) = store.get_product(command.id)? {
@@ -65,12 +54,10 @@ pub(in crate::domain) fn set_product_title_command(
 }
 
 impl Resolver {
-    pub fn set_product_title_command(
-        &self,
-    ) -> impl SetProductTitleCommand {
-        let store = self.products().product_store();
-        let active_transaction_provider = self.active_transaction_provider();
+    pub fn set_product_title_command(&self) -> impl SetProductTitleCommand {
+        let store = self.product_store();
+        let active_transaction = self.active_transaction();
 
-        set_product_title_command(active_transaction_provider, store)
+        set_product_title_command(active_transaction, store)
     }
 }

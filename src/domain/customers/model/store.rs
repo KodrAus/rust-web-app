@@ -11,21 +11,11 @@ use std::{
 
 use crate::{
     domain::{
-        customers::{
-            Customer,
-            CustomerData,
-            CustomerId,
-        },
-        error::{
-            self,
-            Error,
-        },
+        customers::*,
+        error,
+        Error,
     },
-    store::{
-        Transaction,
-        TransactionStore,
-        TransactionValueStore,
-    },
+    store::*,
 };
 
 /** A place to persist and fetch customers. */
@@ -49,7 +39,7 @@ impl CustomerStore for InMemoryStore {
         }
     }
 
-    fn set_customer(&self, transaction: &Transaction, customer: Customer) -> Result<(), Error> {
+    fn set_customer(&self, _: &Transaction, customer: Customer) -> Result<(), Error> {
         let mut data = customer.into_data();
         let id = data.id;
 
@@ -83,10 +73,7 @@ pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
 mod tests {
     use super::*;
 
-    use crate::domain::customers::{
-        model::test_data::CustomerBuilder,
-        *,
-    };
+    use crate::domain::customers::model::test_data::CustomerBuilder;
 
     #[test]
     fn test_in_memory_store() {

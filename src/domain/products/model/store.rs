@@ -13,21 +13,11 @@ use std::{
 
 use crate::{
     domain::{
-        error::{
-            self,
-            Error,
-        },
-        products::{
-            Product,
-            ProductData,
-            ProductId,
-        },
+        error,
+        products::*,
+        Error,
     },
-    store::{
-        Transaction,
-        TransactionStore,
-        TransactionValueStore,
-    },
+    store::*,
 };
 
 /* A place to persist and fetch product entities. */
@@ -68,7 +58,7 @@ impl ProductStore for InMemoryStore {
         }
     }
 
-    fn set_product(&self, transaction: &Transaction, product: Product) -> Result<(), Error> {
+    fn set_product(&self, _: &Transaction, product: Product) -> Result<(), Error> {
         let mut data = product.into_data();
         let id = data.id;
 
@@ -120,10 +110,7 @@ pub(in crate::domain::products) fn in_memory_store() -> InMemoryStore {
 mod tests {
     use super::*;
 
-    use crate::domain::products::{
-        model::test_data,
-        *,
-    };
+    use crate::domain::products::model::test_data;
 
     #[test]
     fn test_in_memory_store() {

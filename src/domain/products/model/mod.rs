@@ -11,18 +11,9 @@ pub mod store;
 pub mod test_data;
 
 use crate::domain::{
-    entity::Entity,
-    error::{
-        self,
-        Error,
-    },
-    id::{
-        Id,
-        IdProvider,
-        NextId,
-    },
-    version::Version,
-    Resolver,
+    error,
+    infra::*,
+    Error,
 };
 
 pub type ProductId = Id<ProductData>;
@@ -104,17 +95,13 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(
-        id_provider: TId,
-        title: TTitle,
-        price: TPrice,
-    ) -> Result<Self, Error>
+    pub fn new<TId, TTitle, TPrice>(id: TId, title: TTitle, price: TPrice) -> Result<Self, Error>
     where
         TId: IdProvider<ProductData>,
         TTitle: TryInto<Title, Error = Error>,
         TPrice: TryInto<Price, Error = Error>,
     {
-        let id = id_provider.id()?;
+        let id = id.id()?;
 
         Ok(Product::from_data(ProductData {
             id,
@@ -143,7 +130,7 @@ impl Entity for Product {
 }
 
 impl Resolver {
-    pub fn product_id_provider(&self) -> impl IdProvider<ProductData> {
+    pub fn product_id(&self) -> impl IdProvider<ProductData> {
         NextId::<ProductData>::new()
     }
 }

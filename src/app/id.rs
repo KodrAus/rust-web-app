@@ -5,8 +5,8 @@ use rocket::{
 use std::convert::TryFrom;
 
 use crate::domain::{
-    error::Error,
-    id::Id,
+    infra::*,
+    Error,
 };
 
 impl<'r, T> FromParam<'r> for Id<T> {

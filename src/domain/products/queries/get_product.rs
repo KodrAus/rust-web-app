@@ -3,13 +3,9 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::Error,
-    products::{
-        Product,
-        ProductId,
-        ProductStore,
-    },
-    Resolver,
+    infra::*,
+    products::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<Option<Product>, Error>;
@@ -37,7 +33,7 @@ pub(in crate::domain) fn get_product_query(store: impl ProductStore) -> impl Get
 
 impl Resolver {
     pub fn get_product_query(&self) -> impl GetProductQuery {
-        let store = self.products().product_store();
+        let store = self.product_store();
 
         get_product_query(store)
     }

@@ -3,17 +3,9 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::Error,
-    products::{
-        Product,
-        ProductId,
-        ProductStore,
-    },
-    transaction::{
-        ActiveTransaction,
-        ActiveTransactionProvider,
-    },
-    Resolver,
+    infra::*,
+    products::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<(), Error>;
@@ -34,13 +26,11 @@ pub trait CreateProductCommand {
 
 /** Default implementation for a `CreateProductCommand`. */
 pub(in crate::domain) fn create_product_command(
-    transaction: impl ActiveTransactionProvider,
+    transaction: ActiveTransaction,
     store: impl ProductStore,
 ) -> impl CreateProductCommand {
     move |command: CreateProduct| {
         debug!("creating product `{}`", command.id);
-
-        let transaction = transaction.active();
 
         let product = {
             if store.get_product(command.id)?.is_some() {
@@ -59,13 +49,11 @@ pub(in crate::domain) fn create_product_command(
 }
 
 impl Resolver {
-    pub fn create_product_command(
-        &self,
-    ) -> impl CreateProductCommand {
-        let store = self.products().product_store();
-        let active_transaction_provider = self.active_transaction_provider();
+    pub fn create_product_command(&self) -> impl CreateProductCommand {
+        let store = self.product_store();
+        let active_transaction = self.active_transaction();
 
-        create_product_command(active_transaction_provider, store)
+        create_product_command(active_transaction, store)
     }
 }
 
@@ -73,13 +61,7 @@ impl Resolver {
 mod tests {
     use super::*;
 
-    use crate::domain::{
-        products::{
-            model::store::in_memory_store,
-            *,
-        },
-        transaction::NoTransaction,
-    };
+    use crate::domain::products::model::store::in_memory_store;
 
     #[test]
     fn err_if_already_exists() {
@@ -91,7 +73,7 @@ mod tests {
             price: 1f32,
         };
 
-        let mut cmd = create_product_command(NoTransaction, &store);
+        let mut cmd = create_product_command(ActiveTransaction::none(), &store);
 
         cmd.create_product(create.clone()).unwrap();
 

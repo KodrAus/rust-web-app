@@ -9,10 +9,8 @@ use crate::{
         Error,
     },
     domain::{
-        id::IdProvider,
+        infra::*,
         products::*,
-        transaction::ActiveTransactionProvider,
-        Resolver,
     },
 };
 
@@ -51,10 +49,10 @@ pub struct Create {
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, Error> {
-    let id_provider = resolver.product_id_provider();
+    let id = resolver.product_id();
     let mut command = resolver.create_product_command();
 
-    let id = id_provider.id()?;
+    let id = id.id()?;
 
     command.create_product(CreateProduct {
         id,

@@ -3,21 +3,11 @@
 use auto_impl::auto_impl;
 
 use crate::domain::{
-    error::{
-        self,
-        Error,
-    },
-    orders::{
-        LineItemId,
-        OrderId,
-        OrderStore,
-    },
-    products::{
-        GetProductSummaries,
-        GetProductSummariesQuery,
-        ProductId,
-    },
-    Resolver,
+    error,
+    infra::*,
+    orders::*,
+    products::*,
+    Error,
 };
 
 pub type Result = ::std::result::Result<Option<OrderWithProducts>, Error>;
@@ -93,7 +83,7 @@ pub(in crate::domain) fn get_order_with_products_query(
 
 impl Resolver {
     pub fn get_order_with_products_query(&self) -> impl GetOrderWithProductsQuery {
-        let store = self.orders().order_store();
+        let store = self.order_store();
         let query = self.get_product_summaries_query();
 
         get_order_with_products_query(store, query)

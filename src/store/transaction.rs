@@ -45,7 +45,7 @@ An active transaction.
 */
 pub struct Transaction {
     id: TransactionId,
-    complete_guard: Option<Box<dyn FnOnce()>>,
+    complete_guard: Option<Box<dyn FnOnce() + Send + Sync>>,
 }
 
 impl Transaction {
@@ -288,6 +288,12 @@ where
         new_version: Version,
         new_value: T,
     ) -> Result<(), Error> {
+        assert_ne!(
+            old_version,
+            Some(new_version),
+            "a new value must use a different version"
+        );
+
         let mut data = self.data.write().unwrap();
 
         match data.entry(id) {
@@ -296,40 +302,52 @@ where
 
                 match &mut existing.current {
                     Some((existing_transaction, existing_version, existing_value)) => {
-                        // If the transaction for the current value was cancelled then look at the version
-                        // of the prior value instead
-                        let version_matches = if self
-                            .transactions
-                            .is_cancelled(*existing_transaction)
-                        {
-                            old_version
-                                == existing.prior.as_ref().map(
+                        // First, we need to check the versions to make sure they line up
+
+                        // If the existing value is not for a cancelled transaction
+                        // then use it to check the version. This means an active transaction
+                        // that sets a value will prevent any other transactions from setting
+                        // that same value
+                        let version_to_check =
+                            if !self.transactions.is_cancelled(*existing_transaction) {
+                                Some(*existing_version)
+                            }
+                            // If the existing value is for a cancelled transaction then use
+                            // the prior version to check. This prevents a cancelled transaction
+                            // from blocking the value from ever being set again
+                            else {
+                                existing.prior.as_ref().map(
                                     |(prior_transaction, prior_version, _)| {
                                         assert!(self.transactions.is_committed(*prior_transaction));
 
                                         *prior_version
                                     },
                                 )
-                        }
-                        // If the transaction for the current value is active or committed then use it
-                        // Checking the version of an active (uncommitted) transaction guarantees only
-                        // a single transaction can set a new value at a time
-                        else {
-                            old_version == Some(*existing_version)
-                        };
+                            };
 
-                        if !version_matches {
+                        if old_version != version_to_check {
                             return Err(Error::from("version mismatch"));
                         }
 
-                        // Set the new value to the prior one
-                        // Consumers won't see this value unless the transaction is committed
-                        let old_transaction =
-                            std::mem::replace(existing_transaction, transaction.id());
-                        let old_version = std::mem::replace(existing_version, new_version);
-                        let old_value = std::mem::replace(existing_value, new_value);
+                        // Now, we're going to set the value
 
-                        existing.prior = Some((old_transaction, old_version, old_value));
+                        // If the existing value is for a committed transaction then move it
+                        // into the prior value and set the new value in its place
+                        if self.transactions.is_committed(*existing_transaction) {
+                            let old_transaction =
+                                std::mem::replace(existing_transaction, transaction.id());
+                            let old_version = std::mem::replace(existing_version, new_version);
+                            let old_value = std::mem::replace(existing_value, new_value);
+
+                            existing.prior = Some((old_transaction, old_version, old_value));
+                        }
+                        // If the existing value is for an active or cancelled transaction then
+                        // update it without touching the prior value
+                        else {
+                            *existing_transaction = transaction.id();
+                            *existing_version = new_version;
+                            *existing_value = new_value;
+                        }
                     }
                     None => existing.current = Some((transaction.id(), new_version, new_value)),
                 }
@@ -484,20 +502,21 @@ mod tests {
         store.transactions.commit(transaction);
 
         let old_version = version;
-        let version = Version::new();
 
-        // Try set a new value, but cancel instead of commit
-        let transaction = store.transactions.begin();
-        store
-            .set(
-                &transaction,
-                id,
-                Some(old_version),
-                version,
-                String::from("2"),
-            )
-            .unwrap();
-        store.transactions.cancel(transaction);
+        for _ in 0..10 {
+            // Try set a new value, but cancel instead of commit
+            let transaction = store.transactions.begin();
+            store
+                .set(
+                    &transaction,
+                    id,
+                    Some(old_version),
+                    Version::new(),
+                    String::from("2"),
+                )
+                .unwrap();
+            store.transactions.cancel(transaction);
+        }
 
         let (current_version, current_value) = store.get(id).unwrap();
 
@@ -580,5 +599,25 @@ mod tests {
 
         assert_eq!(version, current_version);
         assert_eq!("1", current_value);
+    }
+
+    #[test]
+    fn err_transaction_value_store_set_version_mismatch() {
+        let store = TransactionValueStore::<String>::new(TransactionStore::new());
+
+        let id = Id::new();
+        let version = Version::new();
+
+        let transaction = store.transactions.begin();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
+        store.transactions.commit(transaction);
+
+        let transaction = store.transactions.begin();
+
+        let r = store.set(&transaction, id, None, Version::new(), String::from("2"));
+
+        assert!(r.is_err());
     }
 }

@@ -2,9 +2,14 @@
 
 use std::sync::Arc;
 
-use crate::{
-    domain::orders::model::store as order_store,
-    store::StoreResolver,
+use crate::domain::{
+    infra::*,
+    orders::model::store::{
+        self,
+        InMemoryStore,
+        OrderStore,
+        OrderStoreFilter,
+    },
 };
 
 /**
@@ -12,26 +17,24 @@ Resolver for orders.
 
 The `OrdersResolver` type wraps private implementation details and exposes them as traits within the `orders` module.
 */
-pub struct OrdersResolver {
-    order_store: Arc<order_store::InMemoryStore>,
+pub(in crate::domain) struct OrdersResolver {
+    order_store: Register<Arc<InMemoryStore>>,
 }
 
-impl OrdersResolver {
-    pub(in crate::domain) fn new(store_resolver: &StoreResolver) -> Self {
+impl Default for OrdersResolver {
+    fn default() -> Self {
         OrdersResolver {
-            order_store: Arc::new(order_store::in_memory_store()),
+            order_store: Register::once(|_| Arc::new(store::in_memory_store())),
         }
     }
 }
 
-impl OrdersResolver {
-    pub(in crate::domain::orders) fn order_store(&self) -> impl order_store::OrderStore {
-        self.order_store.clone()
+impl Resolver {
+    pub(in crate::domain::orders) fn order_store(&self) -> impl OrderStore {
+        self.resolve(&self.orders_resolver.order_store)
     }
 
-    pub(in crate::domain::orders) fn order_store_filter(
-        &self,
-    ) -> impl order_store::OrderStoreFilter {
-        self.order_store.clone()
+    pub(in crate::domain::orders) fn order_store_filter(&self) -> impl OrderStoreFilter {
+        self.resolve(&self.orders_resolver.order_store)
     }
 }

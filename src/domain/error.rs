@@ -6,7 +6,7 @@ use std::{
 /** The main error type */
 #[derive(Debug)]
 pub struct Error {
-    kind: Kind,
+    kind: ErrorKind,
     inner: Box<dyn error::Error + Send + Sync>,
 }
 
@@ -17,27 +17,27 @@ impl fmt::Display for Error {
 }
 
 #[derive(Debug)]
-pub enum Kind {
+pub enum ErrorKind {
     BadInput,
     Other,
 }
 
 pub fn msg(err: impl fmt::Display) -> Error {
     Error {
-        kind: Kind::Other,
+        kind: ErrorKind::Other,
         inner: err.to_string().into(),
     }
 }
 
 pub fn bad_input(msg: impl fmt::Display) -> Error {
     Error {
-        kind: Kind::BadInput,
+        kind: ErrorKind::BadInput,
         inner: msg.to_string().into(),
     }
 }
 
 impl Error {
-    pub(crate) fn split(self) -> (Kind, Box<dyn error::Error + Send + Sync>) {
+    pub(crate) fn split(self) -> (ErrorKind, Box<dyn error::Error + Send + Sync>) {
         (self.kind, self.inner)
     }
 }
@@ -48,7 +48,7 @@ where
 {
     fn from(err: E) -> Error {
         Error {
-            kind: Kind::Other,
+            kind: ErrorKind::Other,
             inner: err.into(),
         }
     }

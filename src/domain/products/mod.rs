@@ -10,11 +10,7 @@ pub(self) use self::model::store::{
     ProductStoreFilter,
 };
 pub use self::{
-    model::*,
-    resolver::*,
-};
-
-pub use self::{
     commands::*,
+    model::*,
     queries::*,
 };

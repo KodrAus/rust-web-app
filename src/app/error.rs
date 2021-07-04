@@ -64,9 +64,9 @@ impl<'r> Responder<'r> for Error {
     }
 }
 
-impl From<domain::error::Error> for Error {
-    fn from(err: domain::error::Error) -> Self {
-        use crate::domain::error::Kind::*;
+impl From<domain::Error> for Error {
+    fn from(err: domain::Error) -> Self {
+        use crate::domain::ErrorKind::*;
 
         match err.split() {
             (BadInput, err) => Error::BadRequest(err),

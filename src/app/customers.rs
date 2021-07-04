@@ -10,8 +10,7 @@ use crate::{
     },
     domain::{
         customers::*,
-        id::IdProvider,
-        Resolver,
+        infra::*,
     },
 };
 
@@ -29,11 +28,11 @@ pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWit
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
 pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
-    let id_provider = resolver.customer_id_provider();
+    let id = resolver.customer_id();
 
     let mut command = resolver.create_customer_command();
 
-    let id = id_provider.id()?;
+    let id = id.id()?;
 
     command.create_customer(CreateCustomer { id })?;
 

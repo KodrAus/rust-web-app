@@ -1,20 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
-    domain::{
-        error::Error,
-        Resolver,
-    },
+    domain::error::Error,
     store::{
         Transaction,
         TransactionStore,
     },
 };
-
-#[auto_impl(&, Arc)]
-pub trait ActiveTransactionProvider {
-    fn active(&self) -> ActiveTransaction;
-}
 
 #[derive(Clone)]
 pub struct ActiveTransaction {
@@ -22,14 +14,8 @@ pub struct ActiveTransaction {
     store: Option<TransactionStore>,
 }
 
-impl ActiveTransactionProvider for ActiveTransaction {
-    fn active(&self) -> ActiveTransaction {
-        self.clone()
-    }
-}
-
 impl ActiveTransaction {
-    fn begin(store: TransactionStore) -> Self {
+    pub(in crate::domain::infra::transactions) fn begin(store: TransactionStore) -> Self {
         let transaction = Arc::new(store.begin());
 
         ActiveTransaction {
@@ -64,32 +50,10 @@ impl ActiveTransaction {
     }
 
     #[cfg(test)]
-    fn none() -> Self {
+    pub fn none() -> Self {
         ActiveTransaction {
             transaction: Arc::new(Transaction::none()),
             store: None,
         }
-    }
-}
-
-impl ActiveTransactionProvider for TransactionStore {
-    fn active(&self) -> ActiveTransaction {
-        ActiveTransaction::begin(self.clone())
-    }
-}
-
-#[cfg(test)]
-pub(in crate::domain) struct NoTransaction;
-
-#[cfg(test)]
-impl ActiveTransactionProvider for NoTransaction {
-    fn active(&self) -> ActiveTransaction {
-        ActiveTransaction::none()
-    }
-}
-
-impl Resolver {
-    pub fn active_transaction_provider(&self) -> impl ActiveTransactionProvider {
-        self.store_resolver().transaction_store().clone()
     }
 }

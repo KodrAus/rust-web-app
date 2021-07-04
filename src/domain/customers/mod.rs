@@ -9,7 +9,6 @@ pub use self::{
     commands::*,
     model::*,
     queries::*,
-    resolver::*,
 };
 
 pub(self) use self::model::store::CustomerStore;
