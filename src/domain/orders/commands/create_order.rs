@@ -75,11 +75,13 @@ pub(in crate::domain) fn create_order_command(
 }
 
 impl Resolver {
-    pub fn create_order_command(&self, transaction: &ActiveTransaction) -> impl CreateOrderCommand {
+    pub fn create_order_command(&self) -> impl CreateOrderCommand {
         let store = self.orders().order_store();
+        let active_transaction_provider = self.active_transaction_provider();
+
         let query = self.get_customer_query();
 
-        create_order_command(transaction.clone(), store, query)
+        create_order_command(active_transaction_provider, store, query)
     }
 }
 

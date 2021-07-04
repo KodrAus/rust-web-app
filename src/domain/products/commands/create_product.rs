@@ -61,11 +61,11 @@ pub(in crate::domain) fn create_product_command(
 impl Resolver {
     pub fn create_product_command(
         &self,
-        transaction: &ActiveTransaction,
     ) -> impl CreateProductCommand {
         let store = self.products().product_store();
+        let active_transaction_provider = self.active_transaction_provider();
 
-        create_product_command(transaction.clone(), store)
+        create_product_command(active_transaction_provider, store)
     }
 }
 

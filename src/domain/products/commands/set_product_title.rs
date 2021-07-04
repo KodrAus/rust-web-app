@@ -67,10 +67,10 @@ pub(in crate::domain) fn set_product_title_command(
 impl Resolver {
     pub fn set_product_title_command(
         &self,
-        transaction: &ActiveTransaction,
     ) -> impl SetProductTitleCommand {
         let store = self.products().product_store();
+        let active_transaction_provider = self.active_transaction_provider();
 
-        set_product_title_command(transaction.clone(), store)
+        set_product_title_command(active_transaction_provider, store)
     }
 }

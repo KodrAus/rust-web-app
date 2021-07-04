@@ -110,14 +110,15 @@ pub(in crate::domain) fn add_or_update_product_command(
 impl Resolver {
     pub fn add_or_update_product_command(
         &self,
-        transaction: &ActiveTransaction,
     ) -> impl AddOrUpdateProductCommand {
         let order_store = self.orders().order_store();
+        let active_transaction_provider = self.active_transaction_provider();
+
         let id_provider = self.line_item_id_provider();
 
         let get_product = self.get_product_query();
 
-        add_or_update_product_command(transaction.clone(), order_store, id_provider, get_product)
+        add_or_update_product_command(active_transaction_provider, order_store, id_provider, get_product)
     }
 }
 

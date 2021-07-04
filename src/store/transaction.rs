@@ -560,4 +560,25 @@ mod tests {
         assert_eq!(version2, current_version2);
         assert_eq!("a2", current_value2);
     }
+
+    #[test]
+    fn transaction_value_store_set_get_empty_transaction() {
+        let store = TransactionValueStore::<String>::new(TransactionStore::new());
+
+        let id = Id::new();
+        let version = Version::new();
+
+        let transaction = Transaction::none();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
+
+        // An empty transaction doesn't need to be committed
+        // The transaction store never sees it
+
+        let (current_version, current_value) = store.get(id).unwrap();
+
+        assert_eq!(version, current_version);
+        assert_eq!("1", current_value);
+    }
 }

@@ -59,11 +59,11 @@ pub(in crate::domain) fn create_customer_command(
 impl Resolver {
     pub fn create_customer_command(
         &self,
-        transaction: &ActiveTransaction,
     ) -> impl CreateCustomerCommand {
         let store = self.customers().customer_store();
+        let active_transaction_provider = self.active_transaction_provider();
 
-        create_customer_command(transaction.clone(), store)
+        create_customer_command(active_transaction_provider, store)
     }
 }
 

@@ -51,10 +51,8 @@ pub struct Create {
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, Error> {
-    let transaction = resolver.active_transaction_provider().active();
-
     let id_provider = resolver.product_id_provider();
-    let mut command = resolver.create_product_command(&transaction);
+    let mut command = resolver.create_product_command();
 
     let id = id_provider.id()?;
 
@@ -64,21 +62,15 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
         price: data.0.price,
     })?;
 
-    transaction.commit()?;
-
     Ok(Json(id))
 }
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
 pub fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Result<(), Error> {
-    let transaction = resolver.active_transaction_provider().active();
-
-    let mut command = resolver.set_product_title_command(&transaction);
+    let mut command = resolver.set_product_title_command();
 
     command.set_product_title(SetProductTitle { id, title })?;
-
-    transaction.commit()?;
 
     Ok(())
 }
