@@ -26,6 +26,7 @@ extern crate thiserror;
 extern crate log;
 
 pub mod app;
+pub mod storage;
 pub mod domain;
 pub mod logger;
 

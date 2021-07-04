@@ -61,6 +61,7 @@ A produce price.
 
 The price must be greater than zero.
 */
+// TODO: Replace this with a enum Currency { USD { cents: u64 } }
 pub struct Price(f32);
 
 impl TryFrom<f32> for Price {
