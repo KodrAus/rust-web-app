@@ -3,7 +3,6 @@ Rocket app configuration.
 */
 
 use crate::domain::Resolver;
-use rocket;
 
 mod error;
 mod id;
@@ -12,7 +11,7 @@ pub mod customers;
 pub mod orders;
 pub mod products;
 
-pub fn start() {
+pub fn init() -> rocket::Rocket {
     info!("starting up");
 
     rocket::ignite()
@@ -27,5 +26,6 @@ pub fn start() {
         )
         .mount("/customers", routes![customers::get, customers::create])
         .register(catchers![error::not_found, error::internal_error])
-        .launch();
 }
+
+pub mod client;

@@ -16,7 +16,7 @@ use env_logger::{
 pub const LOG_LEVEL_ENV: &str = "LOG_LEVEL";
 pub const LOG_STYLE_ENV: &str = "LOG_STYLE";
 
-pub(crate) fn init() {
+pub fn init() {
     let env = Env::default()
         .filter_or(LOG_LEVEL_ENV, "debug")
         .write_style(LOG_STYLE_ENV);

@@ -1,6 +1,9 @@
 /*! `/customers` */
 
-use rocket::State;
+use rocket::{
+    response::status::Created,
+    State,
+};
 use rocket_contrib::json::Json;
 
 use crate::{
@@ -27,7 +30,7 @@ pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWit
 
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
-pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
+pub fn create(resolver: State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
     let id = resolver.customer_id();
 
     let mut command = resolver.create_customer_command();
@@ -36,5 +39,7 @@ pub fn create(resolver: State<Resolver>) -> Result<Json<CustomerId>, Error> {
 
     command.create_customer(CreateCustomer { id })?;
 
-    Ok(Json(id))
+    let location = format!("/customers/{}", id);
+
+    Ok(Created(location, Some(Json(id))))
 }

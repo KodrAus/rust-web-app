@@ -5,6 +5,7 @@ This type encodes the currency using its smallest possible unit. This is a bette
 than floating point numbers where imprecision can change the results of calculations.
 */
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Currency {
     USD(USD),
 }

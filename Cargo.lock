@@ -941,25 +941,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rocket-app"
-version = "0.1.0"
-dependencies = [
- "auto_impl",
- "env_logger",
- "futures",
- "log 0.4.14",
- "once_cell",
- "rocket",
- "rocket_codegen",
- "rocket_contrib",
- "serde",
- "serde_derive",
- "serde_json",
- "thiserror",
- "uuid",
-]
-
-[[package]]
 name = "rocket_codegen"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1064,6 +1045,25 @@ dependencies = [
  "cpufeatures",
  "digest",
  "opaque-debug",
+]
+
+[[package]]
+name = "shop"
+version = "0.1.0"
+dependencies = [
+ "auto_impl",
+ "env_logger",
+ "futures",
+ "log 0.4.14",
+ "once_cell",
+ "rocket",
+ "rocket_codegen",
+ "rocket_contrib",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]

@@ -1,6 +1,9 @@
 /*! `/products` */
 
-use rocket::State;
+use rocket::{
+    response::status::Created,
+    State,
+};
 use rocket_contrib::json::Json;
 
 use crate::{
@@ -48,7 +51,10 @@ pub struct Create {
 
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
-pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<ProductId>, Error> {
+pub fn create(
+    data: Json<Create>,
+    resolver: State<Resolver>,
+) -> Result<Created<Json<ProductId>>, Error> {
     let id = resolver.product_id();
     let mut command = resolver.create_product_command();
 
@@ -60,7 +66,9 @@ pub fn create(data: Json<Create>, resolver: State<Resolver>) -> Result<Json<Prod
         price: data.0.price,
     })?;
 
-    Ok(Json(id))
+    let location = format!("/products/{}", id);
+
+    Ok(Created(location, Some(Json(id))))
 }
 
 /** `POST /products/<id>/title/<title>` */

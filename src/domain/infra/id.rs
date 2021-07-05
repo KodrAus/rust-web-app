@@ -38,13 +38,13 @@ pub struct Id<T>(Uuid, PhantomData<T>);
 
 impl<T> fmt::Debug for Id<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        self.0.fmt(f)
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 
 impl<T> fmt::Display for Id<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        self.0.fmt(f)
+        fmt::Display::fmt(&self.0, f)
     }
 }
 

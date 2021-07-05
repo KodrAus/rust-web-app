@@ -1,6 +1,6 @@
 use crate::domain::{
-    products::*,
     infra::*,
+    products::*,
 };
 
 pub fn default_title() -> String {
