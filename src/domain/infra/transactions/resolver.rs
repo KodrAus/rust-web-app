@@ -1,5 +1,11 @@
 use crate::{
-    domain::infra::*,
+    domain::{
+        infra::{
+            transactions::OnDrop,
+            *,
+        },
+        Error,
+    },
     store::TransactionStore,
 };
 
@@ -13,7 +19,11 @@ impl Default for TransactionsResolver {
     fn default() -> Self {
         TransactionsResolver {
             transaction_store: Register::once(|_| TransactionStore::new()),
-            active_transaction: Register::factory(|_| ActiveTransaction::none()),
+            active_transaction: Register::factory(|resolver| {
+                // By default, each call to get an active transaction will receive a fresh one
+                // that will implicitly commit on drop
+                ActiveTransaction::begin(resolver.transaction_store(), OnDrop::Commit)
+            }),
         }
     }
 }
@@ -33,12 +43,12 @@ impl Resolver {
     Any commands that are resolved from the returned resolver will participate in the returned transaction.
     The transaction will need to be completed before it will commit.
     */
-    pub fn begin_transaction(&self) -> (ActiveTransaction, Resolver) {
+    pub fn transaction<T>(&self, f: impl FnOnce(Resolver) -> Result<T, Error>) -> Result<T, Error> {
         let resolver = Resolver {
             transactions_resolver: TransactionsResolver {
                 transaction_store: self.transactions_resolver.transaction_store.clone(),
                 active_transaction: Register::once(|resolver| {
-                    ActiveTransaction::begin(resolver.transaction_store())
+                    ActiveTransaction::begin(resolver.transaction_store(), OnDrop::Cancel)
                 }),
             },
             products_resolver: self.products_resolver.clone(),
@@ -46,6 +56,10 @@ impl Resolver {
             customers_resolver: self.customers_resolver.clone(),
         };
 
-        (resolver.active_transaction(), resolver)
+        let transaction = resolver.active_transaction();
+        let r = f(resolver)?;
+        transaction.commit()?;
+
+        Ok(r)
     }
 }

@@ -19,8 +19,8 @@ use crate::{
 
 /** `GET /customers/<id>` */
 #[get("/<id>")]
-pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
-    let query = resolver.get_customer_with_orders_query();
+pub fn get(id: CustomerId, app: State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
+    let query = app.get_customer_with_orders_query();
 
     match query.get_customer_with_orders(GetCustomerWithOrders { id })? {
         Some(customer) => Ok(Json(customer)),
@@ -30,10 +30,10 @@ pub fn get(id: CustomerId, resolver: State<Resolver>) -> Result<Json<CustomerWit
 
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
-pub fn create(resolver: State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
-    let id = resolver.customer_id();
+pub fn create(app: State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
+    let id = app.customer_id();
 
-    let mut command = resolver.create_customer_command();
+    let mut command = app.create_customer_command();
 
     let id = id.get()?;
 

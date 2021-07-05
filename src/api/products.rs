@@ -26,8 +26,8 @@ pub struct Get {
 
 /** `GET /products/<id>` */
 #[get("/<id>")]
-pub fn get(id: ProductId, resolver: State<Resolver>) -> Result<Json<Get>, Error> {
-    let query = resolver.get_product_query();
+pub fn get(id: ProductId, app: State<Resolver>) -> Result<Json<Get>, Error> {
+    let query = app.get_product_query();
 
     match query.get_product(GetProduct { id })? {
         Some(product) => {
@@ -51,12 +51,9 @@ pub struct Create {
 
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
-pub fn create(
-    data: Json<Create>,
-    resolver: State<Resolver>,
-) -> Result<Created<Json<ProductId>>, Error> {
-    let id = resolver.product_id();
-    let mut command = resolver.create_product_command();
+pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<ProductId>>, Error> {
+    let id = app.product_id();
+    let mut command = app.create_product_command();
 
     let id = id.get()?;
 
@@ -73,8 +70,8 @@ pub fn create(
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
-pub fn set_title(id: ProductId, title: String, resolver: State<Resolver>) -> Result<(), Error> {
-    let mut command = resolver.set_product_title_command();
+pub fn set_title(id: ProductId, title: String, app: State<Resolver>) -> Result<(), Error> {
+    let mut command = app.set_product_title_command();
 
     command.set_product_title(SetProductTitle { id, title })?;
 
