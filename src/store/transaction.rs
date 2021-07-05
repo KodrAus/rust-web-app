@@ -616,7 +616,33 @@ mod tests {
 
         let transaction = store.transactions.begin();
 
+        // Attempting to set the value with a mismatched current version will fail
         let r = store.set(&transaction, id, None, Version::new(), String::from("2"));
+
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn err_multi_transaction_value_store_set() {
+        let store = TransactionValueStore::<String>::new(TransactionStore::new());
+
+        let id = Id::new();
+        let version = Version::new();
+
+        let transaction = store.transactions.begin();
+        store
+            .set(&transaction, id, None, version, String::from("1"))
+            .unwrap();
+        store.transactions.commit(transaction);
+
+        let transaction1 = store.transactions.begin();
+
+        store.set(&transaction1, id, Some(version), Version::new(), String::from("2")).unwrap();
+
+        let transaction2 = store.transactions.begin();
+
+        // Attempting to set the value from concurrent transactions will fail
+        let r = store.set(&transaction2, id, Some(version), Version::new(), String::from("3"));
 
         assert!(r.is_err());
     }
