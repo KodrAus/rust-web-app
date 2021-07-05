@@ -21,7 +21,7 @@ pub struct GetProductSummaries {
 pub struct ProductSummary {
     pub id: ProductId,
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
 }
 
 /** Get a collection of product summaries. */

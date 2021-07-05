@@ -4,13 +4,17 @@ pub(in crate::domain) mod id;
 pub(in crate::domain) mod resolver;
 pub(in crate::domain) mod transactions;
 pub(in crate::domain) mod version;
+pub(in crate::domain) mod currency;
 
 pub use self::{
-    future::*,
     id::*,
+    currency::*,
     resolver::*,
     transactions::*,
     version::*,
 };
 
-pub(in crate::domain) use self::entity::*;
+pub(in crate::domain) use self::{
+    future::*,
+    entity::*,
+};

@@ -68,7 +68,7 @@ pub struct LineItemData {
     pub id: LineItemId,
     pub version: LineItemVersion,
     pub product_id: ProductId,
-    pub price: f32,
+    pub price: Currency,
     pub quantity: u32,
     _private: (),
 }

@@ -15,7 +15,7 @@ pub type Result = ::std::result::Result<(), Error>;
 pub struct CreateProduct {
     pub id: ProductId,
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
 }
 
 /** Create a new product. */
@@ -70,7 +70,7 @@ mod tests {
         let create = CreateProduct {
             id: ProductId::new(),
             title: "Test Product".into(),
-            price: 1f32,
+            price: Currency::usd(100),
         };
 
         let mut cmd = create_product_command(ActiveTransaction::none(), &store);

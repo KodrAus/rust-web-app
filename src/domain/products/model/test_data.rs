@@ -1,11 +1,14 @@
-use crate::domain::products::*;
+use crate::domain::{
+    products::*,
+    infra::*,
+};
 
 pub fn default_title() -> String {
     "A test product".to_owned()
 }
 
-pub fn default_price() -> f32 {
-    1f32
+pub fn default_price() -> Currency {
+    Currency::usd(100)
 }
 
 pub fn default_product() -> Product {

@@ -18,7 +18,7 @@ use crate::{
 pub struct Get {
     pub id: ProductId,
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
 }
 
 /** `GET /products/<id>` */
@@ -43,7 +43,7 @@ pub fn get(id: ProductId, resolver: State<Resolver>) -> Result<Json<Get>, Error>
 #[derive(Deserialize)]
 pub struct Create {
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
 }
 
 /** `PUT /products` */

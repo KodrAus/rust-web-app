@@ -52,17 +52,12 @@ A produce price.
 
 The price must be greater than zero.
 */
-// TODO: Replace this with a enum Currency { USD { cents: u64 } }
-pub struct Price(f32);
+pub struct Price(Currency);
 
-impl TryFrom<f32> for Price {
+impl TryFrom<Currency> for Price {
     type Error = Error;
 
-    fn try_from(price: f32) -> Result<Self, Self::Error> {
-        if !price.is_normal() || !price.is_sign_positive() {
-            return Err(error::msg("price must be greater than 0"));
-        }
-
+    fn try_from(price: Currency) -> Result<Self, Self::Error> {
         Ok(Price(price))
     }
 }
@@ -73,7 +68,7 @@ pub struct ProductData {
     pub id: ProductId,
     pub version: ProductVersion,
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
     _private: (),
 }
 
@@ -141,16 +136,10 @@ mod tests {
 
     #[test]
     fn title_must_be_non_empty() {
-        assert!(Product::new(ProductId::new(), "", 1f32).is_err());
+        assert!(Product::new(ProductId::new(), "", Currency::usd(100)).is_err());
 
-        let mut product = Product::new(ProductId::new(), "A title", 1f32).unwrap();
+        let mut product = Product::new(ProductId::new(), "A title", Currency::usd(100)).unwrap();
 
         assert!(product.set_title("").is_err());
-    }
-
-    #[test]
-    fn price_must_be_greater_than_0() {
-        assert!(Product::new(ProductId::new(), "A title", 0f32).is_err());
-        assert!(Product::new(ProductId::new(), "A title", -1f32).is_err());
     }
 }

@@ -31,7 +31,7 @@ pub struct ProductLineItem {
     pub line_item_id: LineItemId,
     pub product_id: ProductId,
     pub title: String,
-    pub price: f32,
+    pub price: Currency,
     pub quantity: u32,
 }
 
