@@ -11,7 +11,11 @@ cargo run
 
 from the repository root and you're ready to go.
 
-Also see the [API docs](https://kodraus.github.io/rust-web-app/rocket_app/index.html) for an easy way to explore the application.
+Also try exploring the API docs to get an idea of where everything lives:
+
+```
+cargo doc --open
+```
 
 # What's this all about?
 
