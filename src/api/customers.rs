@@ -31,15 +31,17 @@ pub fn get(id: CustomerId, app: State<Resolver>) -> Result<Json<CustomerWithOrde
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
 pub fn create(app: State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
-    let id = app.customer_id();
+    app.transaction(|app| {
+        let id = app.customer_id();
 
-    let mut command = app.create_customer_command();
+        let mut command = app.create_customer_command();
 
-    let id = id.get()?;
+        let id = id.get()?;
 
-    command.create_customer(CreateCustomer { id })?;
+        command.create_customer(CreateCustomer { id })?;
 
-    let location = format!("/customers/{}", id);
+        let location = format!("/customers/{}", id);
 
-    Ok(Created(location, Some(Json(id))))
+        Ok(Created(location, Some(Json(id))))
+    })
 }

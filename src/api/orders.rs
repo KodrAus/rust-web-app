@@ -38,7 +38,7 @@ pub struct Create {
 /** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<OrderId>>, Error> {
-    let outcome = app.transaction(|app| {
+    app.transaction(|app| {
         let id = app.order_id();
         let mut command = app.create_order_command();
 
@@ -52,9 +52,7 @@ pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<O
         let location = format!("/orders/{}", id);
 
         Ok(Created(location, Some(Json(id))))
-    })?;
-
-    Ok(outcome)
+    })
 }
 
 #[derive(Deserialize)]
@@ -74,13 +72,15 @@ pub fn add_or_update_product(
     data: Json<ProductQuantity>,
     app: State<Resolver>,
 ) -> Result<Json<LineItemId>, Error> {
-    let mut command = app.add_or_update_product_command();
+    app.transaction(|app| {
+        let mut command = app.add_or_update_product_command();
 
-    let line_item_id = command.add_or_update_product(AddOrUpdateProduct {
-        id,
-        product_id,
-        quantity: data.0.quantity,
-    })?;
+        let line_item_id = command.add_or_update_product(AddOrUpdateProduct {
+            id,
+            product_id,
+            quantity: data.0.quantity,
+        })?;
 
-    Ok(Json(line_item_id))
+        Ok(Json(line_item_id))
+    })
 }

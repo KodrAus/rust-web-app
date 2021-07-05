@@ -43,7 +43,10 @@ impl Resolver {
     Any commands that are resolved from the returned resolver will participate in the returned transaction.
     The transaction will need to be completed before it will commit.
     */
-    pub fn transaction<T>(&self, f: impl FnOnce(Resolver) -> Result<T, Error>) -> Result<T, Error> {
+    pub fn transaction<T, E>(&self, f: impl FnOnce(Resolver) -> Result<T, E>) -> Result<T, E>
+    where
+        E: From<Error>,
+    {
         let resolver = Resolver {
             transactions_resolver: TransactionsResolver {
                 transaction_store: self.transactions_resolver.transaction_store.clone(),

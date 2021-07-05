@@ -52,28 +52,32 @@ pub struct Create {
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
 pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<ProductId>>, Error> {
-    let id = app.product_id();
-    let mut command = app.create_product_command();
+    app.transaction(|app| {
+        let id = app.product_id();
+        let mut command = app.create_product_command();
 
-    let id = id.get()?;
+        let id = id.get()?;
 
-    command.create_product(CreateProduct {
-        id,
-        title: data.0.title,
-        price: data.0.price,
-    })?;
+        command.create_product(CreateProduct {
+            id,
+            title: data.0.title,
+            price: data.0.price,
+        })?;
 
-    let location = format!("/products/{}", id);
+        let location = format!("/products/{}", id);
 
-    Ok(Created(location, Some(Json(id))))
+        Ok(Created(location, Some(Json(id))))
+    })
 }
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
 pub fn set_title(id: ProductId, title: String, app: State<Resolver>) -> Result<(), Error> {
-    let mut command = app.set_product_title_command();
+    app.transaction(|app| {
+        let mut command = app.set_product_title_command();
 
-    command.set_product_title(SetProductTitle { id, title })?;
+        command.set_product_title(SetProductTitle { id, title })?;
 
-    Ok(())
+        Ok(())
+    })
 }
