@@ -17,6 +17,7 @@ Resolver for orders.
 
 The `OrdersResolver` type wraps private implementation details and exposes them as traits within the `orders` module.
 */
+#[derive(Clone)]
 pub(in crate::domain) struct OrdersResolver {
     order_store: Register<Arc<InMemoryStore>>,
 }

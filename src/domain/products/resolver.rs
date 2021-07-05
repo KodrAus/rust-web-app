@@ -17,6 +17,7 @@ Resolver for products.
 
 The `ProductsResolver` type wraps private implementation details and exposes them as traits within the `products` module.
 */
+#[derive(Clone)]
 pub(in crate::domain) struct ProductsResolver {
     product_store: Register<Arc<InMemoryStore>>,
 }

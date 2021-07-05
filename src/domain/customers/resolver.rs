@@ -16,6 +16,7 @@ Resolver for customers.
 
 The `CustomersResolver` type wraps private implementation details and exposes them as traits within the `customers` module.
 */
+#[derive(Clone)]
 pub(in crate::domain) struct CustomersResolver {
     customer_store: Register<Arc<InMemoryStore>>,
 }

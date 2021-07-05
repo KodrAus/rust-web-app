@@ -49,7 +49,6 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    #[cfg(test)]
     pub(crate) fn none() -> Self {
         Transaction {
             id: TransactionId(Uuid::default()),

@@ -1,5 +1,7 @@
 /*! Contains the root `Resolver` type. */
 
+use std::sync::Arc;
+
 use once_cell::sync::OnceCell;
 
 use crate::domain::{
@@ -31,26 +33,25 @@ impl Resolver {
     where
         T: Clone,
     {
-        match register.0 {
-            RegisterInner::Once(ref cell, ref init) => cell.get_or_init(|| init(self)).clone(),
-            RegisterInner::Factory(ref factory) => factory(self),
-        }
+        (register.0)(self)
     }
 }
 
-pub struct Register<T>(RegisterInner<T>);
-
-enum RegisterInner<T> {
-    Once(OnceCell<T>, Box<dyn Fn(&Resolver) -> T + Send + Sync>),
-    Factory(Box<dyn Fn(&Resolver) -> T + Send + Sync>),
-}
+#[derive(Clone)]
+pub struct Register<T>(Arc<dyn Fn(&Resolver) -> T + Send + Sync>);
 
 impl<T> Register<T> {
-    pub fn once(f: impl Fn(&Resolver) -> T + Send + Sync + 'static) -> Self {
-        Register(RegisterInner::Once(OnceCell::new(), Box::new(f)))
+    pub fn once(f: impl Fn(&Resolver) -> T + Send + Sync + 'static) -> Self
+    where
+        T: Send + Sync + Clone + 'static,
+    {
+        let cell = OnceCell::new();
+        Register(Arc::new(move |resolver| {
+            cell.get_or_init(|| f(resolver)).clone()
+        }))
     }
 
     pub fn factory(f: impl Fn(&Resolver) -> T + Send + Sync + 'static) -> Self {
-        Register(RegisterInner::Factory(Box::new(f)))
+        Register(Arc::new(f))
     }
 }

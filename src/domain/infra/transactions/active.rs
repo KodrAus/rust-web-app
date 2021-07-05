@@ -49,6 +49,14 @@ impl ActiveTransaction {
         }
     }
 
+    #[cfg(not(test))]
+    pub(in crate::domain::infra::transactions) fn none() -> Self {
+        ActiveTransaction {
+            transaction: Arc::new(Transaction::none()),
+            store: None,
+        }
+    }
+
     #[cfg(test)]
     pub fn none() -> Self {
         ActiveTransaction {
