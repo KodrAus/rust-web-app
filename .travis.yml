@@ -1,8 +1,0 @@
-sudo: required
-language: rust
-
-matrix:
-  include:
-    - rust: nightly
-
-script: ./ci/travis.sh

@@ -1,4 +1,6 @@
-# An Example Rust Application [![Build Status](https://travis-ci.org/KodrAus/rust-web-app.svg?branch=master)](https://travis-ci.org/KodrAus/rust-web-app)
+# An Example Rust Application
+
+[![Rust](https://github.com/KodrAus/rust-web-app/actions/workflows/rust.yml/badge.svg)](https://github.com/KodrAus/rust-web-app/actions/workflows/rust.yml)
 
 This application requires a `nightly` compiler to run.
 Call:

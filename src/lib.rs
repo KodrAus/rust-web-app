@@ -1,10 +1,11 @@
 /*!
 An example Rust web application.
 
-The project is split into two main parts:
+The project is split into a few main parts:
 
-- `app`: the rocket web application where the app is configured and hosted
-- `domain`: the business domain where the app logic is defined
+- `api`: the rocket web application where the app is configured and hosted
+- `domain`: the core app logic
+- `store`: a little datastore implementation
 
 Most of the `domain` module is `pub(restricted)`, so these docs only show the items that can be consumed by the application.
 Refer to the source for a fuller picture of what's in there.
