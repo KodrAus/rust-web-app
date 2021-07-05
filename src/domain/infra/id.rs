@@ -26,7 +26,10 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::domain::error::Error;
+use crate::{
+    domain::error::Error,
+    store,
+};
 
 /**
 An id.
@@ -35,6 +38,18 @@ Ids have a phantom generic parameter so you can't compare an `Id<T>` to an `Id<U
 It means you also can't use an `Id<T>` in place of an `Id<U>`.
 */
 pub struct Id<T>(Uuid, PhantomData<T>);
+
+impl<T> From<Id<T>> for store::Id {
+    fn from(id: Id<T>) -> store::Id {
+        store::Id::from_raw(id.0)
+    }
+}
+
+impl<T> From<store::Id> for Id<T> {
+    fn from(id: store::Id) -> Id<T> {
+        Id(id.into_raw(), PhantomData)
+    }
+}
 
 impl<T> fmt::Debug for Id<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {

@@ -195,6 +195,14 @@ impl Id {
     pub fn new() -> Self {
         Id(Uuid::new_v4())
     }
+
+    pub(crate) fn from_raw(id: Uuid) -> Id {
+        Id(id)
+    }
+
+    pub(crate) fn into_raw(self) -> Uuid {
+        self.0
+    }
 }
 
 /**
@@ -206,6 +214,14 @@ pub struct Version(Uuid);
 impl Version {
     pub fn new() -> Self {
         Version(Uuid::new_v4())
+    }
+
+    pub(crate) fn from_raw(version: Uuid) -> Version {
+        Version(version)
+    }
+
+    pub(crate) fn into_raw(self) -> Uuid {
+        self.0
     }
 }
 
@@ -250,21 +266,51 @@ where
 
        This will also return the current version of the value that will be needed to update it.
     */
-    pub fn get(&self, id: Id) -> Option<(Version, T)> {
+    pub fn get(&self, id: impl Into<Id>) -> Option<(Version, T)> {
+        let id = id.into();
+
         let data = self.data.read().unwrap();
 
+        Self::get_sync(id, &self.transactions, &*data)
+            .map(|(version, value)| (version, value.clone()))
+    }
+
+    pub fn get_all(
+        &self,
+        mut filter: impl FnMut(&T) -> bool,
+    ) -> impl Iterator<Item = (Version, T)> {
+        let data = self.data.read().unwrap();
+
+        data.keys()
+            .filter_map(|id| Self::get_sync(*id, &self.transactions, &*data))
+            .filter_map(|(version, value)| {
+                if filter(value) {
+                    Some((version, value.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    fn get_sync<'a>(
+        id: Id,
+        transactions: &TransactionStore,
+        data: &'a HashMap<Id, TransactionalValue<T>>,
+    ) -> Option<(Version, &'a T)> {
         if let Some(existing) = data.get(&id) {
             if let Some((existing_transaction, existing_version, ref existing_value)) =
                 existing.current
             {
-                if self.transactions.is_committed(existing_transaction) {
-                    return Some((existing_version, existing_value.clone()));
+                if transactions.is_committed(existing_transaction) {
+                    return Some((existing_version, existing_value));
                 }
 
                 if let Some((prior_transaction, prior_version, ref prior_value)) = existing.prior {
-                    assert!(self.transactions.is_committed(prior_transaction));
+                    assert!(transactions.is_committed(prior_transaction));
 
-                    return Some((prior_version, prior_value.clone()));
+                    return Some((prior_version, prior_value));
                 }
             }
         }
@@ -282,11 +328,15 @@ where
     pub fn set(
         &self,
         transaction: &Transaction,
-        id: Id,
-        old_version: Option<Version>,
-        new_version: Version,
+        id: impl Into<Id>,
+        old_version: Option<impl Into<Version>>,
+        new_version: impl Into<Version>,
         new_value: T,
     ) -> Result<(), Error> {
+        let id = id.into();
+        let old_version = old_version.map(Into::into);
+        let new_version = new_version.into();
+
         assert_ne!(
             old_version,
             Some(new_version),
@@ -445,7 +495,13 @@ mod tests {
 
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
         store.transactions.commit(transaction);
 
@@ -453,6 +509,26 @@ mod tests {
 
         assert_eq!(version, current_version);
         assert_eq!("1", current_value);
+    }
+
+    #[test]
+    fn transaction_value_store_set_ignores_old_version_initially() {
+        let store = TransactionValueStore::<String>::new(TransactionStore::new());
+
+        let id = Id::new();
+        let version = Version::new();
+
+        let transaction = store.transactions.begin();
+
+        let r = store.set(
+            &transaction,
+            id,
+            Some(Version::new()),
+            version,
+            String::from("1"),
+        );
+
+        assert!(r.is_ok());
     }
 
     #[test]
@@ -464,7 +540,13 @@ mod tests {
 
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
 
         assert!(store.get(id).is_none());
@@ -479,7 +561,13 @@ mod tests {
 
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
         store.transactions.cancel(transaction);
 
@@ -496,7 +584,13 @@ mod tests {
         // Set an initial value
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
         store.transactions.commit(transaction);
 
@@ -559,10 +653,22 @@ mod tests {
 
         // Transactions apply across stores
         store1
-            .set(&transaction, id1, None, version1, String::from("a1"))
+            .set(
+                &transaction,
+                id1,
+                None::<Version>,
+                version1,
+                String::from("a1"),
+            )
             .unwrap();
         store2
-            .set(&transaction, id2, None, version2, String::from("a2"))
+            .set(
+                &transaction,
+                id2,
+                None::<Version>,
+                version2,
+                String::from("a2"),
+            )
             .unwrap();
 
         assert!(store1.get(id1).is_none());
@@ -588,7 +694,13 @@ mod tests {
 
         let transaction = Transaction::none();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
 
         // An empty transaction doesn't need to be committed
@@ -609,14 +721,26 @@ mod tests {
 
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
         store.transactions.commit(transaction);
 
         let transaction = store.transactions.begin();
 
         // Attempting to set the value with a mismatched current version will fail
-        let r = store.set(&transaction, id, None, Version::new(), String::from("2"));
+        let r = store.set(
+            &transaction,
+            id,
+            None::<Version>,
+            Version::new(),
+            String::from("2"),
+        );
 
         assert!(r.is_err());
     }
@@ -630,7 +754,13 @@ mod tests {
 
         let transaction = store.transactions.begin();
         store
-            .set(&transaction, id, None, version, String::from("1"))
+            .set(
+                &transaction,
+                id,
+                None::<Version>,
+                version,
+                String::from("1"),
+            )
             .unwrap();
         store.transactions.commit(transaction);
 

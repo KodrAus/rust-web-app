@@ -1,17 +1,8 @@
 /*! Persistent customer storage. */
 
-use std::{
-    collections::{
-        hash_map::Entry,
-        HashMap,
-    },
-    sync::RwLock,
-};
-
 use crate::{
     domain::{
         customers::*,
-        error,
         Error,
     },
     store::*,
@@ -24,48 +15,37 @@ pub(in crate::domain) trait CustomerStore {
     fn set_customer(&self, transaction: &Transaction, customer: Customer) -> Result<(), Error>;
 }
 
-/* A test in-memory customer store. */
-pub(in crate::domain) type InMemoryStore = RwLock<HashMap<CustomerId, CustomerData>>;
+pub(in crate::domain) struct InMemoryStore(TransactionValueStore<CustomerData>);
 
 impl CustomerStore for InMemoryStore {
     fn get_customer(&self, id: CustomerId) -> Result<Option<Customer>, Error> {
-        let customers = self.read().map_err(|_| error::msg("not good!"))?;
+        if let Some((version, data)) = self.0.get(id) {
+            assert_eq!(version, data.version.into());
 
-        if let Some(data) = customers.get(&id) {
-            Ok(Some(Customer::from_data(data.clone())))
+            Ok(Some(Customer::from_data(data)))
         } else {
             Ok(None)
         }
     }
 
-    fn set_customer(&self, _: &Transaction, customer: Customer) -> Result<(), Error> {
+    fn set_customer(&self, transaction: &Transaction, customer: Customer) -> Result<(), Error> {
         let mut data = customer.into_data();
         let id = data.id;
 
-        let mut customers = self.write().map_err(|_| error::msg("not good!"))?;
-
-        match customers.entry(id) {
-            Entry::Vacant(entry) => {
-                data.version.next();
-                entry.insert(data);
-            }
-            Entry::Occupied(mut entry) => {
-                let entry = entry.get_mut();
-                if entry.version != data.version {
-                    return Err(error::msg("optimistic concurrency fail"));
-                }
-
-                data.version.next();
-                *entry = data;
-            }
-        }
+        self.0.set(
+            transaction,
+            id,
+            Some(data.version),
+            data.version.next(),
+            data,
+        )?;
 
         Ok(())
     }
 }
 
-pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
-    RwLock::new(HashMap::new())
+pub(in crate::domain) fn in_memory_store(transaction_store: TransactionStore) -> InMemoryStore {
+    InMemoryStore(TransactionValueStore::new(transaction_store))
 }
 
 #[cfg(test)]
@@ -76,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_in_memory_store() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let id = CustomerId::new();
 
@@ -92,7 +72,7 @@ mod tests {
 
     #[test]
     fn add_customer_twice_fails_concurrency_check() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let id = CustomerId::new();
 

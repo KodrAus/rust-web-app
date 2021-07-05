@@ -1,17 +1,9 @@
 /*! Persistent storage for products. */
 
-use std::{
-    collections::{
-        hash_map::Entry,
-        HashMap,
-    },
-    sync::RwLock,
-    vec::IntoIter,
-};
+use std::vec::IntoIter;
 
 use crate::{
     domain::{
-        error,
         products::*,
         Error,
     },
@@ -43,40 +35,30 @@ pub(in crate::domain) trait ProductStoreFilter {
 pub(in crate::domain) type Iter = IntoIter<ProductData>;
 
 /** A test in-memory product store. */
-pub(in crate::domain) type InMemoryStore = RwLock<HashMap<ProductId, ProductData>>;
+pub(in crate::domain) struct InMemoryStore(TransactionValueStore<ProductData>);
 
 impl ProductStore for InMemoryStore {
     fn get_product(&self, id: ProductId) -> Result<Option<Product>, Error> {
-        let products = self.read().map_err(|_| error::msg("not good!"))?;
+        if let Some((version, data)) = self.0.get(id) {
+            assert_eq!(version, data.version.into());
 
-        if let Some(data) = products.get(&id) {
-            Ok(Some(Product::from_data(data.clone())))
+            Ok(Some(Product::from_data(data)))
         } else {
             Ok(None)
         }
     }
 
-    fn set_product(&self, _: &Transaction, product: Product) -> Result<(), Error> {
+    fn set_product(&self, transaction: &Transaction, product: Product) -> Result<(), Error> {
         let mut data = product.into_data();
         let id = data.id;
 
-        let mut products = self.write().map_err(|_| error::msg("not good!"))?;
-
-        match products.entry(id) {
-            Entry::Vacant(entry) => {
-                data.version.next();
-                entry.insert(data);
-            }
-            Entry::Occupied(mut entry) => {
-                let entry = entry.get_mut();
-                if entry.version != data.version {
-                    return Err(error::msg("optimistic concurrency fail"));
-                }
-
-                data.version.next();
-                *entry = data;
-            }
-        }
+        self.0.set(
+            transaction,
+            id,
+            Some(data.version),
+            data.version.next(),
+            data,
+        )?;
 
         Ok(())
     }
@@ -88,20 +70,16 @@ impl ProductStoreFilter for InMemoryStore {
     where
         F: Fn(&ProductData) -> bool,
     {
-        let products: Vec<_> = self
-            .read()
-            .map_err(|_| error::msg("not good!"))?
-            .values()
-            .filter(|p| predicate(*p))
-            .cloned()
-            .collect();
+        let products: Vec<_> = self.0.get_all(predicate).map(|(_, data)| data).collect();
 
         Ok(products.into_iter())
     }
 }
 
-pub(in crate::domain::products) fn in_memory_store() -> InMemoryStore {
-    RwLock::new(HashMap::new())
+pub(in crate::domain::products) fn in_memory_store(
+    transaction_store: TransactionStore,
+) -> InMemoryStore {
+    InMemoryStore(TransactionValueStore::new(transaction_store))
 }
 
 #[cfg(test)]
@@ -112,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_in_memory_store() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let id = ProductId::new();
 
@@ -127,7 +105,7 @@ mod tests {
 
     #[test]
     fn add_product_twice_fails_concurrency_check() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let id = ProductId::new();
 

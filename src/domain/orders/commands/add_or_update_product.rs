@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn add_item_if_not_in_order() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
         let product_id = ProductId::new();
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn update_quantity_if_in_order() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
         let product_id = ProductId::new();

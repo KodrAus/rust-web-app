@@ -1,12 +1,7 @@
 /*! Persistent order storage. */
 
 use std::{
-    collections::{
-        hash_map::Entry,
-        HashMap,
-        HashSet,
-    },
-    sync::RwLock,
+    collections::HashSet,
     vec::IntoIter,
 };
 
@@ -52,12 +47,8 @@ pub(in crate::domain) type Iter = IntoIter<OrderData>;
 
 /** A test in-memory order store. */
 pub(in crate::domain) struct InMemoryStore {
-    data: RwLock<InMemoryStoreInner>,
-}
-
-struct InMemoryStoreInner {
-    orders: HashMap<OrderId, (OrderData, HashSet<LineItemId>)>,
-    line_items: HashMap<LineItemId, LineItemData>,
+    orders: TransactionValueStore<(OrderData, HashSet<LineItemId>)>,
+    line_items: TransactionValueStore<LineItemData>,
 }
 
 impl OrderStore for InMemoryStore {
@@ -66,110 +57,99 @@ impl OrderStore for InMemoryStore {
         id: OrderId,
         line_item_id: LineItemId,
     ) -> Result<Option<OrderLineItem>, Error> {
-        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
+        if let Some((version, (order_data, item_ids))) = self.orders.get(id) {
+            assert_eq!(version, order_data.version.into());
 
-        if let Some(&(ref data, ref item_ids)) = store_data.orders.get(&id) {
             // Check that the line item is part of the order
             if !item_ids.contains(&line_item_id) {
                 return Err(error::msg("line item not found"));
             }
 
             // Find the line item
-            let item_data = store_data
+            let (version, line_item_data) = self
                 .line_items
-                .values()
-                .find(|item_data| item_data.id == line_item_id)
-                .cloned()
+                .get(line_item_id)
                 .ok_or_else(|| error::msg("line item not found"))?;
 
-            Ok(Some(OrderLineItem::from_data(data.clone(), item_data)))
+            assert_eq!(version, line_item_data.version.into());
+
+            Ok(Some(OrderLineItem::from_data(order_data, line_item_data)))
         } else {
             Ok(None)
         }
     }
 
-    fn set_line_item(&self, _: &Transaction, order: OrderLineItem) -> Result<(), Error> {
-        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
-
+    fn set_line_item(&self, transaction: &Transaction, order: OrderLineItem) -> Result<(), Error> {
         let (order_id, mut order_item_data) = order.into_data();
         let line_item_id = order_item_data.id;
 
         // Check that the line item is part of the order
         {
-            let &(_, ref item_ids) = store_data
+            let (_, (_, item_ids)) = self
                 .orders
-                .get(&order_id)
+                .get(order_id)
                 .ok_or_else(|| error::msg("order not found"))?;
+
             if !item_ids.contains(&line_item_id) {
                 return Err(error::msg("line item not found"));
             }
         }
 
-        match store_data.line_items.entry(line_item_id) {
-            Entry::Vacant(entry) => {
-                order_item_data.version.next();
-                entry.insert(order_item_data);
-            }
-            Entry::Occupied(mut entry) => {
-                let entry = entry.get_mut();
-                if entry.version != order_item_data.version {
-                    return Err(error::msg("optimistic concurrency fail"));
-                }
-
-                order_item_data.version.next();
-                *entry = order_item_data;
-            }
-        }
+        self.line_items.set(
+            transaction,
+            line_item_id,
+            Some(order_item_data.version),
+            order_item_data.version.next(),
+            order_item_data,
+        )?;
 
         Ok(())
     }
 
     fn get_order(&self, id: OrderId) -> Result<Option<Order>, Error> {
-        let store_data = self.data.read().map_err(|_| error::msg("not good!"))?;
+        if let Some((version, (order_data, line_items))) = self.orders.get(id) {
+            assert_eq!(version, order_data.version.into());
 
-        if let Some(&(ref order_data, ref item_ids)) = store_data.orders.get(&id) {
-            let items_data = store_data
+            let items_data = self
                 .line_items
-                .values()
-                .filter(|item_data| item_ids.iter().any(|id| *id == item_data.id))
-                .cloned();
+                .get_all(|line_item| line_items.contains(&line_item.id))
+                .map(|(version, line_item_data)| {
+                    assert_eq!(version, line_item_data.version.into());
 
-            Ok(Some(Order::from_data(order_data.clone(), items_data)))
+                    line_item_data
+                });
+
+            Ok(Some(Order::from_data(order_data, items_data)))
         } else {
             Ok(None)
         }
     }
 
-    fn set_order(&self, _c: &Transaction, order: Order) -> Result<(), Error> {
-        let mut store_data = self.data.write().map_err(|_| error::msg("not good!"))?;
-
+    fn set_order(&self, transaction: &Transaction, order: Order) -> Result<(), Error> {
         let (mut order_data, line_items_data) = order.into_data();
         let id = order_data.id;
         let order_item_ids = line_items_data.iter().map(|item| item.id).collect();
 
         // Update the order
-        match store_data.orders.entry(id) {
-            Entry::Vacant(entry) => {
-                order_data.version.next();
-                entry.insert((order_data, order_item_ids));
-            }
-            Entry::Occupied(mut entry) => {
-                let entry = entry.get_mut();
-                if entry.0.version != order_data.version {
-                    return Err(error::msg("optimistic concurrency fail"));
-                }
+        self.orders.set(
+            transaction,
+            id,
+            Some(order_data.version),
+            order_data.version.next(),
+            (order_data, order_item_ids),
+        )?;
 
-                order_data.version.next();
-                *entry = (order_data, order_item_ids);
-            }
-        }
+        // Update each of its line items
+        for mut line_item_data in line_items_data {
+            let id = line_item_data.id;
 
-        // Insert the line items
-        for mut data in line_items_data {
-            let id = data.id;
-
-            data.version.next();
-            store_data.line_items.insert(id, data);
+            self.line_items.set(
+                transaction,
+                id,
+                Some(line_item_data.version),
+                line_item_data.version.next(),
+                line_item_data,
+            )?;
         }
 
         Ok(())
@@ -182,25 +162,20 @@ impl OrderStoreFilter for InMemoryStore {
     where
         F: Fn(&OrderData) -> bool,
     {
-        let store_data = &self.data.read().map_err(|_| error::msg("not good!"))?;
-
-        let orders: Vec<_> = store_data
+        let orders: Vec<_> = self
             .orders
-            .values()
-            .filter(|o| predicate(&o.0))
-            .map(|o| o.0.clone())
+            .get_all(|(data, _)| predicate(data))
+            .map(|(_, (data, _))| data)
             .collect();
 
         Ok(orders.into_iter())
     }
 }
 
-pub(in crate::domain) fn in_memory_store() -> InMemoryStore {
+pub(in crate::domain) fn in_memory_store(transaction_store: TransactionStore) -> InMemoryStore {
     InMemoryStore {
-        data: RwLock::new(InMemoryStoreInner {
-            orders: HashMap::new(),
-            line_items: HashMap::new(),
-        }),
+        orders: TransactionValueStore::new(transaction_store.clone()),
+        line_items: TransactionValueStore::new(transaction_store),
     }
 }
 
@@ -215,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_in_memory_store() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
         let line_item_id = LineItemId::new();
@@ -254,7 +229,7 @@ mod tests {
 
     #[test]
     fn add_order_twice_fails_concurrency_check() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
 
@@ -277,7 +252,7 @@ mod tests {
 
     #[test]
     fn set_order_item_twice_fails_concurrency_check() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
         let line_item_id = LineItemId::new();

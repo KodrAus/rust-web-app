@@ -25,6 +25,8 @@ use std::{
 };
 use uuid::Uuid;
 
+use crate::store;
+
 /**
 A version.
 
@@ -32,6 +34,18 @@ The version provides optimistic concurrency.
 Versions have a phantom generic type so you can't compare `Version<T>` to `Version<U>`.
 */
 pub struct Version<T>(Uuid, PhantomData<T>);
+
+impl<T> From<Version<T>> for store::Version {
+    fn from(id: Version<T>) -> store::Version {
+        store::Version::from_raw(id.0)
+    }
+}
+
+impl<T> From<store::Version> for Version<T> {
+    fn from(id: store::Version) -> Version<T> {
+        Version(id.into_raw(), PhantomData)
+    }
+}
 
 impl<T> fmt::Debug for Version<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
@@ -111,7 +125,8 @@ impl<T> Version<T> {
 }
 
 impl<T> Version<T> {
-    pub fn next(&mut self) {
-        self.0 = Uuid::new_v4();
+    pub(in crate::domain) fn next(&mut self) -> Version<T> {
+        *self = Version(Uuid::new_v4(), PhantomData);
+        *self
     }
 }

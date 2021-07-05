@@ -24,7 +24,9 @@ pub(in crate::domain) struct CustomersResolver {
 impl Default for CustomersResolver {
     fn default() -> Self {
         CustomersResolver {
-            customer_store: Register::once(|_| Arc::new(store::in_memory_store())),
+            customer_store: Register::once(|resolver| {
+                Arc::new(store::in_memory_store(resolver.transaction_store()))
+            }),
         }
     }
 }

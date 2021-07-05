@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn err_if_already_exists() {
-        let store = in_memory_store();
+        let store = in_memory_store(Default::default());
 
         let create = CreateProduct {
             id: ProductId::new(),
