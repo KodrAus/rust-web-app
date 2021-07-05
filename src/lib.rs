@@ -12,7 +12,7 @@ that can be consumed by the application. Refer to the source for a fuller pictur
 You can also build the docs with private items visible to explore everything:
 
 ```text
-cargo doc --document-pivate-items
+cargo doc --document-private-items
 ```
  */
 
