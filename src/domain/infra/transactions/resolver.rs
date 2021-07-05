@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct TransactionsResolver {
+pub(in crate::domain) struct TransactionsResolver {
     transaction_store: Register<TransactionStore>,
     active_transaction: Register<ActiveTransaction>,
 }

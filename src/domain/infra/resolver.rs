@@ -6,7 +6,7 @@ use once_cell::sync::OnceCell;
 
 use crate::domain::{
     customers::resolver::CustomersResolver,
-    infra::transactions::TransactionsResolver,
+    infra::transactions::resolver::TransactionsResolver,
     orders::resolver::OrdersResolver,
     products::resolver::ProductsResolver,
 };
@@ -37,10 +37,19 @@ impl Resolver {
     }
 }
 
+/**
+A registration in the resolver.
+
+Registers produce values of a specific type when a command or query asks for them.
+The values may be singletons that share a single value, or they may be created on-demand.
+*/
 #[derive(Clone)]
 pub struct Register<T>(Arc<dyn Fn(&Resolver) -> T + Send + Sync>);
 
 impl<T> Register<T> {
+    /**
+    Create a register that returns the same instance of a value.
+    */
     pub fn once(f: impl Fn(&Resolver) -> T + Send + Sync + 'static) -> Self
     where
         T: Send + Sync + Clone + 'static,
@@ -51,6 +60,9 @@ impl<T> Register<T> {
         }))
     }
 
+    /**
+    Create a register that returns a new instance of a value each time.
+    */
     pub fn factory(f: impl Fn(&Resolver) -> T + Send + Sync + 'static) -> Self {
         Register(Arc::new(f))
     }

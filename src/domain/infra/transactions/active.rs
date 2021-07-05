@@ -11,6 +11,12 @@ use crate::{
     },
 };
 
+/**
+An active transaction that may implicitly commit or cancel on drop.
+
+A transaction is needed to make changes to entities, but callers don't necessarily need to
+manage the transaction themselves.
+*/
 #[derive(Clone)]
 pub struct ActiveTransaction {
     transaction: Option<Arc<Transaction>>,
@@ -57,6 +63,12 @@ impl ActiveTransaction {
         self.transaction.as_ref().expect("missing transaction")
     }
 
+    /**
+    Commit the transaction, making its changes observable.
+
+    There must be no other callers holding on to this transaction when it's committed.
+    If there are it will return an error instead of committing.
+    */
     pub fn commit(mut self) -> Result<(), Error> {
         match Arc::try_unwrap(self.transaction.take().expect("missing transaction")) {
             Ok(transaction) => {
@@ -70,6 +82,12 @@ impl ActiveTransaction {
         }
     }
 
+    /**
+    Cancel the transaction, reverting its changes.
+
+    There must be no other callers holding on to this transaction when it's cancelled.
+    If there are it will return an error instead of cancelling.
+    */
     pub fn cancel(mut self) {
         if let Ok(transaction) =
             Arc::try_unwrap(self.transaction.take().expect("missing transaction"))

@@ -45,6 +45,7 @@ pub(in crate::domain) fn create_customer_command(
 }
 
 impl Resolver {
+    /** Create a customer. */
     pub fn create_customer_command(&self) -> impl CreateCustomerCommand {
         let store = self.customer_store();
         let active_transaction = self.active_transaction();

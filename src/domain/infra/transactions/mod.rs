@@ -1,6 +1,4 @@
-pub mod active;
-pub mod resolver;
-pub use self::{
-    active::*,
-    resolver::*,
-};
+mod active;
+pub(in crate::domain) mod resolver;
+
+pub use self::active::*;

@@ -11,6 +11,11 @@ pub mod customers;
 pub mod orders;
 pub mod products;
 
+/**
+Create a `Rocket` that will host the app.
+
+The rocket can either be launched or passed to a local client for testing.
+*/
 pub fn init() -> rocket::Rocket {
     info!("starting up");
 

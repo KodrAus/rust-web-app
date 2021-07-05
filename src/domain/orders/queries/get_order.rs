@@ -30,6 +30,7 @@ pub(in crate::domain) fn get_order_query(store: impl OrderStore) -> impl GetOrde
 }
 
 impl Resolver {
+    /** Get an order. */
     pub fn get_order_query(&self) -> impl GetOrderQuery {
         let store = self.order_store();
 

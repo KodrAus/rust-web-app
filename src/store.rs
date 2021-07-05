@@ -1,10 +1,10 @@
-/**
+/*!
 Transactional value storage.
 
 This module sketches out a storage API that uses transactions to coordinate updates to
 independent data stores. The design assumes data for a given transaction will be technically
 observable (such as being written to disk or some external database) before the transaction
-itself is committed. The `TransactionStore` keeps track of whether or not the data associated
+itself is committed. The transaction store keeps track of whether or not the data associated
 with a given transaction should be surfaced to callers or not.
  */
 use std::{
@@ -27,7 +27,13 @@ use uuid::Uuid;
 
 /**
 An identifier for a transaction.
- */
+
+This values are intended to be persisted to disk to record what
+transaction specific changes belonged to.
+
+Transaction ids are independent, so there's nothing connecting the id of an active
+transaction to the one that was created immediately before it.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TransactionId(Uuid);
 
@@ -42,13 +48,21 @@ enum TransactionStatus {
 
 /**
 An active transaction.
- */
+
+The transaction needs to be passed by reference to methods that want to
+make changes to values. A transaction can either be committed to make its
+changes observable, or it can be cancelled to revert them. Both methods take
+full ownership of the transaction so it can no longer be used.
+*/
 pub struct Transaction {
     id: TransactionId,
     complete_guard: Option<Box<dyn FnOnce() + Send + Sync>>,
 }
 
 impl Transaction {
+    /**
+    An "empty" transaction that makes all changes immediately observable.
+    */
     #[cfg(test)]
     pub(crate) fn none() -> Self {
         Transaction {
@@ -68,9 +82,7 @@ impl Drop for Transaction {
 
 impl Transaction {
     /**
-       Get the id associated with this transaction.
-
-       The id can be used to connect changed data with a transaction.
+    Get the id associated with this transaction.
     */
     pub fn id(&self) -> TransactionId {
         self.id
@@ -79,7 +91,11 @@ impl Transaction {
 
 /**
 A store that tracks the state of active transactions.
- */
+
+The store needs to be consulted to tell whether or not a given transaction is active,
+committed, or cancelled. Multiple users can share the same store to track the same set
+of transactions.
+*/
 #[derive(Clone)]
 pub struct TransactionStore {
     active: Arc<Mutex<HashMap<TransactionId, TransactionEntry>>>,
@@ -93,9 +109,10 @@ impl Default for TransactionStore {
 
 impl TransactionStore {
     /**
-       Create a new store.
+    Create a new store.
 
-       This currently assumes that any transaction ids belong to committed transactions.
+    The store is initially empty, so it will consider any transaction ids it
+    encounters committed.
     */
     pub fn new() -> Self {
         TransactionStore {
@@ -105,7 +122,9 @@ impl TransactionStore {
 
     /**
     Begin a new transaction that will be tracked by this store.
-     */
+
+    The transaction will need to be passed back to this store to commit or cancel.
+    */
     pub fn begin(&self) -> Transaction {
         let mut transactions = self.active.lock().unwrap();
 
@@ -137,7 +156,7 @@ impl TransactionStore {
 
     /**
     Commit a transaction, making its changes atomically observable.
-     */
+    */
     pub fn commit(&self, mut transaction: Transaction) {
         drop(transaction.complete_guard.take());
 
@@ -152,7 +171,7 @@ impl TransactionStore {
 
     /**
     Cancel a transaction, ensuring its changes can never be observed.
-     */
+    */
     pub fn cancel(&self, mut transaction: Transaction) {
         drop(transaction.complete_guard.take());
 
@@ -165,7 +184,7 @@ impl TransactionStore {
 
     /**
     Whether or not a given transaction was committed.
-     */
+    */
     pub fn is_committed(&self, id: TransactionId) -> bool {
         let transactions = self.active.lock().unwrap();
 
@@ -175,7 +194,7 @@ impl TransactionStore {
 
     /**
     Whether or not a given transaction was cancelled.
-     */
+    */
     pub fn is_cancelled(&self, id: TransactionId) -> bool {
         let transactions = self.active.lock().unwrap();
 
@@ -187,8 +206,8 @@ impl TransactionStore {
 }
 
 /**
-An identifier for a value.
- */
+An identifier for a transactional value.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Id(Uuid);
 
@@ -207,8 +226,11 @@ impl Id {
 }
 
 /**
-A version for a value.
- */
+A version for a transactional value.
+
+Versions are independent, so there's nothing that connects the current version
+of a value to its previous one.
+*/
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Version(Uuid);
 
@@ -247,7 +269,10 @@ where
 {
     /**
     Create a new transactional value store.
-     */
+
+    The store will use the given transaction store to keep track of the current
+    observable state of its values.
+    */
     pub fn new(transactions: TransactionStore) -> Self {
         TransactionValueStore {
             transactions,
@@ -257,15 +282,17 @@ where
 
     /**
     Get a reference to the underlying transaction store.
-     */
+
+    The transaction store can be used to begin the transactions needed to make changes.
+    */
     pub fn transactions(&self) -> &TransactionStore {
         &self.transactions
     }
 
     /**
-       Get a value for the given id.
+    Get a value for the given id.
 
-       This will also return the current version of the value that will be needed to update it.
+    This will also return the current version of the value that will be needed to update it.
     */
     pub fn get(&self, id: impl Into<Id>) -> Option<(Version, T)> {
         let id = id.into();
@@ -276,6 +303,9 @@ where
             .map(|(version, value)| (version, value.clone()))
     }
 
+    /**
+    Get all values that match a given filter.
+    */
     pub fn get_all(
         &self,
         mut filter: impl FnMut(&T) -> bool,
@@ -320,11 +350,13 @@ where
     }
 
     /**
-       Set a value for the given id.
+    Set a value for the given id.
 
-       Changes are associated with an active transaction and not observable until the transaction
-       is committed. If another transaction attempts to set this same value in the meantime it will
-       fail with a version mismatch.
+    Changes are associated with an active transaction and not observable until the transaction
+    is committed. If another transaction attempts to set this same value in the meantime it will
+    fail with a version mismatch.
+
+    The old version is ignored if the value doesn't currently exist.
     */
     pub fn set(
         &self,
@@ -351,6 +383,14 @@ where
                 let existing = occupied.get_mut();
 
                 match &mut existing.current {
+                    // If the value already exists then we need to update it, without making
+                    // that new version visible to anybody currently looking at the value.
+                    // We do this by updating a pair of values: one for the new version of the
+                    // value and one for the prior version. While this transaction is active,
+                    // callers will get the prior value, but will perform their version checks
+                    // against the current. Since versions are independent that means a conflicting
+                    // transaction can't clobber this one if it got in first. It won't know what
+                    // version it should be using to update the current value set by the other transaction.
                     Some((existing_transaction, existing_version, existing_value)) => {
                         // First, we need to check the versions to make sure they line up
 
@@ -399,6 +439,10 @@ where
                             *existing_value = new_value;
                         }
                     }
+                    // If the value doesn't exist then set it
+                    // We explicitly don't check the old version for `None` here to make life easier
+                    // for consumers that can't tell whether they're looking at the first version
+                    // of a value or not
                     None => existing.current = Some((transaction.id(), new_version, new_value)),
                 }
             }

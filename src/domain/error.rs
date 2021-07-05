@@ -3,7 +3,16 @@ use std::{
     fmt,
 };
 
-/** The main error type */
+/**
+The main error type.
+
+The error type is a simple collector that surfaces enough detail to the API so it
+can pick the right status code to return. It doesn't know anything about HTTP or
+status codes itself.
+
+As a collector, the error type doesn't implement Rust's `Error` trait itself,
+otherwise it wouldn't be able to collect any other kind of error.
+*/
 #[derive(Debug)]
 pub struct Error {
     kind: ErrorKind,
@@ -16,12 +25,22 @@ impl fmt::Display for Error {
     }
 }
 
+/**
+The kind of an error captured.
+*/
 #[derive(Debug)]
 pub enum ErrorKind {
+    /** A command or query was given bad input. */
     BadInput,
+    /** Some other kind of error. */
     Other,
 }
 
+/**
+Create an error from a message.
+
+This message may make its way to end-users so it should be friendly.
+*/
 pub fn msg(err: impl fmt::Display) -> Error {
     Error {
         kind: ErrorKind::Other,
@@ -29,6 +48,11 @@ pub fn msg(err: impl fmt::Display) -> Error {
     }
 }
 
+/**
+Create an error for some bad input.
+
+This message may make its way to end-users so it should be friendly.
+*/
 pub fn bad_input(msg: impl fmt::Display) -> Error {
     Error {
         kind: ErrorKind::BadInput,
@@ -37,6 +61,9 @@ pub fn bad_input(msg: impl fmt::Display) -> Error {
 }
 
 impl Error {
+    /**
+    Split an error into its kind and value.
+    */
     pub(crate) fn split(self) -> (ErrorKind, Box<dyn error::Error + Send + Sync>) {
         (self.kind, self.inner)
     }

@@ -4,10 +4,7 @@ extern crate serde_json;
 use shop::api::client::*;
 
 use rocket::{
-    http::{
-        Header,
-        Status,
-    },
+    http::Status,
     local::Client,
 };
 
@@ -17,7 +14,6 @@ fn set_get() {
 
     let mut put = app
         .put("/products")
-        .header(Header::new("Content-Type", "application/json"))
         .body_json(json!({
             "title": "A new product",
             "price": {

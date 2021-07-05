@@ -47,6 +47,7 @@ pub(in crate::domain) fn get_product_summaries_query(
 }
 
 impl Resolver {
+    /** Get some summary info for a set of products by id. */
     pub fn get_product_summaries_query(&self) -> impl GetProductSummariesQuery {
         let store = self.product_store_filter();
 

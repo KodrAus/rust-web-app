@@ -80,6 +80,7 @@ pub(in crate::domain) fn get_order_with_products_query(
 }
 
 impl Resolver {
+    /** Get an order along with product data for each of its line items. */
     pub fn get_order_with_products_query(&self) -> impl GetOrderWithProductsQuery {
         let store = self.order_store();
         let query = self.get_product_summaries_query();

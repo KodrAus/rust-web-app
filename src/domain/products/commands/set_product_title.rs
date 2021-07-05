@@ -52,6 +52,7 @@ pub(in crate::domain) fn set_product_title_command(
 }
 
 impl Resolver {
+    /** Set an existing product's title. */
     pub fn set_product_title_command(&self) -> impl SetProductTitleCommand {
         let store = self.product_store();
         let active_transaction = self.active_transaction();

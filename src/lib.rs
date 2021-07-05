@@ -5,10 +5,15 @@ The project is split into a few main parts:
 
 - `api`: the rocket web application where the app is configured and hosted
 - `domain`: the core app logic
-- `store`: a little datastore implementation
+- `store`: a little transactional datastore implementation
 
-Most of the `domain` module is `pub(restricted)`, so these docs only show the items that can be consumed by the application.
-Refer to the source for a fuller picture of what's in there.
+Most of the `domain` module is `pub(restricted)`, so these docs only show the items
+that can be consumed by the application. Refer to the source for a fuller picture of what's in there.
+You can also build the docs with private items visible to explore everything:
+
+```text
+cargo doc --document-pivate-items
+```
  */
 
 #![feature(decl_macro)]

@@ -59,6 +59,7 @@ pub(in crate::domain) fn get_customer_with_orders_query(
 }
 
 impl Resolver {
+    /** Get a customer along with all of their orders. */
     pub fn get_customer_with_orders_query(&self) -> impl GetCustomerWithOrdersQuery {
         let store = self.customer_store();
         let query = self.get_order_summaries_for_customer_query();

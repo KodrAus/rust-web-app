@@ -4,10 +4,7 @@ extern crate serde_json;
 use shop::api::client::*;
 
 use rocket::{
-    http::{
-        Header,
-        Status,
-    },
+    http::Status,
     local::Client,
 };
 
@@ -15,11 +12,7 @@ use rocket::{
 fn set_get() {
     let app = Client::new(shop::api::init()).expect("invalid app");
 
-    let mut put = app
-        .put("/customers")
-        .header(Header::new("Content-Type", "application/json"))
-        .body_json(json!({}))
-        .dispatch();
+    let mut put = app.put("/customers").body_json(json!({})).dispatch();
 
     assert_eq!(Status::Created, put.status());
     let id: String = put.body_value().expect("invalid id");

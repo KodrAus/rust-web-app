@@ -85,6 +85,7 @@ pub(in crate::domain) fn add_or_update_product_command(
 }
 
 impl Resolver {
+    /** Add a product to an order or update its quantity. */
     pub fn add_or_update_product_command(&self) -> impl AddOrUpdateProductCommand {
         let order_store = self.order_store();
         let active_transaction = self.active_transaction();

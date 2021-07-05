@@ -3,7 +3,7 @@
 pub mod commands;
 pub mod model;
 pub mod queries;
-pub mod resolver;
+pub(in crate::domain) mod resolver;
 
 pub use self::{
     commands::*,

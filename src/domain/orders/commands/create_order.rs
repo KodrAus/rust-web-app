@@ -55,6 +55,7 @@ pub(in crate::domain) fn create_order_command(
 }
 
 impl Resolver {
+    /** Create an order. */
     pub fn create_order_command(&self) -> impl CreateOrderCommand {
         let store = self.order_store();
         let active_transaction = self.active_transaction();
