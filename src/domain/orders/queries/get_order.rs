@@ -1,7 +1,5 @@
 /*! Contains the `GetOrderQuery` type. */
 
-use auto_impl::auto_impl;
-
 use crate::domain::{
     infra::*,
     orders::*,

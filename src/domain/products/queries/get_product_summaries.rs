@@ -1,7 +1,5 @@
 /*! Contains the `GetProductSummariesQuery` type. */
 
-use auto_impl::auto_impl;
-
 use crate::domain::{
     infra::*,
     products::*,

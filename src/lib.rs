@@ -32,7 +32,7 @@ extern crate log;
 #[macro_use]
 extern crate auto_impl;
 
-pub mod app;
+pub mod api;
 pub mod domain;
 pub mod logger;
 pub mod store;

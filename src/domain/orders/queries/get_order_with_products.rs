@@ -1,7 +1,5 @@
 /*! Contains the `GetOrderWithProductsQuery` type. */
 
-use auto_impl::auto_impl;
-
 use crate::domain::{
     error,
     infra::*,

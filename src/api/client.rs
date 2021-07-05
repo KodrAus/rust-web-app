@@ -3,8 +3,6 @@ API client support for using and testing the app's API.
 */
 use std::error;
 
-pub type Error = Box<dyn error::Error + Send + Sync>;
-
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -12,6 +10,8 @@ use rocket::local::{
     LocalRequest,
     LocalResponse,
 };
+
+pub type Error = Box<dyn error::Error + Send + Sync>;
 
 pub trait LocalRequestExt {
     fn body_json(self, json: impl Into<Value>) -> Self;

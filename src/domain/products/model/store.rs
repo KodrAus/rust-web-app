@@ -1,7 +1,5 @@
 /*! Persistent storage for products. */
 
-use auto_impl::auto_impl;
-
 use std::{
     collections::{
         hash_map::Entry,

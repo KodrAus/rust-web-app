@@ -1,7 +1,5 @@
 /*! Persistent order storage. */
 
-use auto_impl::auto_impl;
-
 use std::{
     collections::{
         hash_map::Entry,

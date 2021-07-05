@@ -1,6 +1,5 @@
 pub(in crate::domain) mod currency;
 pub(in crate::domain) mod entity;
-pub(in crate::domain) mod future;
 pub(in crate::domain) mod id;
 pub(in crate::domain) mod resolver;
 pub(in crate::domain) mod transactions;
@@ -14,7 +13,4 @@ pub use self::{
     version::*,
 };
 
-pub(in crate::domain) use self::{
-    entity::*,
-    future::*,
-};
+pub(in crate::domain) use self::entity::*;

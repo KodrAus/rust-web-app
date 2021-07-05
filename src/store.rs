@@ -6,7 +6,7 @@ independent data stores. The design assumes data for a given transaction will be
 observable (such as being written to disk or some external database) before the transaction
 itself is committed. The `TransactionStore` keeps track of whether or not the data associated
 with a given transaction should be surfaced to callers or not.
-*/
+ */
 use std::{
     collections::{
         hash_map,
@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 /**
 An identifier for a transaction.
-*/
+ */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TransactionId(Uuid);
 
@@ -42,7 +42,7 @@ enum TransactionStatus {
 
 /**
 An active transaction.
-*/
+ */
 pub struct Transaction {
     id: TransactionId,
     complete_guard: Option<Box<dyn FnOnce() + Send + Sync>>,
@@ -68,9 +68,9 @@ impl Drop for Transaction {
 
 impl Transaction {
     /**
-    Get the id associated with this transaction.
+       Get the id associated with this transaction.
 
-    The id can be used to connect changed data with a transaction.
+       The id can be used to connect changed data with a transaction.
     */
     pub fn id(&self) -> TransactionId {
         self.id
@@ -79,7 +79,7 @@ impl Transaction {
 
 /**
 A store that tracks the state of active transactions.
-*/
+ */
 #[derive(Clone)]
 pub struct TransactionStore {
     active: Arc<Mutex<HashMap<TransactionId, TransactionEntry>>>,
@@ -93,9 +93,9 @@ impl Default for TransactionStore {
 
 impl TransactionStore {
     /**
-    Create a new store.
+       Create a new store.
 
-    This currently assumes that any transaction ids belong to committed transactions.
+       This currently assumes that any transaction ids belong to committed transactions.
     */
     pub fn new() -> Self {
         TransactionStore {
@@ -105,7 +105,7 @@ impl TransactionStore {
 
     /**
     Begin a new transaction that will be tracked by this store.
-    */
+     */
     pub fn begin(&self) -> Transaction {
         let mut transactions = self.active.lock().unwrap();
 
@@ -137,7 +137,7 @@ impl TransactionStore {
 
     /**
     Commit a transaction, making its changes atomically observable.
-    */
+     */
     pub fn commit(&self, mut transaction: Transaction) {
         drop(transaction.complete_guard.take());
 
@@ -152,7 +152,7 @@ impl TransactionStore {
 
     /**
     Cancel a transaction, ensuring its changes can never be observed.
-    */
+     */
     pub fn cancel(&self, mut transaction: Transaction) {
         drop(transaction.complete_guard.take());
 
@@ -165,7 +165,7 @@ impl TransactionStore {
 
     /**
     Whether or not a given transaction was committed.
-    */
+     */
     pub fn is_committed(&self, id: TransactionId) -> bool {
         let transactions = self.active.lock().unwrap();
 
@@ -175,7 +175,7 @@ impl TransactionStore {
 
     /**
     Whether or not a given transaction was cancelled.
-    */
+     */
     pub fn is_cancelled(&self, id: TransactionId) -> bool {
         let transactions = self.active.lock().unwrap();
 
@@ -188,7 +188,7 @@ impl TransactionStore {
 
 /**
 An identifier for a value.
-*/
+ */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Id(Uuid);
 
@@ -200,7 +200,7 @@ impl Id {
 
 /**
 A version for a value.
-*/
+ */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Version(Uuid);
 
@@ -219,7 +219,7 @@ struct TransactionalValue<T> {
 A generic value store for transactional values.
 
 This store can participate in transactions with other disconnected stores.
-*/
+ */
 pub struct TransactionValueStore<T> {
     transactions: TransactionStore,
     data: RwLock<HashMap<Id, TransactionalValue<T>>>,
@@ -231,7 +231,7 @@ where
 {
     /**
     Create a new transactional value store.
-    */
+     */
     pub fn new(transactions: TransactionStore) -> Self {
         TransactionValueStore {
             transactions,
@@ -247,9 +247,9 @@ where
     }
 
     /**
-    Get a value for the given id.
+       Get a value for the given id.
 
-    This will also return the current version of the value that will be needed to update it.
+       This will also return the current version of the value that will be needed to update it.
     */
     pub fn get(&self, id: Id) -> Option<(Version, T)> {
         let data = self.data.read().unwrap();
@@ -274,11 +274,11 @@ where
     }
 
     /**
-    Set a value for the given id.
+       Set a value for the given id.
 
-    Changes are associated with an active transaction and not observable until the transaction
-    is committed. If another transaction attempts to set this same value in the meantime it will
-    fail with a version mismatch.
+       Changes are associated with an active transaction and not observable until the transaction
+       is committed. If another transaction attempts to set this same value in the meantime it will
+       fail with a version mismatch.
     */
     pub fn set(
         &self,
@@ -637,12 +637,26 @@ mod tests {
 
         let transaction1 = store.transactions.begin();
 
-        store.set(&transaction1, id, Some(version), Version::new(), String::from("2")).unwrap();
+        store
+            .set(
+                &transaction1,
+                id,
+                Some(version),
+                Version::new(),
+                String::from("2"),
+            )
+            .unwrap();
 
         let transaction2 = store.transactions.begin();
 
         // Attempting to set the value from concurrent transactions will fail
-        let r = store.set(&transaction2, id, Some(version), Version::new(), String::from("3"));
+        let r = store.set(
+            &transaction2,
+            id,
+            Some(version),
+            Version::new(),
+            String::from("3"),
+        );
 
         assert!(r.is_err());
     }

@@ -1,7 +1,5 @@
 /*! Contains the `SetProductTitleCommand`. */
 
-use auto_impl::auto_impl;
-
 use crate::domain::{
     error,
     infra::*,

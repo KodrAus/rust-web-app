@@ -1,7 +1,5 @@
 /*! Contains the `CreateOrderCommand` type. */
 
-use auto_impl::auto_impl;
-
 use crate::domain::{
     customers::*,
     error,

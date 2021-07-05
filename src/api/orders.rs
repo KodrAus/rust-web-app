@@ -7,7 +7,7 @@ use rocket::{
 use rocket_contrib::json::Json;
 
 use crate::{
-    app::error::{
+    api::error::{
         self,
         Error,
     },
