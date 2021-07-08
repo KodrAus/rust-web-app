@@ -63,7 +63,6 @@ impl Transaction {
     /**
     An "empty" transaction that makes all changes immediately observable.
     */
-    #[cfg(test)]
     pub(crate) fn none() -> Self {
         Transaction {
             id: TransactionId(Uuid::default()),

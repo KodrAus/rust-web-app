@@ -15,42 +15,40 @@ pub struct CreateCustomer {
 }
 
 /** Create a customer. */
-#[auto_impl(FnMut)]
+#[auto_impl(FnOnce)]
 pub trait CreateCustomerCommand {
-    fn create_customer(&mut self, command: CreateCustomer) -> Result;
+    fn create_customer(self, command: CreateCustomer) -> Future<Result>;
 }
 
-/** Default implementation for a `CreateCustomerCommand`. */
-pub(in crate::domain) fn create_customer_command(
+pub(in crate::domain) async fn create_customer(
+    command: CreateCustomer,
     transaction: ActiveTransaction,
     store: impl CustomerStore,
-) -> impl CreateCustomerCommand {
-    move |command: CreateCustomer| {
-        debug!("creating customer `{}`", command.id);
+) -> Result {
+    debug!("creating customer `{}`", command.id);
 
-        let customer = {
-            if store.get_customer(command.id)?.is_some() {
-                err!("customer `{}` already exists", command.id)?
-            } else {
-                Customer::new(command.id)?
-            }
-        };
+    let customer = {
+        if store.get_customer(command.id)?.is_some() {
+            err!("customer `{}` already exists", command.id)?
+        } else {
+            Customer::new(command.id)?
+        }
+    };
 
-        store.set_customer(transaction.get(), customer)?;
+    store.set_customer(transaction.get(), customer)?;
 
-        info!("customer `{}` created", command.id);
+    info!("customer `{}` created", command.id);
 
-        Ok(())
-    }
+    Ok(())
 }
 
 impl Resolver {
     /** Create a customer. */
-    pub fn create_customer_command(&self) -> impl CreateCustomerCommand {
+    pub fn create_customer_command(&self) -> impl CreateCustomerCommand + Send + 'static {
         let store = self.customer_store();
         let active_transaction = self.active_transaction();
 
-        create_customer_command(active_transaction, store)
+        move |command: CreateCustomer| create_customer(command, active_transaction, store).boxed()
     }
 }
 
@@ -60,18 +58,20 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn err_if_already_exists() {
+    #[tokio::test]
+    async fn err_if_already_exists() {
         let store = in_memory_store(Default::default());
 
         let create = CreateCustomer {
             id: CustomerId::new(),
         };
 
-        let mut cmd = create_customer_command(ActiveTransaction::none(), &store);
+        create_customer(create.clone(), ActiveTransaction::none(), &store)
+            .await
+            .unwrap();
 
-        cmd.create_customer(create.clone()).unwrap();
-
-        assert!(cmd.create_customer(create).is_err());
+        assert!(create_customer(create, ActiveTransaction::none(), &store)
+            .await
+            .is_err());
     }
 }

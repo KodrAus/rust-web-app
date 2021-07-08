@@ -22,5 +22,5 @@ pub use self::{
         Error,
         ErrorKind,
     },
-    infra::Resolver,
+    infra::App,
 };

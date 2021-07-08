@@ -26,21 +26,23 @@ pub struct Get {
 
 /** `GET /products/<id>` */
 #[get("/<id>")]
-pub async fn get(id: ProductId, app: &State<Resolver>) -> Result<Json<Get>, Error> {
-    let query = app.get_product_query();
+pub async fn get(id: ProductId, app: &State<App>) -> Result<Json<Get>, Error> {
+    app.transaction(|app| {
+        let query = app.get_product_query();
 
-    match query.get_product(GetProduct { id })? {
-        Some(product) => {
-            let product = product.into_data();
+        match query.get_product(GetProduct { id })? {
+            Some(product) => {
+                let product = product.into_data();
 
-            Ok(Json(Get {
-                id: product.id,
-                title: product.title,
-                price: product.price,
-            }))
+                Ok(Json(Get {
+                    id: product.id,
+                    title: product.title,
+                    price: product.price,
+                }))
+            }
+            None => Err(Error::NotFound(error::msg("product not found"))),
         }
-        None => Err(Error::NotFound(error::msg("product not found"))),
-    }
+    })
 }
 
 #[derive(Deserialize)]
@@ -53,7 +55,7 @@ pub struct Create {
 #[put("/", format = "application/json", data = "<data>")]
 pub async fn create(
     data: Json<Create>,
-    app: &State<Resolver>,
+    app: &State<App>,
 ) -> Result<Created<Json<ProductId>>, Error> {
     app.transaction(|app| {
         let id = app.product_id();
@@ -75,7 +77,7 @@ pub async fn create(
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
-pub async fn set_title(id: ProductId, title: String, app: &State<Resolver>) -> Result<(), Error> {
+pub async fn set_title(id: ProductId, title: String, app: &State<App>) -> Result<(), Error> {
     app.transaction(|app| {
         let mut command = app.set_product_title_command();
 
