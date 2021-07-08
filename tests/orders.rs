@@ -1,20 +1,18 @@
 #[macro_use]
 extern crate serde_json;
 
-use shop::api::client::*;
-
 use rocket::{
     http::Status,
-    local::Client,
+    local::blocking::Client,
 };
 
 #[test]
 fn set_get() {
-    let app = Client::new(shop::api::init()).expect("invalid app");
+    let app = Client::untracked(shop::api::init()).expect("invalid app");
 
     let product_id: String = app
         .put("/products")
-        .body_json(json!({
+        .json(&json!({
             "title": "A new product",
             "price": {
                 "usd": {
@@ -23,34 +21,34 @@ fn set_get() {
             }
         }))
         .dispatch()
-        .body_value()
+        .into_json()
         .expect("invalid id");
 
     let customer_id: String = app
         .put("/customers")
-        .body_json(json!({}))
+        .json(&json!({}))
         .dispatch()
-        .body_value()
+        .into_json()
         .expect("invalid id");
 
-    let mut put = app
+    let put = app
         .put("/orders")
-        .body_json(json!({ "customer": customer_id }))
+        .json(&json!({ "customer": customer_id }))
         .dispatch();
 
     assert_eq!(Status::Created, put.status());
-    let order_id: String = put.body_value().expect("invalid id");
+    let order_id: String = put.into_json().expect("invalid id");
 
     app.post(format!("/orders/{}/products/{}", order_id, product_id))
-        .body_json(json!({
+        .json(&json!({
             "quantity": 4
         }))
         .dispatch();
 
-    let mut get = app.get(format!("/orders/{}", order_id)).dispatch();
+    let get = app.get(format!("/orders/{}", order_id)).dispatch();
 
     assert_eq!(Status::Ok, get.status());
-    let order = get.body_json().expect("invalid order");
+    let order: serde_json::Value = get.into_json().expect("invalid order");
 
     assert_eq!(
         1,

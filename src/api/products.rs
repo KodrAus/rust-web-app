@@ -4,7 +4,7 @@ use rocket::{
     response::status::Created,
     State,
 };
-use rocket_contrib::json::Json;
+use rocket::serde::json::Json;
 
 use crate::{
     api::error::{
@@ -26,7 +26,7 @@ pub struct Get {
 
 /** `GET /products/<id>` */
 #[get("/<id>")]
-pub fn get(id: ProductId, app: State<Resolver>) -> Result<Json<Get>, Error> {
+pub fn get(id: ProductId, app: &State<Resolver>) -> Result<Json<Get>, Error> {
     let query = app.get_product_query();
 
     match query.get_product(GetProduct { id })? {
@@ -51,7 +51,7 @@ pub struct Create {
 
 /** `PUT /products` */
 #[put("/", format = "application/json", data = "<data>")]
-pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<ProductId>>, Error> {
+pub fn create(data: Json<Create>, app: &State<Resolver>) -> Result<Created<Json<ProductId>>, Error> {
     app.transaction(|app| {
         let id = app.product_id();
         let mut command = app.create_product_command();
@@ -66,13 +66,13 @@ pub fn create(data: Json<Create>, app: State<Resolver>) -> Result<Created<Json<P
 
         let location = format!("/products/{}", id);
 
-        Ok(Created(location, Some(Json(id))))
+        Ok(Created::new(location).body(Json(id)))
     })
 }
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
-pub fn set_title(id: ProductId, title: String, app: State<Resolver>) -> Result<(), Error> {
+pub fn set_title(id: ProductId, title: String, app: &State<Resolver>) -> Result<(), Error> {
     app.transaction(|app| {
         let mut command = app.set_product_title_command();
 

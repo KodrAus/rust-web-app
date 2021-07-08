@@ -34,8 +34,8 @@ pub fn msg(err: impl fmt::Display) -> Box<dyn error::Error + Send + Sync> {
     err.to_string().into()
 }
 
-impl<'r> Responder<'r> for Error {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
+impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
+    fn respond_to(self, _: &Request) -> response::Result<'o> {
         let (status, err) = match self {
             Error::NotFound(err) => {
                 debug!("request failed with {:?}", err);
@@ -57,7 +57,7 @@ impl<'r> Responder<'r> for Error {
         let err = serde_json::to_vec(&SerializeError { msg: &err }).unwrap_or_else(|_| Vec::new());
 
         Response::build()
-            .sized_body(Cursor::new(err))
+            .sized_body(None::<usize>, Cursor::new(err))
             .header(http::ContentType::JSON)
             .status(status)
             .ok()

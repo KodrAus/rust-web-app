@@ -2,6 +2,8 @@
 Rocket app configuration.
 */
 
+use rocket::Build;
+
 use crate::domain::Resolver;
 
 mod error;
@@ -16,10 +18,10 @@ Create a `Rocket` that will host the app.
 
 The rocket can either be launched or passed to a local client for testing.
 */
-pub fn init() -> rocket::Rocket {
+pub fn init() -> rocket::Rocket<Build> {
     info!("starting up");
 
-    rocket::ignite()
+    rocket::build()
         .manage(Resolver::default())
         .mount(
             "/products",
@@ -30,7 +32,5 @@ pub fn init() -> rocket::Rocket {
             routes![orders::get, orders::create, orders::add_or_update_product],
         )
         .mount("/customers", routes![customers::get, customers::create])
-        .register(catchers![error::not_found, error::internal_error])
+        .register("/", catchers![error::not_found, error::internal_error])
 }
-
-pub mod client;

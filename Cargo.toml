@@ -6,13 +6,11 @@ publish = false
 edition = "2018"
 
 [dependencies.rocket]
-version = "~0.4"
-
-[dependencies.rocket_contrib]
-version = "~0.4"
+version = "=0.5.0-rc.1"
+features = ["json"]
 
 [dependencies.rocket_codegen]
-version = "~0.4"
+version = "=0.5.0-rc.1"
 
 [dependencies.futures]
 version = "~0.3"
