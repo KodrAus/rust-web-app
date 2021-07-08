@@ -4,7 +4,7 @@ Rocket app configuration.
 
 use rocket::Build;
 
-use crate::domain::Resolver;
+use crate::domain::App;
 
 mod error;
 mod id;
@@ -22,7 +22,7 @@ pub fn init() -> rocket::Rocket<Build> {
     info!("starting up");
 
     rocket::build()
-        .manage(Resolver::default())
+        .manage(App::default())
         .mount(
             "/products",
             routes![products::get, products::create, products::set_title],

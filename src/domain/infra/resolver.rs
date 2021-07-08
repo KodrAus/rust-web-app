@@ -12,6 +12,32 @@ use crate::domain::{
 };
 
 /**
+The app.
+*/
+pub struct App {
+    pub(in crate::domain) root_resolver: Resolver,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        App::new()
+    }
+}
+
+impl App {
+    pub fn new() -> Self {
+        App {
+            root_resolver: Resolver {
+                transactions_resolver: Default::default(),
+                products_resolver: Default::default(),
+                orders_resolver: Default::default(),
+                customers_resolver: Default::default(),
+            },
+        }
+    }
+}
+
+/**
 Resolver for the domain.
 
 The goal of the resolver is to let consumers construct components without having to know what their dependencies are.
@@ -20,7 +46,6 @@ The `Resolver` type wraps resolvers from other modules.
 Private implementation details live on the wrapped resolvers.
 Commands and queries are resolved from this `Resolver`.
 */
-#[derive(Default)]
 pub struct Resolver {
     pub(in crate::domain) transactions_resolver: TransactionsResolver,
     pub(in crate::domain) products_resolver: ProductsResolver,
