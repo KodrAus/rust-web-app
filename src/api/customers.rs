@@ -2,9 +2,9 @@
 
 use rocket::{
     response::status::Created,
+    serde::json::Json,
     State,
 };
-use rocket::serde::json::Json;
 
 use crate::{
     api::error::{
@@ -19,7 +19,7 @@ use crate::{
 
 /** `GET /customers/<id>` */
 #[get("/<id>")]
-pub fn get(id: CustomerId, app: &State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
+pub async fn get(id: CustomerId, app: &State<Resolver>) -> Result<Json<CustomerWithOrders>, Error> {
     let query = app.get_customer_with_orders_query();
 
     match query.get_customer_with_orders(GetCustomerWithOrders { id })? {
@@ -30,7 +30,7 @@ pub fn get(id: CustomerId, app: &State<Resolver>) -> Result<Json<CustomerWithOrd
 
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
-pub fn create(app: &State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
+pub async fn create(app: &State<Resolver>) -> Result<Created<Json<CustomerId>>, Error> {
     app.transaction(|app| {
         let id = app.customer_id();
 
