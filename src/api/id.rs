@@ -1,6 +1,4 @@
-use rocket::{
-    request::FromParam,
-};
+use rocket::request::FromParam;
 use std::convert::TryFrom;
 
 use crate::domain::{
