@@ -1,13 +1,9 @@
 /*! Commands for modifying order state. */
 
-pub mod add_or_update_product;
-pub use self::add_or_update_product::{
-    AddOrUpdateProduct,
-    AddOrUpdateProductCommand,
-};
+mod add_or_update_product;
+mod create_order;
 
-pub mod create_order;
-pub use self::create_order::{
-    CreateOrder,
-    CreateOrderCommand,
+pub use self::{
+    add_or_update_product::*,
+    create_order::*,
 };

@@ -54,6 +54,15 @@ pub struct Resolver {
 }
 
 impl Resolver {
+    pub(in crate::domain) fn by_ref(&self) -> Self {
+        Resolver {
+            transactions_resolver: self.transactions_resolver.clone(),
+            products_resolver: self.products_resolver.clone(),
+            orders_resolver: self.orders_resolver.clone(),
+            customers_resolver: self.customers_resolver.clone(),
+        }
+    }
+
     pub(in crate::domain) fn resolve<T>(&self, register: &Register<T>) -> T
     where
         T: Clone,

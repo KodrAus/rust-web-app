@@ -93,9 +93,7 @@ impl Resolver {
                 transaction_store: self.transactions_resolver.transaction_store.clone(),
                 active_transaction,
             },
-            products_resolver: self.products_resolver.clone(),
-            orders_resolver: self.orders_resolver.clone(),
-            customers_resolver: self.customers_resolver.clone(),
+            ..self.by_ref()
         }
     }
 }

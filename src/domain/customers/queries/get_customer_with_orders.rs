@@ -7,7 +7,7 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<Option<CustomerWithOrders>, Error>;
+type Result = ::std::result::Result<Option<CustomerWithOrders>, Error>;
 
 /** Input for a `GetCustomerWithOrdersQuery`. */
 #[derive(Deserialize)]
@@ -28,25 +28,23 @@ pub struct CustomerOrder {
     pub id: OrderId,
 }
 
-/** Get a customer along with their orders. */
-#[auto_impl(Fn)]
-pub trait GetCustomerWithOrdersQuery {
-    fn get_customer_with_orders(&self, query: GetCustomerWithOrders) -> Result;
+impl QueryArgs for GetCustomerWithOrders {
+    type Output = Result;
 }
 
-/** Default implementation for a `GetCustomerWithOrdersQuery`. */
-pub(in crate::domain) fn get_customer_with_orders_query(
-    store: impl CustomerStore,
-    orders_query: impl GetOrderSummariesForCustomerQuery,
-) -> impl GetCustomerWithOrdersQuery {
-    move |query: GetCustomerWithOrders| {
-        let customer = match store.get_customer(query.id)? {
+impl GetCustomerWithOrders {
+    async fn execute(
+        &self,
+        store: impl CustomerStore,
+        orders_query: impl GetOrderSummariesForCustomerQuery,
+    ) -> Result {
+        let customer = match store.get_customer(self.id)? {
             Some(customer) => customer.into_data(),
             None => return Ok(None),
         };
 
         let orders = orders_query
-            .get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
+            .get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: self.id })?;
 
         Ok(Some(CustomerWithOrders {
             id: customer.id,
@@ -60,10 +58,12 @@ pub(in crate::domain) fn get_customer_with_orders_query(
 
 impl Resolver {
     /** Get a customer along with all of their orders. */
-    pub fn get_customer_with_orders_query(&self) -> impl GetCustomerWithOrdersQuery {
-        let store = self.customer_store();
-        let query = self.get_order_summaries_for_customer_query();
+    pub fn get_customer_with_orders_query(&self) -> impl Query<GetCustomerWithOrders> {
+        self.query(|resolver, query: GetCustomerWithOrders| async move {
+            let store = resolver.customer_store();
+            let orders_query = resolver.get_order_summaries_for_customer_query();
 
-        get_customer_with_orders_query(store, query)
+            query.execute(store, orders_query).await
+        })
     }
 }

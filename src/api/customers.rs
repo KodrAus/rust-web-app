@@ -20,14 +20,15 @@ use crate::{
 /** `GET /customers/<id>` */
 #[get("/<id>")]
 pub async fn get(id: CustomerId, app: &State<App>) -> Result<Json<CustomerWithOrders>, Error> {
-    app.transaction(|app| {
+    app.transaction2(|app| async move {
         let query = app.get_customer_with_orders_query();
 
-        match query.get_customer_with_orders(GetCustomerWithOrders { id })? {
+        match query.execute(GetCustomerWithOrders { id }).await? {
             Some(customer) => Ok(Json(customer)),
             None => Err(Error::NotFound(error::msg("customer not found"))),
         }
     })
+    .await
 }
 
 /** `PUT /customers` */
@@ -36,11 +37,11 @@ pub async fn create(app: &State<App>) -> Result<Created<Json<CustomerId>>, Error
     app.transaction2(|app| async move {
         let id = app.customer_id();
 
-        let command = app.create_customer_command();
+        let mut command = app.create_customer_command();
 
         let id = id.get()?;
 
-        command.create_customer(CreateCustomer { id }).await?;
+        command.execute(CreateCustomer { id }).await?;
 
         let location = format!("/customers/{}", id);
 

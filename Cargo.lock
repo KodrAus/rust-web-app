@@ -1066,6 +1066,7 @@ checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
 name = "shop"
 version = "0.0.0"
 dependencies = [
+ "async-trait",
  "auto_impl",
  "env_logger",
  "futures",
