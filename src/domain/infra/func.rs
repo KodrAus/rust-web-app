@@ -2,62 +2,76 @@ use crate::domain::infra::Resolver;
 
 use std::future::Future;
 
-#[async_trait]
-pub trait Command<I, O> {
-    async fn execute(&mut self, input: I) -> O;
+pub trait CommandArgs {
+    type Output;
 }
 
 #[async_trait]
-impl<C, F, I, O> Command<I, O> for C
+pub trait Command<TArgs: CommandArgs> {
+    async fn execute(&mut self, input: TArgs) -> TArgs::Output;
+}
+
+#[async_trait]
+impl<TArgs, TCommand, TFuture> Command<TArgs> for TCommand
 where
-    C: FnMut(I) -> F + Send,
-    F: Future<Output = O> + Send,
-    I: Send + 'static,
+    TArgs: CommandArgs + Send + 'static,
+    TCommand: FnMut(TArgs) -> TFuture + Send,
+    TFuture: Future<Output = TArgs::Output> + Send,
 {
-    async fn execute(&mut self, input: I) -> O {
+    async fn execute(&mut self, input: TArgs) -> TArgs::Output {
         self(input).await
     }
 }
 
-#[async_trait]
-pub trait Query<I, O> {
-    async fn execute(&self, input: I) -> O;
+pub trait QueryArgs {
+    type Output;
 }
 
 #[async_trait]
-impl<Q, F, I, O> Query<I, O> for Q
+pub trait Query<TArgs: QueryArgs> {
+    async fn execute(&self, input: TArgs) -> TArgs::Output;
+}
+
+#[async_trait]
+impl<TArgs, TQuery, TFuture> Query<TArgs> for TQuery
 where
-    Q: Fn(I) -> F + Sync,
-    F: Future<Output = O> + Send,
-    I: Send + 'static,
+    TArgs: QueryArgs + Send + 'static,
+    TQuery: Fn(TArgs) -> TFuture + Sync,
+    TFuture: Future<Output = TArgs::Output> + Send,
 {
-    async fn execute(&self, input: I) -> O {
+    async fn execute(&self, input: TArgs) -> TArgs::Output {
         self(input).await
     }
 }
 
 impl Resolver {
-    pub(in crate::domain) fn command<C, F, I, O>(&self, mut command: C) -> impl Command<I, O>
+    pub(in crate::domain) fn command<TArgs, TCommand, TFuture>(
+        &self,
+        mut command: TCommand,
+    ) -> impl Command<TArgs>
     where
-        C: FnMut(Resolver, I) -> F + Send,
-        F: Future<Output = O> + Send,
-        I: Send + 'static,
+        TArgs: CommandArgs + Send + 'static,
+        TCommand: FnMut(Resolver, TArgs) -> TFuture + Send,
+        TFuture: Future<Output = TArgs::Output> + Send,
     {
         let resolver = self.by_ref();
-        move |input: I| {
+        move |input: TArgs| {
             let resolver = resolver.by_ref();
             command(resolver, input)
         }
     }
 
-    pub(in crate::domain) fn query<Q, F, I, O>(&self, query: Q) -> impl Query<I, O>
+    pub(in crate::domain) fn query<TArgs, TQuery, TFuture>(
+        &self,
+        query: TQuery,
+    ) -> impl Query<TArgs>
     where
-        Q: Fn(Resolver, I) -> F + Sync,
-        F: Future<Output = O> + Send,
-        I: Send + 'static,
+        TArgs: QueryArgs + Send + 'static,
+        TQuery: Fn(Resolver, TArgs) -> TFuture + Sync,
+        TFuture: Future<Output = TArgs::Output> + Send,
     {
         let resolver = self.by_ref();
-        move |input: I| {
+        move |input: TArgs| {
             let resolver = resolver.by_ref();
             query(resolver, input)
         }

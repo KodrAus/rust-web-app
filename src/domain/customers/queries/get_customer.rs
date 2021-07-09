@@ -6,7 +6,7 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<Option<Customer>, Error>;
+type Result = ::std::result::Result<Option<Customer>, Error>;
 
 /** Input for a `GetCustomerQuery`. */
 #[derive(Deserialize)]
@@ -14,16 +14,13 @@ pub struct GetCustomer {
     pub id: CustomerId,
 }
 
-/** Get a customer entity. */
-#[auto_impl(Fn)]
-pub trait GetCustomerQuery {
-    fn get_customer(&self, query: GetCustomer) -> Result;
+impl QueryArgs for GetCustomer {
+    type Output = Result;
 }
 
-/** Default implementation for a `GetCustomerQuery`. */
-pub(in crate::domain) fn get_customer_query(store: impl CustomerStore) -> impl GetCustomerQuery {
-    move |query: GetCustomer| {
-        let customer = store.get_customer(query.id)?;
+impl GetCustomer {
+    async fn execute(&self, store: impl CustomerStore) -> Result {
+        let customer = store.get_customer(self.id)?;
 
         Ok(customer)
     }
@@ -31,9 +28,11 @@ pub(in crate::domain) fn get_customer_query(store: impl CustomerStore) -> impl G
 
 impl Resolver {
     /** Get a customer. */
-    pub fn get_customer_query(&self) -> impl GetCustomerQuery {
-        let store = self.customer_store();
+    pub fn get_customer_query(&self) -> impl Query<GetCustomer> {
+        self.query(|resolver, query: GetCustomer| async move {
+            let store = resolver.customer_store();
 
-        get_customer_query(store)
+            query.execute(store).await
+        })
     }
 }

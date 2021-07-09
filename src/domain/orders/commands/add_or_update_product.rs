@@ -8,7 +8,7 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<LineItemId, Error>;
+type Result = ::std::result::Result<LineItemId, Error>;
 
 /** Input for an `AddOrUpdateProductCommand`. */
 #[derive(Clone, Deserialize)]
@@ -18,36 +18,34 @@ pub struct AddOrUpdateProduct {
     pub quantity: u32,
 }
 
-/** Add or update a product line item on an order. */
-#[auto_impl(FnMut)]
-pub trait AddOrUpdateProductCommand {
-    fn add_or_update_product(&mut self, command: AddOrUpdateProduct) -> Result;
+impl CommandArgs for AddOrUpdateProduct {
+    type Output = Result;
 }
 
-/** Default implementation for an `AddOrUpdateProductCommand`. */
-pub(in crate::domain) fn add_or_update_product_command(
-    transaction: ActiveTransaction,
-    store: impl OrderStore,
-    id: impl IdProvider<LineItemData>,
-    query: impl GetProductQuery,
-) -> impl AddOrUpdateProductCommand {
-    move |command: AddOrUpdateProduct| {
+impl AddOrUpdateProduct {
+    async fn execute(
+        &mut self,
+        transaction: ActiveTransaction,
+        store: impl OrderStore,
+        id: impl IdProvider<LineItemData>,
+        query: impl GetProductQuery,
+    ) -> Result {
         debug!(
             "updating product `{}` in order `{}`",
-            command.product_id, command.id
+            self.product_id, self.id
         );
 
-        if let Some(order) = store.get_order(command.id)? {
-            let id = match order.into_line_item_for_product(command.product_id) {
+        if let Some(order) = store.get_order(self.id)? {
+            let id = match order.into_line_item_for_product(self.product_id) {
                 IntoLineItem::InOrder(mut line_item) => {
                     debug!(
                         "updating existing product `{}` in order `{}`",
-                        command.product_id, command.id
+                        self.product_id, self.id
                     );
 
                     let (_, &LineItemData { id, .. }) = line_item.to_data();
 
-                    line_item.set_quantity(command.quantity)?;
+                    line_item.set_quantity(self.quantity)?;
                     store.set_line_item(transaction.get(), line_item)?;
 
                     id
@@ -55,17 +53,17 @@ pub(in crate::domain) fn add_or_update_product_command(
                 IntoLineItem::NotInOrder(mut order) => {
                     debug!(
                         "adding new product `{}` to order `{}`",
-                        command.product_id, command.id
+                        self.product_id, self.id
                     );
 
                     let id = id.get()?;
                     let product = query
                         .get_product(GetProduct {
-                            id: command.product_id,
+                            id: self.product_id,
                         })?
                         .ok_or_else(|| error::bad_input("product not found"))?;
 
-                    order.add_product(id, &product, command.quantity)?;
+                    order.add_product(id, &product, self.quantity)?;
                     store.set_order(transaction.get(), order)?;
 
                     id
@@ -74,7 +72,7 @@ pub(in crate::domain) fn add_or_update_product_command(
 
             info!(
                 "updated product `{}` in order `{}`",
-                command.product_id, command.id
+                self.product_id, self.id
             );
 
             Ok(id)
@@ -86,15 +84,19 @@ pub(in crate::domain) fn add_or_update_product_command(
 
 impl Resolver {
     /** Add a product to an order or update its quantity. */
-    pub fn add_or_update_product_command(&self) -> impl AddOrUpdateProductCommand {
-        let order_store = self.order_store();
-        let active_transaction = self.active_transaction();
+    pub fn add_or_update_product_command(&self) -> impl Command<AddOrUpdateProduct> {
+        self.command(|resolver, mut command: AddOrUpdateProduct| async move {
+            let order_store = resolver.order_store();
+            let active_transaction = resolver.active_transaction();
 
-        let id = self.line_item_id();
+            let id = resolver.line_item_id();
 
-        let get_product = self.get_product_query();
+            let get_product = resolver.get_product_query();
 
-        add_or_update_product_command(active_transaction, order_store, id, get_product)
+            command
+                .execute(active_transaction, order_store, id, get_product)
+                .await
+        })
     }
 }
 
@@ -107,14 +109,11 @@ mod tests {
             store::in_memory_store,
             test_data::OrderBuilder,
         },
-        products::{
-            model::test_data::ProductBuilder,
-            queries::get_product::Result as QueryResult,
-        },
+        products::model::test_data::ProductBuilder,
     };
 
-    #[test]
-    fn add_item_if_not_in_order() {
+    #[tokio::test]
+    async fn add_item_if_not_in_order() {
         let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
@@ -128,23 +127,19 @@ mod tests {
             )
             .unwrap();
 
-        let mut cmd = add_or_update_product_command(
+        let line_item_id = AddOrUpdateProduct {
+            id: order_id,
+            product_id,
+            quantity,
+        }
+        .execute(
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| {
-                let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
-                product
-            },
-        );
-
-        let line_item_id = cmd
-            .add_or_update_product(AddOrUpdateProduct {
-                id: order_id,
-                product_id,
-                quantity,
-            })
-            .unwrap();
+            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+        )
+        .await
+        .unwrap();
 
         let (_, line_item) = store
             .get_line_item(order_id, line_item_id)
@@ -155,8 +150,8 @@ mod tests {
         assert_eq!(quantity, line_item.quantity);
     }
 
-    #[test]
-    fn update_quantity_if_in_order() {
+    #[tokio::test]
+    async fn update_quantity_if_in_order() {
         let store = in_memory_store(Default::default());
 
         let order_id = OrderId::new();
@@ -176,23 +171,19 @@ mod tests {
             .set_order(ActiveTransaction::none().get(), order)
             .unwrap();
 
-        let mut cmd = add_or_update_product_command(
+        let updated_line_item_id = AddOrUpdateProduct {
+            id: order_id,
+            product_id,
+            quantity,
+        }
+        .execute(
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| {
-                let product: QueryResult = Ok(Some(ProductBuilder::new().id(product_id).build()));
-                product
-            },
-        );
-
-        let updated_line_item_id = cmd
-            .add_or_update_product(AddOrUpdateProduct {
-                id: order_id,
-                product_id,
-                quantity,
-            })
-            .unwrap();
+            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+        )
+        .await
+        .unwrap();
 
         let (_, line_item) = store
             .get_line_item(order_id, line_item_id)

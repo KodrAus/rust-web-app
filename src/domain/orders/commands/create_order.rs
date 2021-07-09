@@ -8,7 +8,7 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<(), Error>;
+type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `CreateOrderCommand`. */
 #[derive(Clone, Deserialize)]
@@ -17,38 +17,37 @@ pub struct CreateOrder {
     pub customer_id: CustomerId,
 }
 
-/** Create a new order. */
-#[auto_impl(FnMut)]
-pub trait CreateOrderCommand {
-    fn create_order(&mut self, command: CreateOrder) -> Result;
+impl CommandArgs for CreateOrder {
+    type Output = Result;
 }
 
-/** Default implementation for a `CreateOrderCommand`. */
-pub(in crate::domain) fn create_order_command(
-    transaction: ActiveTransaction,
-    store: impl OrderStore,
-    query: impl GetCustomerQuery,
-) -> impl CreateOrderCommand {
-    move |command: CreateOrder| {
-        debug!("creating order `{}`", command.id);
+impl CreateOrder {
+    async fn execute(
+        &mut self,
+        transaction: ActiveTransaction,
+        store: impl OrderStore,
+        customer_query: impl Query<GetCustomer>,
+    ) -> Result {
+        debug!("creating order `{}`", self.id);
 
         let order = {
-            if store.get_order(command.id)?.is_some() {
-                err!("order `{}` already exists", command.id)?
+            if store.get_order(self.id)?.is_some() {
+                err!("order `{}` already exists", self.id)?
             } else {
-                let customer = query
-                    .get_customer(GetCustomer {
-                        id: command.customer_id,
-                    })?
+                let customer = customer_query
+                    .execute(GetCustomer {
+                        id: self.customer_id,
+                    })
+                    .await?
                     .ok_or_else(|| error::bad_input("customer not found"))?;
 
-                Order::new(command.id, &customer)?
+                Order::new(self.id, &customer)?
             }
         };
 
         store.set_order(transaction.get(), order)?;
 
-        info!("created order `{}`", command.id);
+        info!("created order `{}`", self.id);
 
         Ok(())
     }
@@ -56,13 +55,17 @@ pub(in crate::domain) fn create_order_command(
 
 impl Resolver {
     /** Create an order. */
-    pub fn create_order_command(&self) -> impl CreateOrderCommand {
-        let store = self.order_store();
-        let active_transaction = self.active_transaction();
+    pub fn create_order_command(&self) -> impl Command<CreateOrder> {
+        self.command(|resolver, mut command: CreateOrder| async move {
+            let store = resolver.order_store();
+            let active_transaction = resolver.active_transaction();
 
-        let query = self.get_customer_query();
+            let customer_query = resolver.get_customer_query();
 
-        create_order_command(active_transaction, store, query)
+            command
+                .execute(active_transaction, store, customer_query)
+                .await
+        })
     }
 }
 
@@ -71,31 +74,31 @@ mod tests {
     use super::*;
 
     use crate::domain::{
-        customers::{
-            model::test_data::CustomerBuilder,
-            queries::get_customer::Result as QueryResult,
-        },
+        customers::model::test_data::CustomerBuilder,
         orders::model::store::in_memory_store,
     };
 
-    #[test]
-    fn err_if_already_exists() {
+    #[tokio::test]
+    async fn err_if_already_exists() {
         let store = in_memory_store(Default::default());
 
         let customer_id = CustomerId::new();
 
-        let create = CreateOrder {
+        let customer_query = |_| async { Ok(Some(CustomerBuilder::new().id(customer_id).build())) };
+
+        let mut create = CreateOrder {
             id: OrderId::new(),
             customer_id,
         };
 
-        let mut cmd = create_order_command(ActiveTransaction::none(), &store, move |_| {
-            let customer: QueryResult = Ok(Some(CustomerBuilder::new().id(customer_id).build()));
-            customer
-        });
+        create
+            .execute(ActiveTransaction::none(), &store, &customer_query)
+            .await
+            .unwrap();
 
-        cmd.create_order(create.clone()).unwrap();
-
-        assert!(cmd.create_order(create).is_err());
+        assert!(create
+            .execute(ActiveTransaction::none(), &store, &customer_query)
+            .await
+            .is_err());
     }
 }

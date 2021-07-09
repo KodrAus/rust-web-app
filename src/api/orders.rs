@@ -40,21 +40,24 @@ pub struct Create {
 /** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
 pub async fn create(data: Json<Create>, app: &State<App>) -> Result<Created<Json<OrderId>>, Error> {
-    app.transaction(|app| {
+    app.transaction2(|app| async move {
         let id = app.order_id();
         let mut command = app.create_order_command();
 
         let id = id.get()?;
 
-        command.create_order(CreateOrder {
-            id,
-            customer_id: data.customer,
-        })?;
+        command
+            .execute(CreateOrder {
+                id,
+                customer_id: data.customer,
+            })
+            .await?;
 
         let location = format!("/orders/{}", id);
 
         Ok(Created::new(location).body(Json(id)))
     })
+    .await
 }
 
 #[derive(Deserialize)]
@@ -74,15 +77,18 @@ pub async fn add_or_update_product(
     data: Json<ProductQuantity>,
     app: &State<App>,
 ) -> Result<Json<LineItemId>, Error> {
-    app.transaction(|app| {
+    app.transaction2(|app| async move {
         let mut command = app.add_or_update_product_command();
 
-        let line_item_id = command.add_or_update_product(AddOrUpdateProduct {
-            id,
-            product_id,
-            quantity: data.0.quantity,
-        })?;
+        let line_item_id = command
+            .execute(AddOrUpdateProduct {
+                id,
+                product_id,
+                quantity: data.0.quantity,
+            })
+            .await?;
 
         Ok(Json(line_item_id))
     })
+    .await
 }

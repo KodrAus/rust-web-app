@@ -6,12 +6,16 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<(), Error>;
+type Result = ::std::result::Result<(), Error>;
 
 /** Input for a `CreateCustomerCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateCustomer {
     pub id: CustomerId,
+}
+
+impl CommandArgs for CreateCustomer {
+    type Output = Result;
 }
 
 impl CreateCustomer {
@@ -40,7 +44,7 @@ impl CreateCustomer {
 
 impl Resolver {
     /** Create a customer. */
-    pub fn create_customer_command(&self) -> impl Command<CreateCustomer, Result> {
+    pub fn create_customer_command(&self) -> impl Command<CreateCustomer> {
         self.command(|resolver, mut command: CreateCustomer| async move {
             let store = resolver.customer_store();
             let active_transaction = resolver.active_transaction();
