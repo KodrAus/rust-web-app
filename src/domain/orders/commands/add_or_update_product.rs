@@ -8,8 +8,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<LineItemId, Error>;
-
 /** Input for an `AddOrUpdateProductCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct AddOrUpdateProduct {
@@ -19,7 +17,7 @@ pub struct AddOrUpdateProduct {
 }
 
 impl CommandArgs for AddOrUpdateProduct {
-    type Output = Result;
+    type Output = Result<LineItemId, Error>;
 }
 
 async fn execute(
@@ -27,8 +25,8 @@ async fn execute(
     transaction: ActiveTransaction,
     store: impl OrderStore,
     id: impl IdProvider<LineItemData>,
-    query: impl GetProductQuery,
-) -> Result {
+    product_query: impl Query<GetProduct>,
+) -> Result<LineItemId, Error> {
     debug!(
         "updating product `{}` in order `{}`",
         command.product_id, command.id
@@ -56,10 +54,11 @@ async fn execute(
                 );
 
                 let id = id.get()?;
-                let product = query
-                    .get_product(GetProduct {
+                let product = product_query
+                    .execute(GetProduct {
                         id: command.product_id,
-                    })?
+                    })
+                    .await?
                     .ok_or_else(|| error::bad_input("product not found"))?;
 
                 order.add_product(id, &product, command.quantity)?;
@@ -84,14 +83,14 @@ impl Resolver {
     /** Add a product to an order or update its quantity. */
     pub fn add_or_update_product_command(&self) -> impl Command<AddOrUpdateProduct> {
         self.command(|resolver, command: AddOrUpdateProduct| async move {
-            let order_store = resolver.order_store();
+            let store = resolver.order_store();
             let active_transaction = resolver.active_transaction();
 
             let id = resolver.line_item_id();
 
             let get_product = resolver.get_product_query();
 
-            execute(command, active_transaction, order_store, id, get_product).await
+            execute(command, active_transaction, store, id, get_product).await
         })
     }
 }
@@ -132,7 +131,7 @@ mod tests {
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+            |_| async { Ok(Some(ProductBuilder::new().id(product_id).build())) },
         )
         .await
         .unwrap();
@@ -176,7 +175,7 @@ mod tests {
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+            |_| async { Ok(Some(ProductBuilder::new().id(product_id).build())) },
         )
         .await
         .unwrap();

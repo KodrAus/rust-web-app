@@ -6,34 +6,30 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<Option<Product>, Error>;
-
 /** Input for a `GetProductQuery`. */
 #[derive(Deserialize)]
 pub struct GetProduct {
     pub id: ProductId,
 }
 
-/** Get a product entity. */
-#[auto_impl(Fn)]
-pub trait GetProductQuery {
-    fn get_product(&self, query: GetProduct) -> Result;
+impl QueryArgs for GetProduct {
+    type Output = Result<Option<Product>, Error>;
 }
 
 /** Default implementation for a `GetProductQuery`. */
-pub(in crate::domain) fn get_product_query(store: impl ProductStore) -> impl GetProductQuery {
-    move |query: GetProduct| {
-        let product = store.get_product(query.id)?;
+async fn execute(query: GetProduct, store: impl ProductStore) -> Result<Option<Product>, Error> {
+    let product = store.get_product(query.id)?;
 
-        Ok(product)
-    }
+    Ok(product)
 }
 
 impl Resolver {
     /** Get a product. */
-    pub fn get_product_query(&self) -> impl GetProductQuery {
-        let store = self.product_store();
+    pub fn get_product_query(&self) -> impl Query<GetProduct> {
+        self.query(|resolver, query: GetProduct| async move {
+            let store = resolver.product_store();
 
-        get_product_query(store)
+            execute(query, store).await
+        })
     }
 }

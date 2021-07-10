@@ -6,8 +6,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<(), Error>;
-
 /** Input for a `CreateCustomerCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateCustomer {
@@ -15,14 +13,14 @@ pub struct CreateCustomer {
 }
 
 impl CommandArgs for CreateCustomer {
-    type Output = Result;
+    type Output = Result<(), Error>;
 }
 
 async fn execute(
     command: CreateCustomer,
     transaction: ActiveTransaction,
     store: impl CustomerStore,
-) -> Result {
+) -> Result<(), Error> {
     debug!("creating customer `{}`", command.id);
 
     let customer = {

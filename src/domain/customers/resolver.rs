@@ -32,9 +32,7 @@ impl Default for CustomersResolver {
 }
 
 impl Resolver {
-    pub(in crate::domain::customers) fn customer_store(
-        &self,
-    ) -> impl CustomerStore + Send + Sync + 'static {
+    pub(in crate::domain::customers) fn customer_store(&self) -> impl CustomerStore {
         self.resolve(&self.customers_resolver.customer_store)
     }
 }

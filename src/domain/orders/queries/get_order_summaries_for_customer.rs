@@ -7,8 +7,6 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<Vec<OrderSummary>, Error>;
-
 /** Input for a `GetOrderSummariesForCustomerQuery`. */
 #[derive(Deserialize)]
 pub struct GetOrderSummariesForCustomer {
@@ -21,31 +19,30 @@ pub struct OrderSummary {
     pub id: OrderId,
 }
 
-/** Get a collection of order summaries for a customer. */
-#[auto_impl(Fn)]
-pub trait GetOrderSummariesForCustomerQuery {
-    fn get_order_summaries_for_customer(&self, query: GetOrderSummariesForCustomer) -> Result;
+impl QueryArgs for GetOrderSummariesForCustomer {
+    type Output = Result<Vec<OrderSummary>, Error>;
 }
 
 /** Default implementation for a `GetOrderSummariesForCustomerQuery`. */
-pub(in crate::domain) fn get_order_summaries_for_customer_query(
+async fn execute(
+    query: GetOrderSummariesForCustomer,
     store: impl OrderStoreFilter,
-) -> impl GetOrderSummariesForCustomerQuery {
-    move |query: GetOrderSummariesForCustomer| {
-        let orders = store
-            .filter(|o| o.customer_id == query.id)?
-            .map(|o| OrderSummary { id: o.id })
-            .collect();
-
-        Ok(orders)
-    }
+) -> Result<Vec<OrderSummary>, Error> {
+    store
+        .filter(|o| o.customer_id == query.id)?
+        .map(|o| Ok(OrderSummary { id: o.id }))
+        .collect()
 }
 
 impl Resolver {
     /** Get a summary for all orders associated with a customer. */
-    pub fn get_order_summaries_for_customer_query(&self) -> impl GetOrderSummariesForCustomerQuery {
-        let store = self.order_store_filter();
+    pub fn get_order_summaries_for_customer_query(
+        &self,
+    ) -> impl Query<GetOrderSummariesForCustomer> {
+        self.query(|resolver, query: GetOrderSummariesForCustomer| async move {
+            let store = resolver.order_store_filter();
 
-        get_order_summaries_for_customer_query(store)
+            execute(query, store).await
+        })
     }
 }

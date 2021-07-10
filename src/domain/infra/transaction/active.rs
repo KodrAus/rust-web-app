@@ -21,7 +21,7 @@ pub struct ActiveTransaction {
 }
 
 impl ActiveTransaction {
-    pub(in crate::domain::infra::transactions) fn begin(store: TransactionStore) -> Self {
+    pub(in crate::domain::infra::transaction) fn begin(store: TransactionStore) -> Self {
         let transaction = Arc::new(store.begin());
 
         ActiveTransaction {

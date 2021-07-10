@@ -8,8 +8,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<(), Error>;
-
 /** Input for a `CreateOrderCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateOrder {
@@ -18,7 +16,7 @@ pub struct CreateOrder {
 }
 
 impl CommandArgs for CreateOrder {
-    type Output = Result;
+    type Output = Result<(), Error>;
 }
 
 async fn execute(
@@ -26,7 +24,7 @@ async fn execute(
     transaction: ActiveTransaction,
     store: impl OrderStore,
     customer_query: impl Query<GetCustomer>,
-) -> Result {
+) -> Result<(), Error> {
     debug!("creating order `{}`", command.id);
 
     let order = {

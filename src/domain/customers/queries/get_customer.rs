@@ -6,8 +6,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<Option<Customer>, Error>;
-
 /** Input for a `GetCustomerQuery`. */
 #[derive(Deserialize)]
 pub struct GetCustomer {
@@ -15,10 +13,10 @@ pub struct GetCustomer {
 }
 
 impl QueryArgs for GetCustomer {
-    type Output = Result;
+    type Output = Result<Option<Customer>, Error>;
 }
 
-async fn execute(query: GetCustomer, store: impl CustomerStore) -> Result {
+async fn execute(query: GetCustomer, store: impl CustomerStore) -> Result<Option<Customer>, Error> {
     let customer = store.get_customer(query.id)?;
 
     Ok(customer)

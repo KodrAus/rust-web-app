@@ -7,8 +7,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<Option<CustomerWithOrders>, Error>;
-
 /** Input for a `GetCustomerWithOrdersQuery`. */
 #[derive(Deserialize)]
 pub struct GetCustomerWithOrders {
@@ -29,21 +27,22 @@ pub struct CustomerOrder {
 }
 
 impl QueryArgs for GetCustomerWithOrders {
-    type Output = Result;
+    type Output = Result<Option<CustomerWithOrders>, Error>;
 }
 
 async fn execute(
     query: GetCustomerWithOrders,
     store: impl CustomerStore,
-    orders_query: impl GetOrderSummariesForCustomerQuery,
-) -> Result {
+    orders_query: impl Query<GetOrderSummariesForCustomer>,
+) -> Result<Option<CustomerWithOrders>, Error> {
     let customer = match store.get_customer(query.id)? {
         Some(customer) => customer.into_data(),
         None => return Ok(None),
     };
 
     let orders = orders_query
-        .get_order_summaries_for_customer(GetOrderSummariesForCustomer { id: query.id })?;
+        .execute(GetOrderSummariesForCustomer { id: query.id })
+        .await?;
 
     Ok(Some(CustomerWithOrders {
         id: customer.id,

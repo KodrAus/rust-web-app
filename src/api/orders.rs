@@ -22,14 +22,15 @@ use crate::{
 /** `GET /orders/<id>` */
 #[get("/<id>")]
 pub async fn get(id: OrderId, app: &State<App>) -> Result<Json<OrderWithProducts>, Error> {
-    app.transaction(|app| {
+    app.transaction(|app| async move {
         let query = app.get_order_with_products_query();
 
-        match query.get_order_with_products(GetOrderWithProducts { id })? {
+        match query.execute(GetOrderWithProducts { id }).await? {
             Some(order) => Ok(Json(order)),
             None => Err(Error::NotFound(error::msg("order not found"))),
         }
     })
+    .await
 }
 
 #[derive(Deserialize)]
@@ -40,7 +41,7 @@ pub struct Create {
 /** `PUT /orders` */
 #[put("/", format = "application/json", data = "<data>")]
 pub async fn create(data: Json<Create>, app: &State<App>) -> Result<Created<Json<OrderId>>, Error> {
-    app.transaction2(|app| async move {
+    app.transaction(|app| async move {
         let id = app.order_id();
         let command = app.create_order_command();
 
@@ -77,7 +78,7 @@ pub async fn add_or_update_product(
     data: Json<ProductQuantity>,
     app: &State<App>,
 ) -> Result<Json<LineItemId>, Error> {
-    app.transaction2(|app| async move {
+    app.transaction(|app| async move {
         let command = app.add_or_update_product_command();
 
         let line_item_id = command
