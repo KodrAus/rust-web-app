@@ -110,8 +110,14 @@ mod tests {
             move |_: GetLen| async move { data.len() }
         }
 
-        add_value(&mut data).execute(AddValue { value: 1 }).await;
+        let command = add_value(&mut data);
 
-        assert_eq!(1, get_len(&data).execute(GetLen).await);
+        command.execute(AddValue { value: 1 }).await;
+        // Commands can only be executed once
+
+        let query = get_len(&data);
+
+        assert_eq!(1, query.execute(GetLen).await);
+        assert_eq!(1, query.execute(GetLen).await);
     }
 }
