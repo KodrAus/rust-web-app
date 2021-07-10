@@ -32,30 +32,7 @@ impl App {
     Any commands that are resolved from the returned resolver will participate in the returned transaction.
     The transaction will need to be completed before it will commit.
     */
-    pub fn transaction<T, E>(&self, f: impl FnOnce(Resolver) -> Result<T, E>) -> Result<T, E>
-    where
-        E: From<Error>,
-    {
-        let resolver = self
-            .root_resolver
-            .with_active_transaction(Register::once(|resolver| {
-                ActiveTransaction::begin(resolver.transaction_store())
-            }));
-
-        let transaction = resolver.active_transaction();
-        let r = f(resolver)?;
-        transaction.commit()?;
-
-        Ok(r)
-    }
-
-    /**
-    Begin a transaction and return a resolver that uses it.
-
-    Any commands that are resolved from the returned resolver will participate in the returned transaction.
-    The transaction will need to be completed before it will commit.
-    */
-    pub async fn transaction2<F, O, T, E>(&self, f: F) -> Result<T, E>
+    pub async fn transaction<F, O, T, E>(&self, f: F) -> Result<T, E>
     where
         F: FnOnce(Resolver) -> O,
         O: ::std::future::Future<Output = Result<T, E>>,

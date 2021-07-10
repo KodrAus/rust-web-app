@@ -27,10 +27,10 @@ pub struct Get {
 /** `GET /products/<id>` */
 #[get("/<id>")]
 pub async fn get(id: ProductId, app: &State<App>) -> Result<Json<Get>, Error> {
-    app.transaction(|app| {
+    app.transaction(|app| async move {
         let query = app.get_product_query();
 
-        match query.get_product(GetProduct { id })? {
+        match query.execute(GetProduct { id }).await? {
             Some(product) => {
                 let product = product.into_data();
 
@@ -43,6 +43,7 @@ pub async fn get(id: ProductId, app: &State<App>) -> Result<Json<Get>, Error> {
             None => Err(Error::NotFound(error::msg("product not found"))),
         }
     })
+    .await
 }
 
 #[derive(Deserialize)]
@@ -57,32 +58,36 @@ pub async fn create(
     data: Json<Create>,
     app: &State<App>,
 ) -> Result<Created<Json<ProductId>>, Error> {
-    app.transaction(|app| {
+    app.transaction(|app| async move {
         let id = app.product_id();
-        let mut command = app.create_product_command();
+        let command = app.create_product_command();
 
         let id = id.get()?;
 
-        command.create_product(CreateProduct {
-            id,
-            title: data.0.title,
-            price: data.0.price,
-        })?;
+        command
+            .execute(CreateProduct {
+                id,
+                title: data.0.title,
+                price: data.0.price,
+            })
+            .await?;
 
         let location = format!("/products/{}", id);
 
         Ok(Created::new(location).body(Json(id)))
     })
+    .await
 }
 
 /** `POST /products/<id>/title/<title>` */
 #[post("/<id>/title/<title>")]
 pub async fn set_title(id: ProductId, title: String, app: &State<App>) -> Result<(), Error> {
-    app.transaction(|app| {
-        let mut command = app.set_product_title_command();
+    app.transaction(|app| async move {
+        let command = app.set_product_title_command();
 
-        command.set_product_title(SetProductTitle { id, title })?;
+        command.execute(SetProductTitle { id, title }).await?;
 
         Ok(())
     })
+    .await
 }

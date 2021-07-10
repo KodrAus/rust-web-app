@@ -8,8 +8,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<(), Error>;
-
 /** Input for a `CreateOrderCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateOrder {
@@ -18,53 +16,49 @@ pub struct CreateOrder {
 }
 
 impl CommandArgs for CreateOrder {
-    type Output = Result;
+    type Output = Result<(), Error>;
 }
 
-impl CreateOrder {
-    async fn execute(
-        &mut self,
-        transaction: ActiveTransaction,
-        store: impl OrderStore,
-        customer_query: impl Query<GetCustomer>,
-    ) -> Result {
-        debug!("creating order `{}`", self.id);
+async fn execute(
+    command: CreateOrder,
+    transaction: ActiveTransaction,
+    store: impl OrderStore,
+    customer_query: impl Query<GetCustomer>,
+) -> Result<(), Error> {
+    debug!("creating order `{}`", command.id);
 
-        let order = {
-            if store.get_order(self.id)?.is_some() {
-                err!("order `{}` already exists", self.id)?
-            } else {
-                let customer = customer_query
-                    .execute(GetCustomer {
-                        id: self.customer_id,
-                    })
-                    .await?
-                    .ok_or_else(|| error::bad_input("customer not found"))?;
+    let order = {
+        if store.get_order(command.id)?.is_some() {
+            err!("order `{}` already exists", command.id)?
+        } else {
+            let customer = customer_query
+                .execute(GetCustomer {
+                    id: command.customer_id,
+                })
+                .await?
+                .ok_or_else(|| error::bad_input("customer not found"))?;
 
-                Order::new(self.id, &customer)?
-            }
-        };
+            Order::new(command.id, &customer)?
+        }
+    };
 
-        store.set_order(transaction.get(), order)?;
+    store.set_order(transaction.get(), order)?;
 
-        info!("created order `{}`", self.id);
+    info!("created order `{}`", command.id);
 
-        Ok(())
-    }
+    Ok(())
 }
 
 impl Resolver {
     /** Create an order. */
     pub fn create_order_command(&self) -> impl Command<CreateOrder> {
-        self.command(|resolver, mut command: CreateOrder| async move {
+        self.command(|resolver, command: CreateOrder| async move {
             let store = resolver.order_store();
             let active_transaction = resolver.active_transaction();
 
             let customer_query = resolver.get_customer_query();
 
-            command
-                .execute(active_transaction, store, customer_query)
-                .await
+            execute(command, active_transaction, store, customer_query).await
         })
     }
 }
@@ -86,19 +80,27 @@ mod tests {
 
         let customer_query = |_| async { Ok(Some(CustomerBuilder::new().id(customer_id).build())) };
 
-        let mut create = CreateOrder {
+        let create = CreateOrder {
             id: OrderId::new(),
             customer_id,
         };
 
-        create
-            .execute(ActiveTransaction::none(), &store, &customer_query)
-            .await
-            .unwrap();
+        execute(
+            create.clone(),
+            ActiveTransaction::none(),
+            &store,
+            &customer_query,
+        )
+        .await
+        .unwrap();
 
-        assert!(create
-            .execute(ActiveTransaction::none(), &store, &customer_query)
-            .await
-            .is_err());
+        assert!(execute(
+            create.clone(),
+            ActiveTransaction::none(),
+            &store,
+            &customer_query
+        )
+        .await
+        .is_err());
     }
 }

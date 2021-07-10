@@ -162,10 +162,7 @@ impl Order {
         }
     }
 
-    pub fn new<TId>(id: TId, customer: &Customer) -> Result<Self, Error>
-    where
-        TId: IdProvider<OrderData>,
-    {
+    pub fn new(id: impl IdProvider<OrderData>, customer: &Customer) -> Result<Self, Error> {
         let id = id.get()?;
         let &CustomerData {
             id: customer_id, ..
@@ -187,16 +184,12 @@ impl Order {
             .any(|item| item.product_id == product_id)
     }
 
-    pub fn add_product<TId, TQuantity>(
+    pub fn add_product(
         &mut self,
-        id: TId,
+        id: impl IdProvider<LineItemData>,
         product: &Product,
-        quantity: TQuantity,
-    ) -> Result<(), Error>
-    where
-        TId: IdProvider<LineItemData>,
-        TQuantity: TryInto<Quantity, Error = Error>,
-    {
+        quantity: impl TryInto<Quantity, Error = Error>,
+    ) -> Result<(), Error> {
         let &ProductData {
             id: product_id,
             price,

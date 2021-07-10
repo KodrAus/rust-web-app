@@ -8,8 +8,6 @@ use crate::domain::{
     Error,
 };
 
-type Result = ::std::result::Result<LineItemId, Error>;
-
 /** Input for an `AddOrUpdateProductCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct AddOrUpdateProduct {
@@ -19,83 +17,80 @@ pub struct AddOrUpdateProduct {
 }
 
 impl CommandArgs for AddOrUpdateProduct {
-    type Output = Result;
+    type Output = Result<LineItemId, Error>;
 }
 
-impl AddOrUpdateProduct {
-    async fn execute(
-        &mut self,
-        transaction: ActiveTransaction,
-        store: impl OrderStore,
-        id: impl IdProvider<LineItemData>,
-        query: impl GetProductQuery,
-    ) -> Result {
-        debug!(
-            "updating product `{}` in order `{}`",
-            self.product_id, self.id
+async fn execute(
+    command: AddOrUpdateProduct,
+    transaction: ActiveTransaction,
+    store: impl OrderStore,
+    id: impl IdProvider<LineItemData>,
+    product_query: impl Query<GetProduct>,
+) -> Result<LineItemId, Error> {
+    debug!(
+        "updating product `{}` in order `{}`",
+        command.product_id, command.id
+    );
+
+    if let Some(order) = store.get_order(command.id)? {
+        let id = match order.into_line_item_for_product(command.product_id) {
+            IntoLineItem::InOrder(mut line_item) => {
+                debug!(
+                    "updating existing product `{}` in order `{}`",
+                    command.product_id, command.id
+                );
+
+                let (_, &LineItemData { id, .. }) = line_item.to_data();
+
+                line_item.set_quantity(command.quantity)?;
+                store.set_line_item(transaction.get(), line_item)?;
+
+                id
+            }
+            IntoLineItem::NotInOrder(mut order) => {
+                debug!(
+                    "adding new product `{}` to order `{}`",
+                    command.product_id, command.id
+                );
+
+                let id = id.get()?;
+                let product = product_query
+                    .execute(GetProduct {
+                        id: command.product_id,
+                    })
+                    .await?
+                    .ok_or_else(|| error::bad_input("product not found"))?;
+
+                order.add_product(id, &product, command.quantity)?;
+                store.set_order(transaction.get(), order)?;
+
+                id
+            }
+        };
+
+        info!(
+            "updated product `{}` in order `{}`",
+            command.product_id, command.id
         );
 
-        if let Some(order) = store.get_order(self.id)? {
-            let id = match order.into_line_item_for_product(self.product_id) {
-                IntoLineItem::InOrder(mut line_item) => {
-                    debug!(
-                        "updating existing product `{}` in order `{}`",
-                        self.product_id, self.id
-                    );
-
-                    let (_, &LineItemData { id, .. }) = line_item.to_data();
-
-                    line_item.set_quantity(self.quantity)?;
-                    store.set_line_item(transaction.get(), line_item)?;
-
-                    id
-                }
-                IntoLineItem::NotInOrder(mut order) => {
-                    debug!(
-                        "adding new product `{}` to order `{}`",
-                        self.product_id, self.id
-                    );
-
-                    let id = id.get()?;
-                    let product = query
-                        .get_product(GetProduct {
-                            id: self.product_id,
-                        })?
-                        .ok_or_else(|| error::bad_input("product not found"))?;
-
-                    order.add_product(id, &product, self.quantity)?;
-                    store.set_order(transaction.get(), order)?;
-
-                    id
-                }
-            };
-
-            info!(
-                "updated product `{}` in order `{}`",
-                self.product_id, self.id
-            );
-
-            Ok(id)
-        } else {
-            Err(error::bad_input("not found"))
-        }
+        Ok(id)
+    } else {
+        Err(error::bad_input("not found"))
     }
 }
 
 impl Resolver {
     /** Add a product to an order or update its quantity. */
     pub fn add_or_update_product_command(&self) -> impl Command<AddOrUpdateProduct> {
-        self.command(|resolver, mut command: AddOrUpdateProduct| async move {
-            let order_store = resolver.order_store();
+        self.command(|resolver, command: AddOrUpdateProduct| async move {
+            let store = resolver.order_store();
             let active_transaction = resolver.active_transaction();
 
             let id = resolver.line_item_id();
 
             let get_product = resolver.get_product_query();
 
-            command
-                .execute(active_transaction, order_store, id, get_product)
-                .await
+            execute(command, active_transaction, store, id, get_product).await
         })
     }
 }
@@ -127,16 +122,16 @@ mod tests {
             )
             .unwrap();
 
-        let line_item_id = AddOrUpdateProduct {
-            id: order_id,
-            product_id,
-            quantity,
-        }
-        .execute(
+        let line_item_id = execute(
+            AddOrUpdateProduct {
+                id: order_id,
+                product_id,
+                quantity,
+            },
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+            |_| async { Ok(Some(ProductBuilder::new().id(product_id).build())) },
         )
         .await
         .unwrap();
@@ -171,16 +166,16 @@ mod tests {
             .set_order(ActiveTransaction::none().get(), order)
             .unwrap();
 
-        let updated_line_item_id = AddOrUpdateProduct {
-            id: order_id,
-            product_id,
-            quantity,
-        }
-        .execute(
+        let updated_line_item_id = execute(
+            AddOrUpdateProduct {
+                id: order_id,
+                product_id,
+                quantity,
+            },
             ActiveTransaction::none(),
             &store,
             NextLineItemId::new(),
-            |_| Ok(Some(ProductBuilder::new().id(product_id).build())),
+            |_| async { Ok(Some(ProductBuilder::new().id(product_id).build())) },
         )
         .await
         .unwrap();

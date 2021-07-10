@@ -40,10 +40,7 @@ impl Customer {
         self.data
     }
 
-    pub fn new<TId>(id: TId) -> Result<Self, Error>
-    where
-        TId: IdProvider<CustomerData>,
-    {
+    pub fn new(id: impl IdProvider<CustomerData>) -> Result<Self, Error> {
         let id = id.get()?;
 
         Ok(Customer::from_data(CustomerData {

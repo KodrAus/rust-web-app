@@ -90,12 +90,11 @@ impl Product {
         &self.data
     }
 
-    pub fn new<TId, TTitle, TPrice>(id: TId, title: TTitle, price: TPrice) -> Result<Self, Error>
-    where
-        TId: IdProvider<ProductData>,
-        TTitle: TryInto<Title, Error = Error>,
-        TPrice: TryInto<Price, Error = Error>,
-    {
+    pub fn new(
+        id: impl IdProvider<ProductData>,
+        title: impl TryInto<Title, Error = Error>,
+        price: impl TryInto<Price, Error = Error>,
+    ) -> Result<Self, Error> {
         let id = id.get()?;
 
         Ok(Product::from_data(ProductData {
@@ -107,10 +106,10 @@ impl Product {
         }))
     }
 
-    pub fn set_title<TTitle>(&mut self, title: TTitle) -> Result<(), Error>
-    where
-        TTitle: TryInto<Title, Error = Error>,
-    {
+    pub fn set_title(
+        &mut self,
+        title: impl TryInto<Title, Error = Error>,
+    ) -> Result<(), Error> {
         self.data.title = title.try_into()?.0;
 
         Ok(())

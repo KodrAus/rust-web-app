@@ -6,7 +6,7 @@ use once_cell::sync::OnceCell;
 
 use crate::domain::{
     customers::resolver::CustomersResolver,
-    infra::transactions::resolver::TransactionsResolver,
+    infra::transaction::resolver::TransactionsResolver,
     orders::resolver::OrdersResolver,
     products::resolver::ProductsResolver,
 };

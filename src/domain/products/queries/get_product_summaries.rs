@@ -6,8 +6,6 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<Vec<ProductSummary>, Error>;
-
 /** Input for a `GetProductSummariesQuery`. */
 #[derive(Deserialize)]
 pub struct GetProductSummaries {
@@ -22,35 +20,34 @@ pub struct ProductSummary {
     pub price: Currency,
 }
 
-/** Get a collection of product summaries. */
-#[auto_impl(Fn)]
-pub trait GetProductSummariesQuery {
-    fn get_product_summaries(&self, query: GetProductSummaries) -> Result;
+impl QueryArgs for GetProductSummaries {
+    type Output = Result<Vec<ProductSummary>, Error>;
 }
 
 /** Default implementation for a `GetProductSummariesQuery`. */
-pub(in crate::domain) fn get_product_summaries_query(
+async fn execute(
+    query: GetProductSummaries,
     store: impl ProductStoreFilter,
-) -> impl GetProductSummariesQuery {
-    move |query: GetProductSummaries| {
-        let products = store
-            .filter(|p| query.ids.iter().any(|id| p.id == *id))?
-            .map(|p| ProductSummary {
+) -> Result<Vec<ProductSummary>, Error> {
+    store
+        .filter(|p| query.ids.iter().any(|id| p.id == *id))?
+        .map(|p| {
+            Ok(ProductSummary {
                 id: p.id,
                 title: p.title,
                 price: p.price,
             })
-            .collect();
-
-        Ok(products)
-    }
+        })
+        .collect()
 }
 
 impl Resolver {
     /** Get some summary info for a set of products by id. */
-    pub fn get_product_summaries_query(&self) -> impl GetProductSummariesQuery {
-        let store = self.product_store_filter();
+    pub fn get_product_summaries_query(&self) -> impl Query<GetProductSummaries> {
+        self.query(|resolver, query: GetProductSummaries| async move {
+            let store = resolver.product_store_filter();
 
-        get_product_summaries_query(store)
+            execute(query, store).await
+        })
     }
 }

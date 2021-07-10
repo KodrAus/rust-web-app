@@ -6,8 +6,6 @@ use crate::domain::{
     Error,
 };
 
-pub type Result = ::std::result::Result<(), Error>;
-
 /** Input for a `CreateProductCommand`. */
 #[derive(Clone, Deserialize)]
 pub struct CreateProduct {
@@ -16,43 +14,42 @@ pub struct CreateProduct {
     pub price: Currency,
 }
 
-/** Create a new product. */
-#[auto_impl(FnMut)]
-pub trait CreateProductCommand {
-    fn create_product(&mut self, command: CreateProduct) -> Result;
+impl CommandArgs for CreateProduct {
+    type Output = Result<(), Error>;
 }
 
 /** Default implementation for a `CreateProductCommand`. */
-pub(in crate::domain) fn create_product_command(
+async fn execute(
+    command: CreateProduct,
     transaction: ActiveTransaction,
     store: impl ProductStore,
-) -> impl CreateProductCommand {
-    move |command: CreateProduct| {
-        debug!("creating product `{}`", command.id);
+) -> Result<(), Error> {
+    debug!("creating product `{}`", command.id);
 
-        let product = {
-            if store.get_product(command.id)?.is_some() {
-                err!("product `{}` already exists", command.id)?
-            } else {
-                Product::new(command.id, command.title, command.price)?
-            }
-        };
+    let product = {
+        if store.get_product(command.id)?.is_some() {
+            err!("product `{}` already exists", command.id)?
+        } else {
+            Product::new(command.id, command.title, command.price)?
+        }
+    };
 
-        store.set_product(transaction.get(), product)?;
+    store.set_product(transaction.get(), product)?;
 
-        info!("created product `{}`", command.id);
+    info!("created product `{}`", command.id);
 
-        Ok(())
-    }
+    Ok(())
 }
 
 impl Resolver {
     /** Create a product. */
-    pub fn create_product_command(&self) -> impl CreateProductCommand {
-        let store = self.product_store();
-        let active_transaction = self.active_transaction();
+    pub fn create_product_command(&self) -> impl Command<CreateProduct> {
+        self.command(|resolver, command: CreateProduct| async move {
+            let store = resolver.product_store();
+            let active_transaction = resolver.active_transaction();
 
-        create_product_command(active_transaction, store)
+            execute(command, active_transaction, store).await
+        })
     }
 }
 
@@ -62,8 +59,8 @@ mod tests {
 
     use crate::domain::products::model::store::in_memory_store;
 
-    #[test]
-    fn err_if_already_exists() {
+    #[tokio::test]
+    async fn err_if_already_exists() {
         let store = in_memory_store(Default::default());
 
         let create = CreateProduct {
@@ -72,10 +69,12 @@ mod tests {
             price: Currency::usd(100),
         };
 
-        let mut cmd = create_product_command(ActiveTransaction::none(), &store);
+        execute(create.clone(), ActiveTransaction::none(), &store)
+            .await
+            .unwrap();
 
-        cmd.create_product(create.clone()).unwrap();
-
-        assert!(cmd.create_product(create).is_err());
+        assert!(execute(create, ActiveTransaction::none(), &store)
+            .await
+            .is_err());
     }
 }

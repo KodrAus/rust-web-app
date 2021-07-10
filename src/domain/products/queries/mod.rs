@@ -1,14 +1,9 @@
 /*! Queries for fetching product state. */
 
-pub mod get_product;
-pub use self::get_product::{
-    GetProduct,
-    GetProductQuery,
-};
+mod get_product;
+mod get_product_summaries;
 
-pub mod get_product_summaries;
-pub use self::get_product_summaries::{
-    GetProductSummaries,
-    GetProductSummariesQuery,
-    ProductSummary,
+pub use self::{
+    get_product::*,
+    get_product_summaries::*,
 };

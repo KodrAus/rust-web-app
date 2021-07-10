@@ -20,7 +20,7 @@ use crate::{
 /** `GET /customers/<id>` */
 #[get("/<id>")]
 pub async fn get(id: CustomerId, app: &State<App>) -> Result<Json<CustomerWithOrders>, Error> {
-    app.transaction2(|app| async move {
+    app.transaction(|app| async move {
         let query = app.get_customer_with_orders_query();
 
         match query.execute(GetCustomerWithOrders { id }).await? {
@@ -34,10 +34,10 @@ pub async fn get(id: CustomerId, app: &State<App>) -> Result<Json<CustomerWithOr
 /** `PUT /customers` */
 #[put("/", format = "application/json")]
 pub async fn create(app: &State<App>) -> Result<Created<Json<CustomerId>>, Error> {
-    app.transaction2(|app| async move {
+    app.transaction(|app| async move {
         let id = app.customer_id();
 
-        let mut command = app.create_customer_command();
+        let command = app.create_customer_command();
 
         let id = id.get()?;
 
