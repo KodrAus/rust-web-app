@@ -18,38 +18,36 @@ impl CommandArgs for CreateCustomer {
     type Output = Result;
 }
 
-impl CreateCustomer {
-    async fn execute(
-        &mut self,
-        transaction: ActiveTransaction,
-        store: impl CustomerStore,
-    ) -> Result {
-        debug!("creating customer `{}`", self.id);
+async fn execute(
+    command: CreateCustomer,
+    transaction: ActiveTransaction,
+    store: impl CustomerStore,
+) -> Result {
+    debug!("creating customer `{}`", command.id);
 
-        let customer = {
-            if store.get_customer(self.id)?.is_some() {
-                err!("customer `{}` already exists", self.id)?
-            } else {
-                Customer::new(self.id)?
-            }
-        };
+    let customer = {
+        if store.get_customer(command.id)?.is_some() {
+            err!("customer `{}` already exists", command.id)?
+        } else {
+            Customer::new(command.id)?
+        }
+    };
 
-        store.set_customer(transaction.get(), customer)?;
+    store.set_customer(transaction.get(), customer)?;
 
-        info!("customer `{}` created", self.id);
+    info!("customer `{}` created", command.id);
 
-        Ok(())
-    }
+    Ok(())
 }
 
 impl Resolver {
     /** Create a customer. */
     pub fn create_customer_command(&self) -> impl Command<CreateCustomer> {
-        self.command(|resolver, mut command: CreateCustomer| async move {
+        self.command(|resolver, command: CreateCustomer| async move {
             let store = resolver.customer_store();
             let active_transaction = resolver.active_transaction();
 
-            command.execute(active_transaction, store).await
+            execute(command, active_transaction, store).await
         })
     }
 }
@@ -64,18 +62,15 @@ mod tests {
     async fn err_if_already_exists() {
         let store = in_memory_store(Default::default());
 
-        let mut create = CreateCustomer {
+        let create = CreateCustomer {
             id: CustomerId::new(),
         };
 
-        create
-            .clone()
-            .execute(ActiveTransaction::none(), &store)
+        execute(create.clone(), ActiveTransaction::none(), &store)
             .await
             .unwrap();
 
-        assert!(create
-            .execute(ActiveTransaction::none(), &store)
+        assert!(execute(create, ActiveTransaction::none(), &store)
             .await
             .is_err());
     }

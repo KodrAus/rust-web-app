@@ -18,12 +18,10 @@ impl QueryArgs for GetCustomer {
     type Output = Result;
 }
 
-impl GetCustomer {
-    async fn execute(&self, store: impl CustomerStore) -> Result {
-        let customer = store.get_customer(self.id)?;
+async fn execute(query: GetCustomer, store: impl CustomerStore) -> Result {
+    let customer = store.get_customer(query.id)?;
 
-        Ok(customer)
-    }
+    Ok(customer)
 }
 
 impl Resolver {
@@ -32,7 +30,7 @@ impl Resolver {
         self.query(|resolver, query: GetCustomer| async move {
             let store = resolver.customer_store();
 
-            query.execute(store).await
+            execute(query, store).await
         })
     }
 }

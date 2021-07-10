@@ -42,7 +42,7 @@ pub struct Create {
 pub async fn create(data: Json<Create>, app: &State<App>) -> Result<Created<Json<OrderId>>, Error> {
     app.transaction2(|app| async move {
         let id = app.order_id();
-        let mut command = app.create_order_command();
+        let command = app.create_order_command();
 
         let id = id.get()?;
 
@@ -78,7 +78,7 @@ pub async fn add_or_update_product(
     app: &State<App>,
 ) -> Result<Json<LineItemId>, Error> {
     app.transaction2(|app| async move {
-        let mut command = app.add_or_update_product_command();
+        let command = app.add_or_update_product_command();
 
         let line_item_id = command
             .execute(AddOrUpdateProduct {

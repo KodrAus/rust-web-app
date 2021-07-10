@@ -37,7 +37,7 @@ pub async fn create(app: &State<App>) -> Result<Created<Json<CustomerId>>, Error
     app.transaction2(|app| async move {
         let id = app.customer_id();
 
-        let mut command = app.create_customer_command();
+        let command = app.create_customer_command();
 
         let id = id.get()?;
 
