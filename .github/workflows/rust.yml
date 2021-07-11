@@ -16,7 +16,7 @@ jobs:
     - name: Setup
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ cat rust-toolchain }}
         override: true
     - name: Build
       run: cargo build
