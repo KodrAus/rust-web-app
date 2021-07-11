@@ -16,7 +16,6 @@ cargo doc --document-private-items
 ```
  */
 
-#![feature(decl_macro)]
 #![allow(
     clippy::manual_non_exhaustive,
     clippy::type_complexity,
