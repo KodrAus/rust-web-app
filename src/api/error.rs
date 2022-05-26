@@ -95,19 +95,19 @@ where
 }
 
 #[catch(500)]
-pub(super) fn internal_error(_: &Request) -> content::Json<Vec<u8>> {
+pub(super) fn internal_error(_: &Request) -> content::RawJson<Vec<u8>> {
     let err = serde_json::to_vec(&SerializeError {
         msg: &"an internal error occurred",
     })
     .unwrap_or_else(|_| Vec::new());
 
-    content::Json(err)
+    content::RawJson(err)
 }
 
 #[catch(404)]
-pub(super) fn not_found(_: &Request) -> content::Json<Vec<u8>> {
+pub(super) fn not_found(_: &Request) -> content::RawJson<Vec<u8>> {
     let err =
         serde_json::to_vec(&SerializeError { msg: &"not found" }).unwrap_or_else(|_| Vec::new());
 
-    content::Json(err)
+    content::RawJson(err)
 }
