@@ -12,9 +12,6 @@ features = ["json"]
 [dependencies.rocket_codegen]
 version = "=0.5.0-rc.2"
 
-[dependencies.futures]
-version = "~0.3"
-
 [dependencies.serde]
 version = "~1"
 
@@ -39,7 +36,7 @@ version = "~0.8"
 version = "~1"
 
 [dependencies.auto_impl]
-version = "~0.4"
+version = "~1"
 
 [dependencies.once_cell]
 version = "~1"
