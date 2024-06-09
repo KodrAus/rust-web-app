@@ -9,7 +9,7 @@ use crate::domain::{
 };
 
 /** Input for a `CreateOrderCommand`. */
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CreateOrder {
     pub id: OrderId,
     pub customer_id: CustomerId,
@@ -25,11 +25,9 @@ async fn execute(
     store: impl OrderStore,
     customer_query: impl Query<GetCustomer>,
 ) -> Result<(), Error> {
-    debug!("creating order `{}`", command.id);
-
     let order = {
         if store.get_order(command.id)?.is_some() {
-            err!("order `{}` already exists", command.id)?
+            err!("order {order_id: command.id} already exists")?
         } else {
             let customer = customer_query
                 .execute(GetCustomer {
@@ -43,8 +41,6 @@ async fn execute(
     };
 
     store.set_order(transaction.get(), order)?;
-
-    info!("created order `{}`", command.id);
 
     Ok(())
 }

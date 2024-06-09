@@ -3,6 +3,7 @@ use std::{
         hash_map,
         HashMap,
     },
+    fmt,
     sync::RwLock,
 };
 
@@ -22,6 +23,12 @@ An identifier for a transactional value.
 */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Id(Uuid);
+
+impl fmt::Display for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
+}
 
 impl Id {
     pub fn new() -> Self {
@@ -107,8 +114,11 @@ where
     This will also return the current version of the value that will be needed to update it.
     */
     pub fn get(&self, id: impl Into<Id>) -> Option<(Version, T)> {
-        let id = id.into();
+        self.internal_get(id.into())
+    }
 
+    #[emit::debug_span("get {kind: std::any::type_name::<T>()} {id}")]
+    fn internal_get(&self, id: Id) -> Option<(Version, T)> {
         let data = self.data.read().unwrap();
 
         Self::get_sync(id, &self.transactions, &*data)
@@ -118,6 +128,7 @@ where
     /**
     Get all values that match a given filter.
     */
+    #[emit::debug_span("get all {kind: std::any::type_name::<T>()} by filter")]
     pub fn get_all(
         &self,
         mut filter: impl FnMut(&T) -> bool,
@@ -178,7 +189,18 @@ where
         new_version: impl Into<Version>,
         new_value: T,
     ) -> Result<(), Error> {
-        let id = id.into();
+        self.internal_set(transaction, id.into(), old_version, new_version, new_value)
+    }
+
+    #[emit::debug_span("set {kind: std::any::type_name::<T>()} {id}")]
+    fn internal_set(
+        &self,
+        transaction: &Transaction,
+        id: Id,
+        old_version: Option<impl Into<Version>>,
+        new_version: impl Into<Version>,
+        new_value: T,
+    ) -> Result<(), Error> {
         let old_version = old_version.map(Into::into);
         let new_version = new_version.into();
 

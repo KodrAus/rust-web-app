@@ -6,8 +6,7 @@ use rocket::Build;
 
 use crate::domain::App;
 
-mod error;
-mod id;
+mod infra;
 
 pub mod customers;
 pub mod orders;
@@ -19,18 +18,23 @@ Create a `Rocket` that will host the app.
 The rocket can either be launched or passed to a local client for testing.
 */
 pub fn init() -> rocket::Rocket<Build> {
-    info!("starting up");
-
     rocket::build()
         .manage(App::default())
         .mount(
             "/products",
-            routes![products::get, products::create, products::set_title],
+            rocket::routes![products::get, products::create, products::set_title],
         )
         .mount(
             "/orders",
-            routes![orders::get, orders::create, orders::add_or_update_product],
+            rocket::routes![orders::get, orders::create, orders::add_or_update_product],
         )
-        .mount("/customers", routes![customers::get, customers::create])
-        .register("/", catchers![error::not_found, error::internal_error])
+        .mount(
+            "/customers",
+            rocket::routes![customers::get, customers::create],
+        )
+        .attach(infra::span::SpanFairing)
+        .register(
+            "/",
+            rocket::catchers![infra::error::not_found, infra::error::internal_error],
+        )
 }

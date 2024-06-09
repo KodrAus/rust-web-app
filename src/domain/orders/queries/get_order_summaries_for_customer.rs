@@ -8,7 +8,7 @@ use crate::domain::{
 };
 
 /** Input for a `GetOrderSummariesForCustomerQuery`. */
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetOrderSummariesForCustomer {
     pub id: CustomerId,
 }

@@ -7,10 +7,7 @@ use rocket::{
 };
 
 use crate::{
-    api::error::{
-        self,
-        Error,
-    },
+    api::infra::*,
     domain::{
         infra::*,
         products::*,
@@ -25,23 +22,26 @@ pub struct Get {
 }
 
 /** `GET /products/<id>` */
-#[get("/<id>")]
-pub async fn get(id: ProductId, app: &State<App>) -> Result<Json<Get>, Error> {
-    app.transaction(|app| async move {
-        let query = app.get_product_query();
+#[rocket::get("/<id>")]
+pub async fn get(id: ProductId, app: &State<App>, span: RequestSpan) -> Result<Json<Get>, Error> {
+    span.trace(async {
+        app.transaction(|app| async move {
+            let query = app.get_product_query();
 
-        match query.execute(GetProduct { id }).await? {
-            Some(product) => {
-                let product = product.into_data();
+            match query.execute(GetProduct { id }).await? {
+                Some(product) => {
+                    let product = product.into_data();
 
-                Ok(Json(Get {
-                    id: product.id,
-                    title: product.title,
-                    price: product.price,
-                }))
+                    Ok(Json(Get {
+                        id: product.id,
+                        title: product.title,
+                        price: product.price,
+                    }))
+                }
+                None => Err(Error::NotFound(error::msg("product not found"))),
             }
-            None => Err(Error::NotFound(error::msg("product not found"))),
-        }
+        })
+        .await
     })
     .await
 }
@@ -53,41 +53,53 @@ pub struct Create {
 }
 
 /** `PUT /products` */
-#[put("/", format = "application/json", data = "<data>")]
+#[rocket::put("/", format = "application/json", data = "<data>")]
 pub async fn create(
     data: Json<Create>,
     app: &State<App>,
+    span: RequestSpan,
 ) -> Result<Created<Json<ProductId>>, Error> {
-    app.transaction(|app| async move {
-        let id = app.product_id();
-        let command = app.create_product_command();
+    span.trace(async move {
+        app.transaction(|app| async move {
+            let id = app.product_id();
+            let command = app.create_product_command();
 
-        let id = id.get()?;
+            let id = id.get()?;
 
-        command
-            .execute(CreateProduct {
-                id,
-                title: data.0.title,
-                price: data.0.price,
-            })
-            .await?;
+            command
+                .execute(CreateProduct {
+                    id,
+                    title: data.0.title,
+                    price: data.0.price,
+                })
+                .await?;
 
-        let location = format!("/products/{}", id);
+            let location = format!("/products/{}", id);
 
-        Ok(Created::new(location).body(Json(id)))
+            Ok(Created::new(location).body(Json(id)))
+        })
+        .await
     })
     .await
 }
 
 /** `POST /products/<id>/title/<title>` */
-#[post("/<id>/title/<title>")]
-pub async fn set_title(id: ProductId, title: String, app: &State<App>) -> Result<(), Error> {
-    app.transaction(|app| async move {
-        let command = app.set_product_title_command();
+#[rocket::post("/<id>/title/<title>")]
+pub async fn set_title(
+    id: ProductId,
+    title: String,
+    app: &State<App>,
+    span: RequestSpan,
+) -> Result<(), Error> {
+    span.trace(async move {
+        app.transaction(|app| async move {
+            let command = app.set_product_title_command();
 
-        command.execute(SetProductTitle { id, title }).await?;
+            command.execute(SetProductTitle { id, title }).await?;
 
-        Ok(())
+            Ok(())
+        })
+        .await
     })
     .await
 }

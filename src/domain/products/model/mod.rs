@@ -106,10 +106,7 @@ impl Product {
         }))
     }
 
-    pub fn set_title(
-        &mut self,
-        title: impl TryInto<Title, Error = Error>,
-    ) -> Result<(), Error> {
+    pub fn set_title(&mut self, title: impl TryInto<Title, Error = Error>) -> Result<(), Error> {
         self.data.title = title.try_into()?.0;
 
         Ok(())

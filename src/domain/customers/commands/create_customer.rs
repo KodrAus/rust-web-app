@@ -7,7 +7,7 @@ use crate::domain::{
 };
 
 /** Input for a `CreateCustomerCommand`. */
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CreateCustomer {
     pub id: CustomerId,
 }
@@ -21,19 +21,15 @@ async fn execute(
     transaction: ActiveTransaction,
     store: impl CustomerStore,
 ) -> Result<(), Error> {
-    debug!("creating customer `{}`", command.id);
-
     let customer = {
         if store.get_customer(command.id)?.is_some() {
-            err!("customer `{}` already exists", command.id)?
+            err!("customer {id: command.id} already exists")?
         } else {
             Customer::new(command.id)?
         }
     };
 
     store.set_customer(transaction.get(), customer)?;
-
-    info!("customer `{}` created", command.id);
 
     Ok(())
 }

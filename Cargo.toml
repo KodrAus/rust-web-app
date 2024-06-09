@@ -6,11 +6,11 @@ publish = false
 edition = "2021"
 
 [dependencies.rocket]
-version = "=0.5.0-rc.2"
+version = "~0.5"
 features = ["json"]
 
 [dependencies.rocket_codegen]
-version = "=0.5.0-rc.2"
+version = "~0.5"
 
 [dependencies.serde]
 version = "~1"
@@ -25,12 +25,12 @@ version = "~1"
 version = "~1"
 features = ["serde", "v4"]
 
-[dependencies.log]
-version = "~0.4"
+[dependencies.emit]
+version = "0.11.0-alpha.3"
 features = ["serde"]
 
-[dependencies.env_logger]
-version = "~0.8"
+[dependencies.emit_term]
+version = "0.11.0-alpha.3"
 
 [dependencies.thiserror]
 version = "~1"
@@ -40,9 +40,6 @@ version = "~1"
 
 [dependencies.once_cell]
 version = "~1"
-
-[dependencies.async-trait]
-version = "~0.1"
 
 [dev-dependencies.tokio]
 version = "~1"

@@ -7,7 +7,7 @@ use crate::domain::{
 };
 
 /** Input for a `GetCustomerQuery`. */
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetCustomer {
     pub id: CustomerId,
 }

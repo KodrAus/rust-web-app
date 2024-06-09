@@ -32,6 +32,7 @@ impl App {
     Any commands that are resolved from the returned resolver will participate in the returned transaction.
     The transaction will need to be completed before it will commit.
     */
+    #[emit::span("execute transaction")]
     pub async fn transaction<F, O, T, E>(&self, f: F) -> Result<T, E>
     where
         F: FnOnce(Resolver) -> O,

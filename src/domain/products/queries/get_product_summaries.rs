@@ -7,7 +7,7 @@ use crate::domain::{
 };
 
 /** Input for a `GetProductSummariesQuery`. */
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetProductSummaries {
     pub ids: Vec<ProductId>,
 }

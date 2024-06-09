@@ -9,7 +9,7 @@ use crate::domain::{
 };
 
 /** Input for an `AddOrUpdateProductCommand`. */
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AddOrUpdateProduct {
     pub id: OrderId,
     pub product_id: ProductId,
@@ -27,19 +27,9 @@ async fn execute(
     id: impl IdProvider<LineItemData>,
     product_query: impl Query<GetProduct>,
 ) -> Result<LineItemId, Error> {
-    debug!(
-        "updating product `{}` in order `{}`",
-        command.product_id, command.id
-    );
-
     if let Some(order) = store.get_order(command.id)? {
         let id = match order.into_line_item_for_product(command.product_id) {
             IntoLineItem::InOrder(mut line_item) => {
-                debug!(
-                    "updating existing product `{}` in order `{}`",
-                    command.product_id, command.id
-                );
-
                 let (_, &LineItemData { id, .. }) = line_item.to_data();
 
                 line_item.set_quantity(command.quantity)?;
@@ -48,11 +38,6 @@ async fn execute(
                 id
             }
             IntoLineItem::NotInOrder(mut order) => {
-                debug!(
-                    "adding new product `{}` to order `{}`",
-                    command.product_id, command.id
-                );
-
                 let id = id.get()?;
                 let product = product_query
                     .execute(GetProduct {
@@ -67,11 +52,6 @@ async fn execute(
                 id
             }
         };
-
-        info!(
-            "updated product `{}` in order `{}`",
-            command.product_id, command.id
-        );
 
         Ok(id)
     } else {

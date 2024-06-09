@@ -23,22 +23,13 @@ cargo doc --document-private-items
 )]
 
 #[macro_use]
-extern crate rocket;
-
-#[macro_use]
 extern crate serde_derive;
 
 #[macro_use]
 extern crate thiserror;
 
 #[macro_use]
-extern crate log;
-
-#[macro_use]
 extern crate auto_impl;
-
-#[macro_use]
-extern crate async_trait;
 
 pub mod api;
 pub mod domain;

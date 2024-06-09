@@ -83,7 +83,7 @@ where
 
 macro_rules! err {
     ($($err:tt)*) => {{
-        error!($($err)*);
-        Err(crate::domain::error::msg(format!($($err)*)))
+        emit::error!($($err)*);
+        Err(crate::domain::error::msg(emit::format!($($err)*)))
     }};
 }
