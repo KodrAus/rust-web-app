@@ -10,10 +10,7 @@ use rocket::{
         Info,
         Kind,
     },
-    http::{
-        Method,
-        Status,
-    },
+    http::Status,
     request::{
         FromRequest,
         Outcome,
@@ -43,48 +40,23 @@ type Span = emit::Span<
 // and this span and gives us a generic `.invoke(|app: &App| { .. })` method
 // Then any new per-request things will automatically be available on all routes
 pub struct RequestSpan {
-    span: Span,
-    method: Method,
-    uri: String,
+    ctxt: Option<emit::span::SpanCtxt>,
 }
 
 impl RequestSpan {
-    pub async fn trace<T>(mut self, f: impl Future<Output = Result<T, Error>>) -> Result<T, Error> {
+    pub async fn trace<T>(self, f: impl Future<Output = Result<T, Error>>) -> Result<T, Error> {
         let rt = emit::runtime::shared();
 
-        // TODO: Don't actually complete the span here; just use it to populate trace ids
-        // Then we can attach response data in the response callback
-        self.span
-            .push_ctxt(rt.ctxt(), emit::Empty)
+        emit::Frame::push(rt.ctxt(), self.ctxt)
             .in_future(async move {
                 match f.await {
-                    Ok(r) => {
-                        self.span.complete_with(|event| {
-                            emit::debug!(event, "HTTP {method: self.method} {uri: self.uri}")
-                        });
-
-                        Ok(r)
-                    }
+                    Ok(r) => Ok(r),
                     Err(err) => {
-                        self.span.complete_with(|event| {
-                            let status = err.status();
-
-                            if status.code == Status::InternalServerError.code {
-                                emit::error!(
-                                    event,
-                                    "HTTP {method: self.method} {uri: self.uri}",
-                                    status,
-                                    err
-                                );
-                            } else {
-                                emit::warn!(
-                                    event,
-                                    "HTTP {method: self.method} {uri: self.uri}",
-                                    status,
-                                    err
-                                );
-                            }
-                        });
+                        if err.status().code == Status::InternalServerError.code {
+                            emit::error!("request failed with {err}",);
+                        } else {
+                            emit::warn!("request failed with {err}",);
+                        }
 
                         Err(err)
                     }
@@ -123,21 +95,7 @@ impl Fairing for SpanFairing {
         req.local_cache(|| CachedSpan(Mutex::new(span)));
     }
 
-    async fn on_response<'r>(&self, req: &'r Request<'_>, _: &mut Response<'r>) {
-        // If the caller didn't explicitly complete the span then do it here
-        if let Outcome::Success(span) = RequestSpan::from_request(req).await {
-            span.span.complete_with(|event| {
-                emit::debug!(event, "HTTP {method: span.method} {uri: span.uri}")
-            });
-        }
-    }
-}
-
-#[rocket::async_trait]
-impl<'r> FromRequest<'r> for RequestSpan {
-    type Error = ();
-
-    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, ()> {
+    async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
         let span = mem::replace(
             &mut *req
                 .local_cache(|| CachedSpan(Mutex::new(Span::disabled())))
@@ -147,10 +105,35 @@ impl<'r> FromRequest<'r> for RequestSpan {
             Span::disabled(),
         );
 
-        Outcome::Success(RequestSpan {
-            span,
-            method: req.method(),
-            uri: req.uri().to_string(),
-        })
+        span.complete_with(|event| {
+            let status = res.status().code;
+
+            emit::emit!(
+                event,
+                "HTTP {method: req.method()} {uri: req.uri().to_string()} {status}",
+                lvl: match status {
+                    200..=399 => emit::Level::Debug,
+                    400..=499 => emit::Level::Warn,
+                    _ => emit::Level::Error,
+                },
+            )
+        });
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for RequestSpan {
+    type Error = ();
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, ()> {
+        let ctxt = req
+            .local_cache(|| CachedSpan(Mutex::new(Span::disabled())))
+            .0
+            .lock()
+            .unwrap()
+            .ctxt()
+            .copied();
+
+        Outcome::Success(RequestSpan { ctxt })
     }
 }
