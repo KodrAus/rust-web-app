@@ -38,9 +38,9 @@ impl RequestSpan {
                     Ok(r) => Ok(r),
                     Err(err) => {
                         if err.status().code == Status::InternalServerError.code {
-                            emit::error!("request failed with {err}",);
+                            emit::error!("request failed with {err}");
                         } else {
-                            emit::warn!("request failed with {err}",);
+                            emit::warn!("request failed with {err}");
                         }
 
                         Err(err)
@@ -87,11 +87,11 @@ impl Fairing for SpanFairing {
         let status = res.status().code;
 
         emit::emit!(
-            event: emit::span::Span::new(
+            event: emit::Span::new(
                 emit::module!(),
                 span.timer,
                 "HTTP request",
-                emit::props! {},
+                span.ctxt,
             ),
             "HTTP {method: req.method()} {uri: req.uri().to_string()} {status}",
             lvl: match status {
