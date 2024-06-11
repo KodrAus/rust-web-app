@@ -204,8 +204,7 @@ checksum = "3dca9240753cf90908d7e4aac30f630662b02aebaa1b58a3cadabdb23385b58b"
 [[package]]
 name = "emit"
 version = "0.11.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27698ec394973821abb77d4304ef36afa891d7dc51f93003b43ee7b7807c290f"
+source = "git+https://github.com/emit-rs/emit#24f98815fcceab90a133859bd5b4bd9e53452918"
 dependencies = [
  "emit_core",
  "emit_macros",
@@ -218,8 +217,7 @@ dependencies = [
 [[package]]
 name = "emit_core"
 version = "0.11.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc166e34c4a2a08e811326f16808101cebbea44a70c8feaf7476c0a2a90d5142"
+source = "git+https://github.com/emit-rs/emit#24f98815fcceab90a133859bd5b4bd9e53452918"
 dependencies = [
  "serde",
  "sval",
@@ -231,8 +229,7 @@ dependencies = [
 [[package]]
 name = "emit_macros"
 version = "0.11.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8c1eabf821df3e05e6f8e786c0781a842c72f3736ee3aba229dac2ad17f3710"
+source = "git+https://github.com/emit-rs/emit#24f98815fcceab90a133859bd5b4bd9e53452918"
 dependencies = [
  "emit_core",
  "fv-template",
@@ -244,8 +241,7 @@ dependencies = [
 [[package]]
 name = "emit_term"
 version = "0.11.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b28d6165ad5bb53a73a5a40c53e8d75e94db8ae205b1cd1b82d6eb5e4e7982e3"
+source = "git+https://github.com/emit-rs/emit#24f98815fcceab90a133859bd5b4bd9e53452918"
 dependencies = [
  "emit",
  "sval",
