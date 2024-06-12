@@ -32,7 +32,7 @@ pub struct RequestSpan {
 impl RequestSpan {
     pub async fn trace<T>(self, f: impl Future<Output = Result<T, Error>>) -> Result<T, Error> {
         self.ctxt
-            .push(emit::ctxt(), emit::props! {})
+            .push(emit::ctxt())
             .in_future(async move {
                 match f.await {
                     Ok(r) => Ok(r),
