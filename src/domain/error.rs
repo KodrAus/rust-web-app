@@ -56,7 +56,7 @@ The event will be emitted.
 pub fn emit(event: impl emit::event::ToEvent) -> Error {
     let event = event.to_event();
 
-    emit::error!(event: &event);
+    emit::error!(evt: &event);
 
     msg(event.msg())
 }
