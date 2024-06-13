@@ -29,14 +29,19 @@ impl App {
     /**
     Begin a transaction and return a resolver that uses it.
 
-    Any commands that are resolved from the returned resolver will participate in the returned transaction.
+    Any commands that are resolved within the closure will participate in the returned transaction.
     The transaction will need to be completed before it will commit.
     */
+    #[emit::span(
+        ok_lvl: "debug",
+        err_lvl: "error",
+        "execute transaction",
+    )]
     pub async fn transaction<F, O, T, E>(&self, f: F) -> Result<T, E>
     where
         F: FnOnce(Resolver) -> O,
         O: ::std::future::Future<Output = Result<T, E>>,
-        E: From<Error>,
+        E: ::std::error::Error + Send + Sync + From<Error> + 'static,
     {
         let resolver = self
             .root_resolver

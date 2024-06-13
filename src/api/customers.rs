@@ -3,14 +3,10 @@
 use rocket::{
     response::status::Created,
     serde::json::Json,
-    State,
 };
 
 use crate::{
-    api::error::{
-        self,
-        Error,
-    },
+    api::infra::*,
     domain::{
         customers::*,
         infra::*,
@@ -18,8 +14,8 @@ use crate::{
 };
 
 /** `GET /customers/<id>` */
-#[get("/<id>")]
-pub async fn get(id: CustomerId, app: &State<App>) -> Result<Json<CustomerWithOrders>, Error> {
+#[rocket::get("/<id>")]
+pub async fn get(id: CustomerId, app: AppRequest<'_>) -> Result<Json<CustomerWithOrders>, Error> {
     app.transaction(|app| async move {
         let query = app.get_customer_with_orders_query();
 
@@ -32,8 +28,8 @@ pub async fn get(id: CustomerId, app: &State<App>) -> Result<Json<CustomerWithOr
 }
 
 /** `PUT /customers` */
-#[put("/", format = "application/json")]
-pub async fn create(app: &State<App>) -> Result<Created<Json<CustomerId>>, Error> {
+#[rocket::put("/", format = "application/json")]
+pub async fn create(app: AppRequest<'_>) -> Result<Created<Json<CustomerId>>, Error> {
     app.transaction(|app| async move {
         let id = app.customer_id();
 

@@ -3,14 +3,10 @@
 use rocket::{
     response::status::Created,
     serde::json::Json,
-    State,
 };
 
 use crate::{
-    api::error::{
-        self,
-        Error,
-    },
+    api::infra::*,
     domain::{
         customers::*,
         infra::*,
@@ -20,12 +16,33 @@ use crate::{
 };
 
 /** `GET /orders/<id>` */
-#[get("/<id>")]
-pub async fn get(id: OrderId, app: &State<App>) -> Result<Json<OrderWithProducts>, Error> {
+#[rocket::get("/<id>")]
+pub async fn get(id: OrderId, app: AppRequest<'_>) -> Result<Json<OrderWithProducts>, Error> {
     app.transaction(|app| async move {
         let query = app.get_order_with_products_query();
 
         match query.execute(GetOrderWithProducts { id }).await? {
+            Some(order) => Ok(Json(order)),
+            None => Err(Error::NotFound(error::msg("order not found"))),
+        }
+    })
+    .await
+}
+
+/** `GET /orders/<id>/line-items/<line_item_id>` */
+#[rocket::get("/<id>/line-items/<line_item_id>")]
+pub async fn get_line_item(
+    id: OrderId,
+    line_item_id: LineItemId,
+    app: AppRequest<'_>,
+) -> Result<Json<LineItemWithProduct>, Error> {
+    app.transaction(|app| async move {
+        let query = app.get_line_item_with_product_query();
+
+        match query
+            .execute(GetLineItemWithProduct { id, line_item_id })
+            .await?
+        {
             Some(order) => Ok(Json(order)),
             None => Err(Error::NotFound(error::msg("order not found"))),
         }
@@ -39,8 +56,11 @@ pub struct Create {
 }
 
 /** `PUT /orders` */
-#[put("/", format = "application/json", data = "<data>")]
-pub async fn create(data: Json<Create>, app: &State<App>) -> Result<Created<Json<OrderId>>, Error> {
+#[rocket::put("/", format = "application/json", data = "<data>")]
+pub async fn create(
+    data: Json<Create>,
+    app: AppRequest<'_>,
+) -> Result<Created<Json<OrderId>>, Error> {
     app.transaction(|app| async move {
         let id = app.order_id();
         let command = app.create_order_command();
@@ -67,7 +87,7 @@ pub struct ProductQuantity {
 }
 
 /** `POST /orders/<id>/products/<product_id>` */
-#[post(
+#[rocket::post(
     "/<id>/products/<product_id>",
     format = "application/json",
     data = "<data>"
@@ -76,7 +96,7 @@ pub async fn add_or_update_product(
     id: OrderId,
     product_id: ProductId,
     data: Json<ProductQuantity>,
-    app: &State<App>,
+    app: AppRequest<'_>,
 ) -> Result<Json<LineItemId>, Error> {
     app.transaction(|app| async move {
         let command = app.add_or_update_product_command();

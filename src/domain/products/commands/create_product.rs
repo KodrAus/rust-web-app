@@ -1,13 +1,14 @@
 /*! Contains the `CreateProductCommand` type. */
 
 use crate::domain::{
+    error,
     infra::*,
     products::*,
     Error,
 };
 
 /** Input for a `CreateProductCommand`. */
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CreateProduct {
     pub id: ProductId,
     pub title: String,
@@ -24,19 +25,17 @@ async fn execute(
     transaction: ActiveTransaction,
     store: impl ProductStore,
 ) -> Result<(), Error> {
-    debug!("creating product `{}`", command.id);
-
     let product = {
         if store.get_product(command.id)?.is_some() {
-            err!("product `{}` already exists", command.id)?
+            return Err(error::emit(emit::event!(
+                "product {id: command.id} already exists"
+            )));
         } else {
             Product::new(command.id, command.title, command.price)?
         }
     };
 
     store.set_product(transaction.get(), product)?;
-
-    info!("created product `{}`", command.id);
 
     Ok(())
 }

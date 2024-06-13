@@ -9,7 +9,7 @@ use crate::domain::{
 };
 
 /** Input for a `GetOrderWithProductsQuery`. */
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetOrderWithProducts {
     pub id: OrderId,
 }

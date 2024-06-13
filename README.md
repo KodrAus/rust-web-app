@@ -2,7 +2,6 @@
 
 [![Rust](https://github.com/KodrAus/rust-web-app/actions/workflows/rust.yml/badge.svg)](https://github.com/KodrAus/rust-web-app/actions/workflows/rust.yml)
 
-This application requires a `nightly` compiler to run.
 Call:
 
 ```

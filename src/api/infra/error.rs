@@ -7,7 +7,10 @@ use std::{
 use serde::Serializer;
 
 use rocket::{
-    http,
+    http::{
+        ContentType,
+        Status,
+    },
     request::Request,
     response::{
         self,
@@ -30,35 +33,39 @@ pub enum Error {
     Other(#[source] Box<dyn error::Error + Send + Sync>),
 }
 
+impl Error {
+    pub(in crate::api) fn status(&self) -> Status {
+        match self {
+            Error::NotFound(_) => Status::NotFound,
+            Error::BadRequest(_) => Status::BadRequest,
+            Error::Other(_) => Status::InternalServerError,
+        }
+    }
+
+    fn into_inner(self) -> Box<dyn error::Error + Send + Sync> {
+        match self {
+            Error::NotFound(err) => err,
+            Error::BadRequest(err) => err,
+            Error::Other(err) => err,
+        }
+    }
+}
+
 pub fn msg(err: impl fmt::Display) -> Box<dyn error::Error + Send + Sync> {
     err.to_string().into()
 }
 
 impl<'r, 'o: 'r> Responder<'r, 'o> for Error {
     fn respond_to(self, _: &Request) -> response::Result<'o> {
-        let (status, err) = match self {
-            Error::NotFound(err) => {
-                debug!("request failed with {:?}", err);
+        let status = self.status();
 
-                (http::Status::NotFound, err)
-            }
-            Error::BadRequest(err) => {
-                debug!("request failed with {:?}", err);
-
-                (http::Status::BadRequest, err)
-            }
-            Error::Other(err) => {
-                error!("request failed with {:?}", err);
-
-                (http::Status::InternalServerError, err)
-            }
-        };
+        let err = self.into_inner();
 
         let err = serde_json::to_vec(&SerializeError { msg: &err }).unwrap_or_else(|_| Vec::new());
 
         Response::build()
             .sized_body(None::<usize>, Cursor::new(err))
-            .header(http::ContentType::JSON)
+            .header(ContentType::JSON)
             .status(status)
             .ok()
     }
@@ -94,8 +101,8 @@ where
     s.collect_str(msg)
 }
 
-#[catch(500)]
-pub(super) fn internal_error(_: &Request) -> content::RawJson<Vec<u8>> {
+#[rocket::catch(500)]
+pub(in crate::api) fn internal_error(_: &Request) -> content::RawJson<Vec<u8>> {
     let err = serde_json::to_vec(&SerializeError {
         msg: &"an internal error occurred",
     })
@@ -104,8 +111,8 @@ pub(super) fn internal_error(_: &Request) -> content::RawJson<Vec<u8>> {
     content::RawJson(err)
 }
 
-#[catch(404)]
-pub(super) fn not_found(_: &Request) -> content::RawJson<Vec<u8>> {
+#[rocket::catch(404)]
+pub(in crate::api) fn not_found(_: &Request) -> content::RawJson<Vec<u8>> {
     let err =
         serde_json::to_vec(&SerializeError { msg: &"not found" }).unwrap_or_else(|_| Vec::new());
 

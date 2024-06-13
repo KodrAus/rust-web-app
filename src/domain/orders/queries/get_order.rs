@@ -7,7 +7,7 @@ use crate::domain::{
 };
 
 /** Input for a `GetOrderQuery`. */
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GetOrder {
     pub id: OrderId,
 }

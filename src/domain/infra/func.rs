@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::domain::infra::Resolver;
 
 use std::future::Future;
@@ -6,18 +8,17 @@ pub trait CommandArgs {
     type Output;
 }
 
-#[async_trait]
 pub trait Command<TArgs: CommandArgs> {
-    async fn execute(self, input: TArgs) -> TArgs::Output;
+    fn execute(self, input: TArgs) -> impl Future<Output = TArgs::Output> + Send;
 }
 
-#[async_trait]
 impl<TArgs, TCommand, TFuture> Command<TArgs> for TCommand
 where
-    TArgs: CommandArgs + Send + 'static,
+    TArgs: CommandArgs + Serialize + Send + 'static,
     TCommand: FnOnce(TArgs) -> TFuture + Send,
     TFuture: Future<Output = TArgs::Output> + Send,
 {
+    #[emit::debug_span("command {#[emit::as_serde] command: input}")]
     async fn execute(self, input: TArgs) -> TArgs::Output {
         self(input).await
     }
@@ -27,18 +28,17 @@ pub trait QueryArgs {
     type Output;
 }
 
-#[async_trait]
 pub trait Query<TArgs: QueryArgs> {
-    async fn execute(&self, input: TArgs) -> TArgs::Output;
+    fn execute(&self, input: TArgs) -> impl Future<Output = TArgs::Output> + Send;
 }
 
-#[async_trait]
 impl<TArgs, TQuery, TFuture> Query<TArgs> for TQuery
 where
-    TArgs: QueryArgs + Send + 'static,
+    TArgs: QueryArgs + Serialize + Send + 'static,
     TQuery: Fn(TArgs) -> TFuture + Sync,
     TFuture: Future<Output = TArgs::Output> + Send,
 {
+    #[emit::debug_span("query {#[emit::as_serde] query: input}")]
     async fn execute(&self, input: TArgs) -> TArgs::Output {
         self(input).await
     }
@@ -50,7 +50,7 @@ impl Resolver {
         command: TCommand,
     ) -> impl Command<TArgs>
     where
-        TArgs: CommandArgs + Send + 'static,
+        TArgs: CommandArgs + Serialize + Send + 'static,
         TCommand: FnOnce(Resolver, TArgs) -> TFuture + Send,
         TFuture: Future<Output = TArgs::Output> + Send,
     {
@@ -66,7 +66,7 @@ impl Resolver {
         query: TQuery,
     ) -> impl Query<TArgs>
     where
-        TArgs: QueryArgs + Send + 'static,
+        TArgs: QueryArgs + Serialize + Send + 'static,
         TQuery: Fn(Resolver, TArgs) -> TFuture + Sync,
         TFuture: Future<Output = TArgs::Output> + Send,
     {
@@ -84,10 +84,12 @@ mod tests {
 
     #[tokio::test]
     async fn unsync_command_query() {
+        #[derive(Serialize)]
         struct AddValue {
             value: i32,
         }
 
+        #[derive(Serialize)]
         struct GetLen;
 
         impl CommandArgs for AddValue {

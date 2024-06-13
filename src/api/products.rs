@@ -3,14 +3,10 @@
 use rocket::{
     response::status::Created,
     serde::json::Json,
-    State,
 };
 
 use crate::{
-    api::error::{
-        self,
-        Error,
-    },
+    api::infra::*,
     domain::{
         infra::*,
         products::*,
@@ -25,8 +21,8 @@ pub struct Get {
 }
 
 /** `GET /products/<id>` */
-#[get("/<id>")]
-pub async fn get(id: ProductId, app: &State<App>) -> Result<Json<Get>, Error> {
+#[rocket::get("/<id>")]
+pub async fn get(id: ProductId, app: AppRequest<'_>) -> Result<Json<Get>, Error> {
     app.transaction(|app| async move {
         let query = app.get_product_query();
 
@@ -53,10 +49,10 @@ pub struct Create {
 }
 
 /** `PUT /products` */
-#[put("/", format = "application/json", data = "<data>")]
+#[rocket::put("/", format = "application/json", data = "<data>")]
 pub async fn create(
     data: Json<Create>,
-    app: &State<App>,
+    app: AppRequest<'_>,
 ) -> Result<Created<Json<ProductId>>, Error> {
     app.transaction(|app| async move {
         let id = app.product_id();
@@ -80,8 +76,8 @@ pub async fn create(
 }
 
 /** `POST /products/<id>/title/<title>` */
-#[post("/<id>/title/<title>")]
-pub async fn set_title(id: ProductId, title: String, app: &State<App>) -> Result<(), Error> {
+#[rocket::post("/<id>/title/<title>")]
+pub async fn set_title(id: ProductId, title: String, app: AppRequest<'_>) -> Result<(), Error> {
     app.transaction(|app| async move {
         let command = app.set_product_title_command();
 

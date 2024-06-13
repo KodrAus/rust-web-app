@@ -8,7 +8,7 @@ use crate::domain::{
 };
 
 /** Input for a `SetProductTitleCommand`. */
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SetProductTitle {
     pub id: ProductId,
     pub title: String,
@@ -24,11 +24,6 @@ async fn execute(
     transaction: ActiveTransaction,
     store: impl ProductStore,
 ) -> Result<(), Error> {
-    debug!(
-        "updating product `{}` title to {:?}",
-        command.id, command.title
-    );
-
     let product = {
         if let Some(mut product) = store.get_product(command.id)? {
             product.set_title(command.title)?;
@@ -40,8 +35,6 @@ async fn execute(
     };
 
     store.set_product(transaction.get(), product)?;
-
-    info!("updated product `{}` title", command.id);
 
     Ok(())
 }
