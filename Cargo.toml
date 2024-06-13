@@ -26,11 +26,11 @@ version = "~1"
 features = ["serde", "v4"]
 
 [dependencies.emit]
-git = "https://github.com/emit-rs/emit"
+version = "0.11.0-alpha.4"
 features = ["serde"]
 
 [dependencies.emit_term]
-git = "https://github.com/emit-rs/emit"
+version = "0.11.0-alpha.4"
 
 [dependencies.thiserror]
 version = "~1"
