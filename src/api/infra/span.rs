@@ -87,7 +87,7 @@ impl Fairing for SpanFairing {
         let status = res.status().code;
 
         emit::emit!(
-            event: emit::Span::new(
+            evt: emit::Span::new(
                 emit::module!(),
                 span.timer,
                 "HTTP request",
