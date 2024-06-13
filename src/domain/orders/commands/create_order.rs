@@ -27,7 +27,9 @@ async fn execute(
 ) -> Result<(), Error> {
     let order = {
         if store.get_order(command.id)?.is_some() {
-            err!("order {order_id: command.id} already exists")?
+            return Err(error::emit(emit::event!(
+                "order {order_id: command.id} already exists"
+            )));
         } else {
             let customer = customer_query
                 .execute(GetCustomer {

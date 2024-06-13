@@ -49,6 +49,19 @@ pub fn msg(err: impl fmt::Display) -> Error {
 }
 
 /**
+Create an error from a diagnostic event.
+
+The event will be emitted.
+*/
+pub fn emit(event: impl emit::event::ToEvent) -> Error {
+    let event = event.to_event();
+
+    emit::error!(event: &event);
+
+    msg(event.msg())
+}
+
+/**
 Create an error for some bad input.
 
 This message may make its way to end-users so it should be friendly.
@@ -79,11 +92,4 @@ where
             inner: err.into(),
         }
     }
-}
-
-macro_rules! err {
-    ($($err:tt)*) => {{
-        emit::error!($($err)*);
-        Err(crate::domain::error::msg(emit::format!($($err)*)))
-    }};
 }

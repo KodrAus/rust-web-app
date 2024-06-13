@@ -2,6 +2,7 @@
 
 use crate::domain::{
     customers::*,
+    error,
     infra::*,
     Error,
 };
@@ -23,7 +24,9 @@ async fn execute(
 ) -> Result<(), Error> {
     let customer = {
         if store.get_customer(command.id)?.is_some() {
-            err!("customer {id: command.id} already exists")?
+            return Err(error::emit(emit::event!(
+                "customer {id: command.id} already exists"
+            )));
         } else {
             Customer::new(command.id)?
         }

@@ -1,6 +1,7 @@
 /*! Contains the `CreateProductCommand` type. */
 
 use crate::domain::{
+    error,
     infra::*,
     products::*,
     Error,
@@ -26,7 +27,9 @@ async fn execute(
 ) -> Result<(), Error> {
     let product = {
         if store.get_product(command.id)?.is_some() {
-            err!("product {id: command.id} already exists")?
+            return Err(error::emit(emit::event!(
+                "product {id: command.id} already exists"
+            )));
         } else {
             Product::new(command.id, command.title, command.price)?
         }
