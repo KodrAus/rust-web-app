@@ -88,9 +88,9 @@ impl Fairing for SpanFairing {
 
         emit::emit!(
             evt: emit::Span::new(
-                emit::module!(),
-                span.timer,
+                emit::mdl!(),
                 "HTTP request",
+                span.timer,
                 span.ctxt,
             ),
             "HTTP {method: req.method()} {uri: req.uri().to_string()} {status}",
