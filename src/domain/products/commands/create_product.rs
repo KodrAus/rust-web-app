@@ -27,7 +27,7 @@ async fn execute(
 ) -> Result<(), Error> {
     let product = {
         if store.get_product(command.id)?.is_some() {
-            return Err(error::emit(emit::event!(
+            return Err(error::emit(emit::evt!(
                 "product {id: command.id} already exists"
             )));
         } else {
