@@ -26,14 +26,14 @@ version = "~1"
 features = ["serde", "v4"]
 
 [dependencies.emit]
-version = "~0.11"
+version = "~1"
 features = ["serde"]
 
 [dependencies.emit_term]
-version = "~0.11"
+version = "~1"
 
 [dependencies.emit_otlp]
-version = "~0.11"
+version = "~1"
 
 [dependencies.thiserror]
 version = "~2"
