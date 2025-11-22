@@ -1,9 +1,9 @@
 /*! Contains the `GetProductQuery` type. */
 
 use crate::domain::{
+    Error,
     infra::*,
     products::*,
-    Error,
 };
 
 /** Input for a `GetProductQuery`. */

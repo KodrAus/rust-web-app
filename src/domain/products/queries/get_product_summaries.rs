@@ -1,9 +1,9 @@
 /*! Contains the `GetProductSummariesQuery` type. */
 
 use crate::domain::{
+    Error,
     infra::*,
     products::*,
-    Error,
 };
 
 /** Input for a `GetProductSummariesQuery`. */

@@ -20,11 +20,11 @@ pub mod store;
 pub mod test_data;
 
 use crate::domain::{
+    Error,
     customers::*,
     error,
     infra::*,
     products::*,
-    Error,
 };
 
 pub type OrderId = Id<OrderData>;
@@ -248,8 +248,8 @@ mod tests {
         customers::model::test_data::default_customer,
         orders::model::test_data::default_order,
         products::model::test_data::{
-            default_product,
             ProductBuilder,
+            default_product,
         },
     };
 

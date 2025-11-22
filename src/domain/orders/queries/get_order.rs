@@ -1,9 +1,9 @@
 /*! Contains the `GetOrderQuery` type. */
 
 use crate::domain::{
+    Error,
     infra::*,
     orders::*,
-    Error,
 };
 
 /** Input for a `GetOrderQuery`. */

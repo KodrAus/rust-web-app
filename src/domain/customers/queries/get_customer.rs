@@ -1,9 +1,9 @@
 /*! Contains the `GetCustomerQuery` type. */
 
 use crate::domain::{
+    Error,
     customers::*,
     infra::*,
-    Error,
 };
 
 /** Input for a `GetCustomerQuery`. */

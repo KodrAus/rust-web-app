@@ -2,8 +2,8 @@
 
 use crate::{
     domain::{
-        customers::*,
         Error,
+        customers::*,
     },
     store::*,
 };
@@ -82,8 +82,10 @@ mod tests {
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(store
-            .set_customer(&Transaction::none(), CustomerBuilder::new().id(id).build())
-            .is_err());
+        assert!(
+            store
+                .set_customer(&Transaction::none(), CustomerBuilder::new().id(id).build())
+                .is_err()
+        );
     }
 }

@@ -1,8 +1,8 @@
 /*! Contains the `Customer` entity. */
 
 use crate::domain::{
-    infra::*,
     Error,
+    infra::*,
 };
 
 pub mod store;

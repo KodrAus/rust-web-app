@@ -1,6 +1,9 @@
 use std::future::Future;
 
 use rocket::{
+    Data,
+    Request,
+    Response,
     fairing::{
         Fairing,
         Info,
@@ -11,9 +14,6 @@ use rocket::{
         FromRequest,
         Outcome,
     },
-    Data,
-    Request,
-    Response,
 };
 
 use super::Error;

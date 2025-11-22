@@ -1,10 +1,10 @@
 /*! Contains the `GetOrderSummariesForCustomerQuery` type. */
 
 use crate::domain::{
+    Error,
     customers::*,
     infra::*,
     orders::*,
-    Error,
 };
 
 /** Input for a `GetOrderSummariesForCustomerQuery`. */

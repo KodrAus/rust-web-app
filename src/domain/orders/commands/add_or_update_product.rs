@@ -1,11 +1,11 @@
 /*! Contains the `AddOrUpdateProductCommand` type. */
 
 use crate::domain::{
+    Error,
     error,
     infra::*,
     orders::*,
     products::*,
-    Error,
 };
 
 /** Input for an `AddOrUpdateProductCommand`. */

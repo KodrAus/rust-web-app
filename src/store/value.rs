@@ -1,7 +1,7 @@
 use std::{
     collections::{
-        hash_map,
         HashMap,
+        hash_map,
     },
     fmt,
     sync::RwLock,
@@ -10,12 +10,12 @@ use std::{
 use uuid::Uuid;
 
 use crate::store::{
+    Error,
     transaction::{
         Transaction,
         TransactionId,
         TransactionStore,
     },
-    Error,
 };
 
 /**

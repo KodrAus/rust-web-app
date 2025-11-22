@@ -1,13 +1,13 @@
 /*! Contains the `GetLineItemWithProductQuery` type. */
 
 use crate::domain::{
+    Error,
     infra::*,
     orders::*,
     products::{
         GetProduct,
         ProductId,
     },
-    Error,
 };
 
 /** Input for a `GetLineItemWithProductQuery`. */

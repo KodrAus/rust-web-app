@@ -1,11 +1,11 @@
 /*! Contains the `GetOrderWithProductsQuery` type. */
 
 use crate::domain::{
+    Error,
     error,
     infra::*,
     orders::*,
     products::*,
-    Error,
 };
 
 /** Input for a `GetOrderWithProductsQuery`. */
