@@ -7,9 +7,9 @@ use std::{
 
 use crate::{
     domain::{
+        Error,
         error,
         orders::*,
-        Error,
     },
     store::*,
 };
@@ -242,12 +242,14 @@ mod tests {
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(store
-            .set_order(
-                &Transaction::none(),
-                OrderBuilder::new().id(order_id).build()
-            )
-            .is_err());
+        assert!(
+            store
+                .set_order(
+                    &Transaction::none(),
+                    OrderBuilder::new().id(order_id).build()
+                )
+                .is_err()
+        );
     }
 
     #[test]
@@ -284,8 +286,10 @@ mod tests {
             .set_line_item(&Transaction::none(), line_item_a)
             .unwrap();
 
-        assert!(store
-            .set_line_item(&Transaction::none(), line_item_b)
-            .is_err());
+        assert!(
+            store
+                .set_line_item(&Transaction::none(), line_item_b)
+                .is_err()
+        );
     }
 }

@@ -1,17 +1,17 @@
 use std::future::Future;
 
 use rocket::{
+    Request,
     http::Status,
     request::{
         FromRequest,
         Outcome,
     },
-    Request,
 };
 
 use crate::domain::{
-    infra::Resolver,
     App,
+    infra::Resolver,
 };
 
 use super::{

@@ -1,11 +1,11 @@
 /*! Contains the `CreateOrderCommand` type. */
 
 use crate::domain::{
+    Error,
     customers::*,
     error,
     infra::*,
     orders::*,
-    Error,
 };
 
 /** Input for a `CreateOrderCommand`. */
@@ -92,13 +92,15 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(execute(
-            create.clone(),
-            ActiveTransaction::none(),
-            &store,
-            &customer_query
-        )
-        .await
-        .is_err());
+        assert!(
+            execute(
+                create.clone(),
+                ActiveTransaction::none(),
+                &store,
+                &customer_query
+            )
+            .await
+            .is_err()
+        );
     }
 }

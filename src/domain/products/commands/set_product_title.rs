@@ -1,10 +1,10 @@
 /*! Contains the `SetProductTitleCommand`. */
 
 use crate::domain::{
+    Error,
     error,
     infra::*,
     products::*,
-    Error,
 };
 
 /** Input for a `SetProductTitleCommand`. */

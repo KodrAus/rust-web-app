@@ -2,8 +2,8 @@ use rocket::request::FromParam;
 use std::convert::TryFrom;
 
 use crate::domain::{
-    infra::*,
     Error,
+    infra::*,
 };
 
 impl<'r, T> FromParam<'r> for Id<T> {

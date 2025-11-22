@@ -1,10 +1,10 @@
 /*! Contains the `CreateCustomerCommand` type. */
 
 use crate::domain::{
+    Error,
     customers::*,
     error,
     infra::*,
-    Error,
 };
 
 /** Input for a `CreateCustomerCommand`. */
@@ -67,8 +67,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(execute(create, ActiveTransaction::none(), &store)
-            .await
-            .is_err());
+        assert!(
+            execute(create, ActiveTransaction::none(), &store)
+                .await
+                .is_err()
+        );
     }
 }

@@ -11,9 +11,9 @@ pub mod store;
 pub mod test_data;
 
 use crate::domain::{
+    Error,
     error,
     infra::*,
-    Error,
 };
 
 pub type ProductId = Id<ProductData>;

@@ -4,8 +4,8 @@ use std::vec::IntoIter;
 
 use crate::{
     domain::{
-        products::*,
         Error,
+        products::*,
     },
     store::*,
 };
@@ -118,11 +118,13 @@ mod tests {
             .unwrap();
 
         // Attempting to create a second time fails optimistic concurrency check
-        assert!(store
-            .set_product(
-                &Transaction::none(),
-                test_data::ProductBuilder::new().id(id).build()
-            )
-            .is_err());
+        assert!(
+            store
+                .set_product(
+                    &Transaction::none(),
+                    test_data::ProductBuilder::new().id(id).build()
+                )
+                .is_err()
+        );
     }
 }

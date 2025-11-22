@@ -14,9 +14,9 @@ use rocket::{
     request::Request,
     response::{
         self,
-        content,
         Responder,
         Response,
+        content,
     },
 };
 
